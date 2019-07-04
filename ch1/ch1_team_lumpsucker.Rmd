@@ -205,6 +205,31 @@ text(50, 1.6,
 
 Fig. 1.6: The limit to subdividing reproduction into smaller steps. We can compare this numerical approximation to the true value, $e^1 = 2.718$.
 
+```{r}
+### Casey's version
+### I changed the input numbers since computation limits aren't
+### much of a big deal
+e_df <- data.frame(n = 1:10000, N0 = 1, rd = 1) %>%
+  mutate(N1 = N0 * (1 + rd / n)^n,
+         e_approx = N1/N0)
+
+ggplot(e_df, aes(x = n, y = e_approx)) +
+  theme_bw() +
+  geom_hline(yintercept = exp(1), color = 'green', size = 1) +
+    ### showing the actual value of e as a target
+  geom_hline(yintercept = 0, color = 'black', size = 1) +
+    ### throwing on an X axis at y = 0
+  geom_point(size = 2) +
+  scale_x_log10() ### log scale: easier to see changes in small values of n
+
+display_df <- e_df %>% 
+  filter(n %in% c(10, 100, 1000, 10000)) %>%
+  select(n, e_approx) %>%
+  mutate(error = round((exp(1) - e_approx) / exp(1), 5))
+knitr::kable(display_df)
+```
+
+
 #### Projecting a continuous population
 
 We select five different values for $r$: two negative, zero, and two positive. We let $t$ include the integers from 1 to 100. We then use `sapply` to apply our function of continuous exponential growth to each $r$, across all time steps. This results in a matrix where each row is the population size at each time $t$, and each column uses a different $r$.
