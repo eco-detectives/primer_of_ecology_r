@@ -120,6 +120,22 @@ We can also plot it with a log scale on the y-axis.
 matplot(time, Nt.s, log = "y", pch = 1:3)
 ```
 
+```{r}
+### Casey's version of section 1.3.2: 
+###   using crossing() to make all combinations of year and starting pop
+lambda <- 2
+time <- 0:4
+N_0  <- c(10, 20, 30)
+
+pop_df <- crossing(time, N_0) %>%
+  mutate(N_t = N_0 * lambda ^ time)
+
+ggplot(pop_df, aes(x = time, y = N_t, color = N_0)) +
+  theme_classic() +
+  geom_line(aes(group = N_0)) +
+  geom_point()
+```
+
 ### 1.3.3 Effects of different per capita growth rates
 
 Here we demonstrate the effects on growth of $\lambda > 1$ and $\lambda < 1$. We set $N_0 = 100$, and time, and then pick three different $\lambda$.
@@ -173,6 +189,48 @@ legend(0, 70,
        c("Arithmetic Ave.", "Geometric Ave."),
        title = "Projections Based On:", 
        lty = 2:1, bty = "n", xjust = 0)
+```
+
+```{r}
+### Casey's version of section 1.3.4
+data(sparrows) ### load data from the primer package
+
+### Using the first six years of sparrow data... because that's the portion
+### of the data that is basically exponential growth?  let's check a plot:
+# ggplot(sparrows, aes(x = Year, y = Count)) +
+#   geom_point()
+### Kinda looks like it - after year 6 it flattens out
+
+### Calculate the growth rate from year t to year t-1 separately, then average
+sparrows_6yr <- sparrows %>%
+  setNames(tolower(names(.))) %>% ### I hate capitals in colnames
+  mutate(t = 0:(n()-1)) %>%  ### create a t column to use instead of year maybe
+  filter(t < 6) %>%
+  mutate(lambda = count / lag(count))
+
+l_means <- sparrows_6yr %>%
+  filter(!is.na(lambda)) %>%
+  summarize(lambda_arth = sum(lambda) / n(),
+            lambda_geom = prod(lambda) ^ (1/n()))
+### check that they match the base R values: yep!
+
+### for a stochastic simulation we'd need to calculate each year in turn
+### but for a deterministic, we can make a dataframe with the N0 column
+### and calculate each year by accounting for the amount of time passed
+pop_df <- sparrows_6yr %>%
+  select(t, count) %>% ### no need for the extra columns
+  mutate(N_0   = first(count),
+         N_t_arith = N_0 * (l_means$lambda_arth)^t,
+         N_t_geom = N_0 * (l_means$lambda_geom)^t) %>%
+  gather(mean, estimate, N_t_arith, N_t_geom) ### gather for ggplot
+
+ggplot(pop_df, aes(x = t, y = estimate, color = mean)) +
+  theme_bw() +
+  geom_line(aes(group = mean)) +
+  geom_point(size = 3) +
+  geom_point(aes(y = count), color = 'black', size = 3, alpha = .7)
+
+### looks like arithmetic mean overestimates results
 ```
 
 ## 1.4 Continuous Exponential Growth
