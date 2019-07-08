@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Compiled on Mon Jul 08 14:33:00 2019 by JC" />
+<meta name="author" content="Compiled on Mon Jul 08 14:38:06 2019 by JC" />
 
 
 <title>Primer of Ecology with R: chapter 1</title>
@@ -427,12 +427,12 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Primer of Ecology with R: chapter 1</h1>
-<h4 class="author"><em>Compiled on Mon Jul 08 14:33:00 2019 by JC</em></h4>
+<h4 class="author"><em>Compiled on Mon Jul 08 14:38:06 2019 by JC</em></h4>
 
 </div>
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">fig.width =</span> <span class="dv">6</span>, <span class="dt">fig.height =</span> <span class="dv">4</span>, <span class="dt">fig.path =</span> <span class="st">&#39;Figs/&#39;</span>,</a>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">fig.width =</span> <span class="dv">6</span>, <span class="dt">fig.height =</span> <span class="dv">4</span>, <span class="dt">fig.path =</span> <span class="st">&#39;Figs/lobster&#39;</span>,</a>
 <a class="sourceLine" id="cb1-2" title="2">                      <span class="dt">echo =</span> <span class="ot">TRUE</span>, <span class="dt">message =</span> <span class="ot">FALSE</span>, <span class="dt">warning =</span> <span class="ot">FALSE</span>)</a>
 <a class="sourceLine" id="cb1-3" title="3"></a>
 <a class="sourceLine" id="cb1-4" title="4"><span class="kw">library</span>(tidyverse)</a>
@@ -662,7 +662,7 @@ $(document).ready(function () {
 <a class="sourceLine" id="cb38-11" title="11">}</a></code></pre></div>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" title="1"><span class="kw">system.time</span>(output &lt;-<span class="st"> </span><span class="kw">PopSim</span>(<span class="dt">Rs =</span> obs.R, <span class="dt">N0 =</span> <span class="dv">43</span>, <span class="dt">sims =</span> <span class="dv">1000</span>))</a></code></pre></div>
 <pre><code>##    user  system elapsed 
-##    0.14    0.00    0.14</code></pre>
+##    0.12    0.00    0.14</code></pre>
 <div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" title="1"><span class="co">#  user  system elapsed</span></a>
 <a class="sourceLine" id="cb41-2" title="2"><span class="co"># 0.404   0.004   0.407</span></a></code></pre></div>
 <p>This tells me that it took less than half a second to complete 1000 simulations. That helps me understand how long 100,000 simulations might take. We also check the dimensions of the output, and they make sense.</p>
