@@ -1,20 +1,19 @@
 ---
-title: 'PoER: Ch. 1 - Team Nudi'
-author: Jessica, Alberto, Sean, Vincent
+title: 'Primer of Ecology with R: chapter 1'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
-  pdf_document:
-    toc: false
   html_document:
     toc: false
     number_sections: false
     theme: cerulean
     highlight: haddock
+  pdf_document:
+    toc: false
 ---
-# Question for Casey: Can you review what you did here in the initial R chunk (apart from loading packages)?
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/lobster',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
@@ -25,8 +24,6 @@ library(primer) # install.packages('primer')
 
 ```
 
-![](../img/yellowSpotNudi.jpg)
-
 # Chapter 1 {.tabset}
 
 ## 1.3 Exploring Population Growth
@@ -36,33 +33,9 @@ library(primer) # install.packages('primer')
 Here we create two vectors: population size, $N$, and years. Using `c()` allows us to create an arbitrary vector, and the colon, `:`, provides a sequence of consecutive integers.
 
 ```{r}
-### Original version
 N <- c(1, 3, 9, 27, 81)
 year <- 2001:2005
 plot(year, N)
-```
-
-```{r}
-### JLC's version
-expGrw <- data.frame(N = c(1, 3, 9, 27, 81),
-                         year = 2001:2005)
-ggplot(expGrw, aes(x = year, y = N)) +
-  geom_point(color = 'blue', size = 3) +
-  labs(x = 'Year', y = 'Population',title = "Hypotehical water lily population")+
-  theme_bw()
-```
-
-```{r}
-# Sean's version
-
-exp_growth <- data.frame(N = c(1, 3, 8, 27, 81), year = 2001:2005)
-View(exp_growth)
-
-exp_growth_plot <- ggplot(exp_growth, aes(x= year, y = N)) +
-   geom_point(color = 'red', size = 2) +
-  theme_bw() +
-  labs(x = 'Year', y = 'Population size / N')
-exp_growth_plot
 ```
 
 The lily population (Fig. 1.3) increases by a different amount each year. What about proportions — does it increase by a different proportion each year? Let’s divide each year’s population size by the previous year’s size, that is, perform $N_{t+1}/N_t$ for all $t$, where $t$ is any particular point in time, and $t + 1$ is the next point in time. For $N$, that amounts to 3/1, 9/3, . . . . What do we notice?
@@ -76,17 +49,6 @@ rates = N[2:5]/N[1:4]
 rates
 # [1] 3 3 3 3
 ```
-
-```{r}
-### JLC's version
-
-expGrw<-expGrw %>%
-  mutate(rate=N/lag(N))
-
-expGrw$rate[2:nrow(expGrw)]
-
-```
-
 
 ### 1.3.1 Projecting population size
 
@@ -403,7 +365,7 @@ qqline(scale(logOR))
 
 ## End of chapter questions
 
-### 1.1. Geometric growth Analyze the following data, relying on selected snippets of previous code.
+### 1.1. Geometric growth Analyze the following data, relying on selected snip- pets of previous code.
 
 a. In the years 1996 through 2005, lily population sizes are $N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150$. Make a graph of population size versus time. 
 b. Calculate $R$ for each year; graph $R$ vs. time.
