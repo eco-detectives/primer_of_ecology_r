@@ -2,14 +2,15 @@
 title: 'PoER: Ch. 1 - Team Nudi'
 author: Jessica, Alberto, Sean, Vincent
 output: 
+  pdf_document:
+    toc: false
   html_document:
     toc: false
     number_sections: false
     theme: cerulean
     highlight: haddock
-  pdf_document:
-    toc: false
 ---
+# Question for Casey: Can you review what you did here in the initial R chunk (apart from loading packages)?
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
@@ -49,6 +50,19 @@ ggplot(exp_growth, aes(x = year, y = N)) +
   theme_bw() +
   geom_point(color = 'blue', size = 3) +
   labs(x = 'Year', y = 'Population')
+```
+
+```{r}
+# Sean's version
+
+exp_growth <- data.frame(N = c(1, 3, 8, 27, 81), year = 2001:2005)
+View(exp_growth)
+
+exp_growth_plot <- ggplot(exp_growth, aes(x= year, y = N)) +
+   geom_point(color = 'red', size = 2) +
+  theme_bw() +
+  labs(x = 'Year', y = 'Population size / N')
+exp_growth_plot
 ```
 
 The lily population (Fig. 1.3) increases by a different amount each year. What about proportions — does it increase by a different proportion each year? Let’s divide each year’s population size by the previous year’s size, that is, perform $N_{t+1}/N_t$ for all $t$, where $t$ is any particular point in time, and $t + 1$ is the next point in time. For $N$, that amounts to 3/1, 9/3, . . . . What do we notice?
