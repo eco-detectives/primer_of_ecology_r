@@ -24,6 +24,8 @@ library(primer) # install.packages('primer')
 
 ```
 
+![](../img/slipper_lobster.jpg)
+
 # Chapter 1 {.tabset}
 
 ## 1.3 Exploring Population Growth
