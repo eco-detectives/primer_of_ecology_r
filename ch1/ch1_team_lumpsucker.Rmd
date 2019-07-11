@@ -360,7 +360,7 @@ data(sparrows) ### load data from the primer package
 obs_r_df <- sparrows %>%
   setNames(tolower(names(.))) %>%
   mutate(t = 0:(n() - 1),
-         r_obs = count / lag(count))
+         r_obs = count / lag(count)) 
 
 ### replicate Fig. 1.8
 fig1_8a <- ggplot(obs_r_df, aes(x = year, y = count)) +
@@ -430,7 +430,7 @@ sims_df <- crossing(year = 0:years,
                     sim  = 1:sims) %>%
   mutate(sim_r = sample(obs_r_df$r_obs, n(), replace = TRUE),
            ### sample r for all combos of year and sim at once
-         count = ifelse(year == 0, last(obs_r_df$r_obs), NA)) 
+         count = ifelse(year == 0, last(obs_r_df$count), NA)) 
            ### start N where observed ended, i.e. count is 43
 
 ### unfortunately we need to do this with a loop since each count value
