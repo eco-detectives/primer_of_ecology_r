@@ -1,98 +1,133 @@
 ---
-title: 'PoER: Ch. 1 - Team Nudi'
-author: Jessica, Alberto, Sean, Vincent
-output: 
-  html_document:
-    toc: false
-    number_sections: false
-    theme: cerulean
-    highlight: haddock
-  pdf_document:
-    toc: false
+title: "R Practice"
+author: "Sean Denny"
+date: "7/8/2019"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
-``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
-
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
-
-library(tidyverse)
-library(RColorBrewer) # Just additional color palettes you can use. Not necessary to load this.
-
-### The book has an R package! 
-library(primer) # install.packages('primer')
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-![](../img/yellowSpotNudi.jpg)
+Questions:
+
+1. If I open RStudio, will all of the Github files already be updated/pulled? Or do I need to pull again?
+
+2. Can I only pull if someone has changed something? Or should I be able to pull regardless?
+
+3. What is the white M in the blue box next to our file name for teamNudi?
+
+4. Confused about the notation for sapply (chunk 10).
+
+5. What is RColorBrewer for?
+
+6. For graphing a matrix,how do I change the scale on the right so it's not continuous but just reflects the three N0 values?
+
+# Header
+## Smaller
+### This is as small as it gets, I think
+
+I can now just type normally and it's the regular font size, but it's not bold. It's equivalent to size ###. If I wanted to bold it though, I could just **do this**. Or, I could italicize by doing *this*. If I wanted to make a list...
+
+1. I
+2. Could
+3. Do
+4. This
+
+To add a new R chunk, use command+option+i, or just go to insert and insert an R script.
+
+```{r}
+mean <- 8
+```
+
+
+To reference something in the text in Rmarkdown use backticks and "r {function name}". Example, the mean is **`r {mean}`**. You can also use backticks just to write a function in Rmarkdown text without it applying the function. Example `\pagebreak`.
+
+```{r Load tidyverse and RColorBrewer, message = FALSE}
+# start by loading packages
+
+library(tidyverse)
+library(RColorBrewer)
+```
+
+```{r Load book package, message = FALSE, warning = FALSE}
+#Use warning = FALSE in R chunk header to prevent Rmarkdown including warning messages in HTML or PDF outputs.
+
+#This book has it's own R package
+
+# install.packages('primer')
+library(primer)
+```
+
+Example of using case_when to create a new column (with new values) based on criteria:
+
+nc_new <- nc_births %>%
+  mutate(
+    sdp = case_when(
+      smoke == 0 ~ "nonsmoker",
+      smoke == 1 ~ "smoker"
+    )
+    
+Using filter to select values that are everything but NA, or any specified value (the second option):
+
+filter(!is.na(sdp)) *OR*
+filter(sdp != "NA") 
+
+**Finally**, if you wanted to do a pagebreak you can use this:
+
+\pagebreak
 
 # Chapter 1 {.tabset}
 
-## 1.3 Exploring Population Growth
+(By using {.tabset} in Rmarkdown, you can create tabs in the HTML format for the following headers, I believe.)
 
-#### Simple Graphing of Population Size (Fig. 1.3)
+##1.3 Exploring Population Growth
 
-Here we create two vectors: population size, $N$, and years. Using `c()` allows us to create an arbitrary vector, and the colon, `:`, provides a sequence of consecutive integers.
+Simple graphing of population size (Fig 1.3):
 
 ```{r}
-### Original version
+# Original version
+
 N <- c(1, 3, 9, 27, 81)
 year <- 2001:2005
-plot(year, N)
-```
-
-```{r}
-### JLC's version
-expGrw <- data.frame(N = c(1, 3, 9, 27, 81),
-                         year = 2001:2005)
-ggplot(expGrw, aes(x = year, y = N)) +
-  geom_point(color = 'blue', size = 3) +
-  labs(x = 'Year', y = 'Population',title = "Hypotehical water lily population")+
-  theme_bw()
+plot (year, N)
 ```
 
 ```{r}
 # Sean's version
 
-exp_growth <- data.frame(N = c(1, 3, 8, 27, 81), year = 2001:2005)
+exp_growth <- data.frame(N = c(1, 3, 9, 27, 81), year = 2001:2005)
 
 exp_growth_plot <- ggplot(exp_growth, aes(x= year, y = N)) +
    geom_point(color = 'red', size = 2) +
   theme_bw() +
-  labs(x = 'Year', y = 'Population size (N)')
+  labs(x = 'Year', y = 'Population size / N')
 exp_growth_plot
 ```
-
-The lily population (Fig. 1.3) increases by a different amount each year. What about proportions — does it increase by a different proportion each year? Let’s divide each year’s population size by the previous year’s size, that is, perform $N_{t+1}/N_t$ for all $t$, where $t$ is any particular point in time, and $t + 1$ is the next point in time. For $N$, that amounts to 3/1, 9/3, . . . . What do we notice?
 
 #### Vectorized math
 
 Here we divide each element of one vector (the second through fifth element of $N$) by each element of another vector (the first through fourth elements of $N$).
 
 ```{r}
+rates = N[2:5/1:4]
+rates
+
 rates = N[2:5]/N[1:4]
 rates
 # [1] 3 3 3 3
+
+# Same rate of change for each population
 ```
-
-```{r}
-### JLC's version
-
-expGrw<-expGrw %>%
-  mutate(rate=N/lag(N))
-
-expGrw$rate[2:nrow(expGrw)]
-
-```
-
 
 ### 1.3.1 Projecting population size
 
 Here we calculate population sizes for 10 time points beyond the initial. First we assign values for $N_0$, $\lambda$, and time.
 
-# Question: Can someone describe the use of notation $ and `\` in the text above? -Sean
-
 ```{r}
+
 N0 <- 1
 lambda <- 2
 time <- 0:10
@@ -101,13 +136,13 @@ time <- 0:10
 Next we calculate $N_t$ directly using our general formula. 
 
 ``` {r}
-Nt <- N0 * lambda^time
+
+Nt <- N0*lambda^time
 Nt
+
 # [1] 1 2 4 8 16 32 64 128 256 5121024
 
 ```
-
-Note: $\lambda$ = finite rate of increase (the per capita rate of growth of a population if the population is growing geometrically)
 
 ### 1.3.2 Effects of Initial Population Size
 
@@ -122,10 +157,10 @@ time <- 0:4
 We calculate population sizes at once using `sapply` to _apply_ a function (`n*lambda^time`) to each element of the first argument (each element of `N0`).
 
 ```{r}
-Nt.s <- sapply(N0, function(n) n*lambda^time) # n here is just a variable - it could be anything
-
+Nt.s <- sapply(N0, function(n) n*lambda^time)
 Nt.s
-#      [,1] [,2] [,3]
+
+#     [,1] [,2] [,3]
 # [1,]   10   20   30
 # [2,]   20   40   60
 # [3,]   40   80  120
@@ -149,25 +184,24 @@ matplot(time, Nt.s, log = "y", pch = 1:3)
 ```
 
 ```{r}
-# Sean's version
+#Sean's
 
 # Use crossing() to make a data frame for all combinations of N0 and time
 # Use mutate() to create a new column)
 
 exp_pop_df <- crossing(time, N0) %>% 
-  mutate(Nt = N0*lambda^time) %>% 
-  mutate(N0 = factor(N0))
+  mutate(Nt = N0*lambda^time)
 
 exp_pop_plot <- ggplot(exp_pop_df, aes(x = time, y = Nt, color = N0)) +
-  geom_point(size = 2.5) +
+  geom_point() +
   labs(x = 'Year', y = 'Population size (Nt)') +
-  geom_line(aes(group = N0), size = 0.8) +
-  theme_bw() +
-  ggtitle("Population growth trajectories from different initial population sizes") +
-  theme(plot.title = element_text(hjust = 0.5)) #to center the title
+  geom_line(aes(group = N0)) +
+  theme_bw()
 exp_pop_plot
 
-# How do I change the scale on the right so it's not continuous but just reflects the three N0 values?
+# Could use 'alpha =' in aes brackets to change transparent (from 0 to 1, I'm guessing.)
+
+#Also, #scale_color_manual to change colors manually. How do I do this?
 ```
 
 ### 1.3.3 Effects of different per capita growth rates
@@ -189,13 +223,6 @@ text(0.5, 250, expression(lambda > 1), cex = 1.2)
 text(0.5, 20, expression(lambda < 1), cex = 1.2)
 ```
 
-```{r}
-# Sean's version
-
-# TBD
-
-```
-
 The reference line is a ***h***orizontal line with the ***l***ine ***ty***pe dotted. Our text simply indicates the regions of positive and negative growth.
 
 ### 1.3.4 Average growth rate
@@ -209,6 +236,7 @@ t <- 5
 data(sparrows)
 SS6 <- sparrows[1:(t + 1), ]
 ```
+
 
 Next we calculate $\lambda$ for each generation, from $t$ to $t + 1$, and calculate the arithmetic and geometric means.
 
@@ -229,18 +257,6 @@ legend(0, 70,
        c("Arithmetic Ave.", "Geometric Ave."),
        title = "Projections Based On:", 
        lty = 2:1, bty = "n", xjust = 0)
-```
-
-```{r}
-# Sean's version
-
-# First, load data from the 'primer' package
-data(sparrows)
-
-# Next, 
-
-
-
 ```
 
 ## 1.4 Continuous Exponential Growth
@@ -443,31 +459,3 @@ round(N.Final.95)
 qqplot(qt(ppoints(n), df = n - 1), scale(logOR))
 qqline(scale(logOR))
 ```
-
-## End of chapter questions
-
-### 1.1. Geometric growth Analyze the following data, relying on selected snippets of previous code.
-
-a. In the years 1996 through 2005, lily population sizes are $N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150$. Make a graph of population size versus time. 
-b. Calculate $R$ for each year; graph $R$ vs. time.
-c. Calculate arithmetic and geometric average growth rates of this population. 
-d. Based on the appropriate average growth rate, what would be the expected population size in 2025? What would the estimated population size be if you used the inappropriate mean? Do not use simulation for this.
-e. Given these data, develop simulations as above with the user-defined function, `PopSim`. Describe the distribution of projected population sizes for 2010.
-
-### 1.2. Doubling Time
-
-a. Derive the formula for doubling time in a population with continuous exponential growth.
-b. What is the formula for tripling time?
-c. If we are modeling humans or _E. coli_, would a model of geometric, or exponential growth be better? Why?
-d. If an _E. coli_ population grew from 1000 cells to 2 × 10^9^ cells in 6 h, what would its intrinsic rate of increase be? Its doubling time?
-
-### 1.3. Human Population Growth
-
-a. There were about 630 million people on the planet in 1700, and 6.3 billion in 2003 [33]. What was the intrinsic rate of increase, r?
-b. Graph the model of human population size population size from 1700 to 2020.
-c. Add points on the graph indicating the population doublings from 1700 onward.
-d. What will prevent humans from outweighing the planet by the end of this century? What controls human population growth? Do these controls vary spatially across the planet? See Cohen [33] to get going.
-
-### 1.4. R functions
-
-Find the R functions in Chapter 1. Demonstrate their uses.
