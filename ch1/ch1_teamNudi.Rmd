@@ -2,15 +2,14 @@
 title: 'PoER: Ch. 1 - Team Nudi'
 author: Jessica, Alberto, Sean, Vincent
 output: 
+  pdf_document:
+    toc: false
   html_document:
     toc: false
     number_sections: false
     theme: cerulean
     highlight: haddock
-  pdf_document:
-    toc: false
 ---
-# Question for Casey: Can you review what you did here in the initial R chunk (apart from loading packages)? -Sean
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 

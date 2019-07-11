@@ -13,7 +13,7 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/lumpsucker',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
@@ -352,6 +352,32 @@ plot(obs.R ~ Year[-length(Count)])
 abline(h = 1, lty = 3)
 ```
 
+```{r}
+### Casey's version
+data(sparrows) ### load data from the primer package
+
+### use the sparrows dataframe to determine R for each interval
+obs_r_df <- sparrows %>%
+  setNames(tolower(names(.))) %>%
+  mutate(t = 0:(n() - 1),
+         r_obs = count / lag(count))
+
+### replicate Fig. 1.8
+fig1_8a <- ggplot(obs_r_df, aes(x = year, y = count)) +
+  theme_bw() +
+  geom_line() +
+  geom_point(shape = 21, fill = 'white')
+
+fig1_8b <- ggplot(obs_r_df, aes(x = year, y = r_obs)) +
+  theme_bw() +
+  geom_hline(yintercept = 1, linetype = 'dotted', color = 'darkred') +
+  geom_point(shape = 21, fill = 'white')
+
+fig1_8 <- cowplot::plot_grid(fig1_8a, fig1_8b, labels = c('A', 'B'))
+  
+print(fig1_8)
+```
+
 ### 1.6.3 One simulation
 
 ```{r}
@@ -370,10 +396,11 @@ for (t in 1:years) output[t + 1] <- {
 plot(0:years, output, type = "l")
 ```
 
+
 ### 1.6.4 Multiple simulations
 
 ```{r}
-sims = 10
+sims = 100
 sim.RM <- matrix(sample(obs.R, sims * years, replace = TRUE),
                  nrow = years, ncol = sims)
 
@@ -384,6 +411,44 @@ outmat <- sapply(1:sims, function(i) {
   })
 
 matplot(0:years, outmat, type = "l", log = "y")
+
+```
+
+```{r}
+### Casey's version
+years <- 50
+sims  <- 100
+set.seed(3)
+
+### use the sparrows dataframe to determine R for each interval (same as above)
+obs_r_df <- sparrows %>%
+  setNames(tolower(names(.))) %>%
+  mutate(r_obs = count / lag(count)) %>%
+  filter(!is.na(r_obs))
+
+sims_df <- crossing(year = 0:years,
+                    sim  = 1:sims) %>%
+  mutate(sim_r = sample(obs_r_df$r_obs, n(), replace = TRUE),
+           ### sample r for all combos of year and sim at once
+         count = ifelse(year == 0, last(obs_r_df$r_obs), NA)) 
+           ### start N where observed ended, i.e. count is 43
+
+### unfortunately we need to do this with a loop since each count value
+### depends stochastically on the one before
+sims_df2 <- sims_df %>%
+  group_by(sim)
+for(yr in 1:years) { ### yr <- 1
+  sims_df2 <- sims_df2 %>%
+    mutate(count = ifelse(year == yr, lag(count) * sim_r, count))
+}
+sims_df2 <- sims_df2 %>%
+  ungroup()
+
+ggplot(sims_df2, aes(x = year, y = count, color = sim)) +
+  theme_classic() +
+  geom_line(aes(group = sim), alpha = .2) +
+  scale_color_viridis_c() +
+  scale_y_log10()
 
 ```
 
@@ -413,6 +478,69 @@ This tells me that it took less than half a second to complete 1000 simulations.
 ``` {r}
 dim(output)
 # [1] 51 1000
+```
+
+```{r}
+### Casey's function slow but readable
+pop_sim_multi <- function(r_vec = 1.1, n_0 = 100, years = 50, sims = 20) {
+  sims_df <- crossing(year = 0:years,
+                      sim  = 1:sims) %>%
+    mutate(sim_r = sample(r_vec, size = n(), replace = TRUE),
+           count = ifelse(year == 0, n_0, NA))
+
+  sims_df2 <- sims_df %>%
+    group_by(sim)
+  for(yr in 1:years) { ### yr <- 1
+    sims_df2 <- sims_df2 %>%
+      mutate(count = ifelse(year == yr, lag(count) * sim_r, count))
+  }
+  sims_df2 <- sims_df2 %>%
+    ungroup()
+  return(sims_df2)
+}
+
+system.time(pop_output <- pop_sim_multi(r_vec = obs_r_df$r_obs, n_0 = 43, years = 50, sims = 1000))
+  #  user  system elapsed 
+  # 5.244   0.586   9.090 
+
+```
+
+```{r}
+### Casey's function(s) higher performance
+pop_sim_one <- function(r_vec = 1.1, n_0 = 100, years = 50) {
+  ### resample the r vector
+  r_vec_rand <- sample(r_vec, size = years, replace = TRUE)
+  sim_vec <- vector('numeric', length = years + 1)
+  sim_vec[1] <- n_0
+  ### loop over years to determine pop in each year for this set of r
+  for(yr in 1:years) { ### yr <- 1
+    sim_vec[yr + 1] <- round(sim_vec[yr] * r_vec_rand[yr])
+  }
+  ### return the simulated vector - no need for year (assume in order) and
+  ### no need for r (unobservable anyway)
+  
+  return(sim_vec)
+}
+
+system.time(pop_output <- pop_sim_one(r_vec = obs_r_df$r_obs, n_0 = 43, years = 50))
+  #  user  system elapsed 
+  # 0.015   0.002   0.026 
+
+pop_sim_many <- function(r_vec, n_0, years, sims) {
+  ### use lapply() instead of a for loop (or sapply in the orig function)
+  sim_list <- lapply(1:sims, FUN = function(x) {
+    pop_sim_one(r_vec = r_vec, n_0 = n_0, years = years)
+  })
+  sims_mat <- matrix(unlist(sim_list), nrow = years + 1, ncol = sims)
+}
+
+system.time({
+  pop_output_cco <- pop_sim_many(r_vec = obs_r_df$r_obs, 
+                                 n_0 = 43, years = 50, sims = 1000)
+  })
+  #  user  system elapsed 
+  # 0.096   0.015   0.238 
+
 ```
 
 ### 1.6.6 Analyzing results
@@ -458,6 +586,74 @@ round(N.Final.95)
 qqplot(qt(ppoints(n), df = n - 1), scale(logOR))
 qqline(scale(logOR))
 ```
+
+
+```{r}
+### Casey's outputs
+
+### Look at last row for predictions at the end of all sims
+n_2053_cco <- pop_output_cco[51, ]
+summary(n_2053_cco, digits = 6)
+# Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+# 0.00    13.75    59.00   740.09   257.50 67456.00 
+### mean and median are very different - skewed right
+
+quantile(n_2053_cco, prob = c(0.0275, 0.975))
+# 2.75%   97.5% 
+#  0.00 5763.65
+
+# hist(n_2053_cco, main = "N")
+# hist(log10(n_2053_cco + 1), main = "log(N+1)")
+# abline(v = log10(quantile(n_2053_cco, prob = c(0.0275, 0.975)) + 1), 
+#        lty = 3)
+### put into dataframe for ggplot
+df_2053 <- data.frame(n = n_2053_cco) %>%
+  mutate(log_nplus1 = log(n + 1))
+
+ggplot(df_2053) +
+  theme_bw() +
+  geom_histogram(aes(x = n)) # +
+  # scale_x_log10()
+ggplot(df_2053) +
+  theme_bw() +
+  geom_histogram(aes(x = log_nplus1))
+
+```
+
+``` {r}
+### Casey's continuation - looking at projections using log R
+
+### recreate obs R vector just in case
+log_r_vec <- sparrows %>%
+  setNames(tolower(names(.))) %>%
+  mutate(r_obs = count / lag(count)) %>%
+  filter(!is.na(r_obs)) %>%
+  .$r_obs %>%
+  log()
+
+### use qt() to find the 2.5 and 97.5 quantiles of the distribution
+### with degrees of freedom based on obs_r_vec
+t_quants <- qt(c(0.025, 0.975), df = length(log_r_vec) - 1)
+
+### calc standard error as std dev/sqrt(n) or sqrt(var / n)
+log_r_se <- sd(log_r_vec) / sqrt(length(log_r_vec))
+log_r_se <- sqrt(var(log_r_vec) / length(log_r_vec))
+# [1] 0.05691178
+
+### calc 95% confidence intervals: mean +/- the (T values times the standard error)
+log_r_95ci <- mean(log_r_vec) + t_quants * log_r_se
+
+r_95ci <- exp(log_r_95ci)
+# [1] 0.8967762 1.1301703
+
+n_95 <- last(sparrows$Count) * r_95ci^50
+round(n_95)
+# [1] 0 19528
+
+qqplot(qt(ppoints(n), df = n - 1), scale(logOR))
+qqline(scale(logOR))
+```
+
 
 ## End of chapter questions
 
