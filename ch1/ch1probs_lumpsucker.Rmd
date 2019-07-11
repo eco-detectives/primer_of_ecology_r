@@ -1,0 +1,81 @@
+---
+title: 'Primer of Ecology with R: chapter 1 problems'
+author: Molly, Jacob, Mireia, Erin, Casey
+output: 
+  html_document:
+    toc: false
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/lumpsucker',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+library(primer) # install.packages('primer')
+```
+
+# Chapter 1: Problems
+
+## 1.1. Geometric growth
+Analyze the following data, relying on selected snippets of previous code.
+
+### 1.1a 
+In the years 1996 through 2005, lily population sizes are N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150. Make a graph of population size versus time. 
+
+```{r}
+lily_df <- data.frame(year = 1996:2005, N = c(150, 100, 125, 200, 225, 150, 100, 175, 100, 150))
+ggplot(lily_df, aes(x = year, y = N)) +
+  theme_classic() +
+  geom_point() +
+  geom_line()
+```
+
+### 1.1b
+Calculate R for each year; graph R vs. time. 
+
+```{r}
+lily_df <- lily_df %>%
+  mutate(lambda = N / lag(N))
+
+ggplot(lily_df, aes(x = year, y = lambda)) +
+  theme_classic() +
+  geom_point() +
+  geom_hline(yintercept = 1, linetype = 'dotted')
+```
+
+### 1.1c 
+Calculate arithmetic and geometric average growth rates of this population.
+
+```{r}
+lily_means <- lily_df %>%
+  na.omit() %>%
+  summarize(lambda_am = sum(lambda) / n(),
+          lambda_gm = prod(lambda) ^ (1/n())
+    ) ### is this right? should check values...
+```
+
+### 1.1d 
+Based on the appropriate average growth rate, what would be the expected population size in 2025? What would the estimated population size be if you used the inappropriate mean? Do not use simulation for this. 
+
+###1.1.d* 
+Given these data, develop simulations as above with the user-defined function, PopSim. Describe the distribution of projected population sizes for 2010.
+
+## 1.2. Doubling Time
+
+###1.2a
+Derive the formula for doubling time in a population with contiunous ex- ponential growth. 
+
+###1.2b
+What is the formula for tripling time? 
+
+###1.2c
+If we are modeling humans or E. coli, would a model of geometric, or expo- nential growth be better? Why? 
+
+###1.2d
+If an E. coli population grew from 1000 cells to 2 × 109 cells in 6 h, what would its intrinsic rate of increase be? Its doubling time?
