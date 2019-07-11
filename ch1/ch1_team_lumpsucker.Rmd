@@ -335,7 +335,7 @@ Note that R tells us that when $r = 0$, it takes an infinite (`Inf`) amount of t
 ```{r}
 names(sparrows)
 # [1] "Year"           "Count"          "ObserverNumber"
-attach(sparrows)
+attach(sparrows) # this allows names to be called directly without sparrows$xyz
 ```
 
 Now we plot these counts through time (Fig. 1.8).
@@ -344,11 +344,11 @@ Now we plot these counts through time (Fig. 1.8).
 plot(Count ~ Year, type = "b")
 ```
 ```{r}
-obs.R <- Count[-1]/Count[-length(Count)]
+obs.R <- Count[-1]/Count[-length(Count)] # allows division by previous count value
 ```
 
 ```{r}
-plot(obs.R ~ Year[-length(Count)])
+plot(obs.R ~ Year[-length(Count)]) # removing last value
 abline(h = 1, lty = 3)
 ```
 
@@ -358,9 +358,13 @@ data(sparrows) ### load data from the primer package
 
 ### use the sparrows dataframe to determine R for each interval
 obs_r_df <- sparrows %>%
-  setNames(tolower(names(.))) %>%
+  setNames(tolower(names(.))) %>% # need (.) because names() function doesn't know to call dataframe
   mutate(t = 0:(n() - 1),
+<<<<<<< HEAD
          r_obs = count / lag(count)) 
+=======
+         r_obs = count / lag(count)) # divides by count 1 year before
+>>>>>>> 8727a2ea5610b08685fdfd0593752e1c2dca097e
 
 ### replicate Fig. 1.8
 fig1_8a <- ggplot(obs_r_df, aes(x = year, y = count)) +
@@ -383,11 +387,11 @@ print(fig1_8)
 ```{r}
 years <- 50
 set.seed(3)
-sim.Rs <- sample(x = obs.R, size = years, replace = TRUE)
+sim.Rs <- sample(x = obs.R, size = years, replace = TRUE) # random rampling with replacement
 
-output <- numeric(years + 1)
+output <- numeric(years + 1) # placeholder with 51 elements
 
-output[1] <- Count[Year == max(Year)]
+output[1] <- Count[Year == max(Year)] # start with last count provided in observed dataset
 
 for (t in 1:years) output[t + 1] <- {
   output[t] * sim.Rs[t]
@@ -405,7 +409,7 @@ sim.RM <- matrix(sample(obs.R, sims * years, replace = TRUE),
                  nrow = years, ncol = sims)
 
 output[1] <- Count[Year == max(Year)]
-outmat <- sapply(1:sims, function(i) {
+outmat <- sapply(1:sims, function(i) { # re-running loop for each simulation (adtl loop)
   for (t in 1:years) output[t + 1] <- output[t] * sim.RM[t, i]
   output
   })
@@ -427,7 +431,7 @@ obs_r_df <- sparrows %>%
   filter(!is.na(r_obs))
 
 sims_df <- crossing(year = 0:years,
-                    sim  = 1:sims) %>%
+                    sim  = 1:sims) %>% # similar to expand.grid(), get all combinations but in 2 column df
   mutate(sim_r = sample(obs_r_df$r_obs, n(), replace = TRUE),
            ### sample r for all combos of year and sim at once
          count = ifelse(year == 0, last(obs_r_df$count), NA)) 
