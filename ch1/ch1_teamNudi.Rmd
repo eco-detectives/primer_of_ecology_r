@@ -17,7 +17,7 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
-library(RColorBrewer)
+library(RColorBrewer) # Just additional color palettes you can use. Not necessary to load this.
 
 ### The book has an R package! 
 library(primer) # install.packages('primer')
@@ -122,7 +122,8 @@ time <- 0:4
 We calculate population sizes at once using `sapply` to _apply_ a function (`n*lambda^time`) to each element of the first argument (each element of `N0`).
 
 ```{r}
-Nt.s <- sapply(N0, function(n) n * lambda^time)
+Nt.s <- sapply(N0, function(n) n*lambda^time) # n here is just a variable - it could be anything
+
 Nt.s
 #      [,1] [,2] [,3]
 # [1,]   10   20   30
@@ -154,7 +155,8 @@ matplot(time, Nt.s, log = "y", pch = 1:3)
 # Use mutate() to create a new column)
 
 exp_pop_df <- crossing(time, N0) %>% 
-  mutate(Nt = N0*lambda^time)
+  mutate(Nt = N0*lambda^time) %>% 
+  mutate(N0 = factor(N0))
 
 exp_pop_plot <- ggplot(exp_pop_df, aes(x = time, y = Nt, color = N0)) +
   geom_point(size = 2.5) +
