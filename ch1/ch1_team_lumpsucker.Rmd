@@ -360,11 +360,7 @@ data(sparrows) ### load data from the primer package
 obs_r_df <- sparrows %>%
   setNames(tolower(names(.))) %>% # need (.) because names() function doesn't know to call dataframe
   mutate(t = 0:(n() - 1),
-<<<<<<< HEAD
-         r_obs = count / lag(count)) 
-=======
          r_obs = count / lag(count)) # divides by count 1 year before
->>>>>>> 8727a2ea5610b08685fdfd0593752e1c2dca097e
 
 ### replicate Fig. 1.8
 fig1_8a <- ggplot(obs_r_df, aes(x = year, y = count)) +
