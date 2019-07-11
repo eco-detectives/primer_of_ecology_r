@@ -2,13 +2,13 @@
 title: 'PoER: Ch. 1 - Team Nudi'
 author: Jessica, Alberto, Sean, Vincent
 output: 
-  pdf_document:
-    toc: false
   html_document:
     toc: false
     number_sections: false
     theme: cerulean
     highlight: haddock
+  pdf_document:
+    toc: false
 ---
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
