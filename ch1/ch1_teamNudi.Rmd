@@ -150,6 +150,22 @@ We can also plot it with a log scale on the y-axis.
 matplot(time, Nt.s, log = "y", pch = 1:3)
 ```
 
+```{r}
+# Sean's version
+
+# Use crossing() to make a data frame for all combinations of N0 and time
+# Use mutate() to create a new column for Nt
+
+exp_pop_df <- crossing(time, N0) %>% 
+  mutate(Nt = N0*lambda^time)
+
+exp_pop_plot <- ggplot(exp_pop_df, aes(x = time, y = Nt, color = N0)) +
+  geom_point() +
+  labs(x = 'Year', y = 'Population size / Nt') +
+  theme_bw()
+exp_pop_plot
+```
+
 ### 1.3.3 Effects of different per capita growth rates
 
 Here we demonstrate the effects on growth of $\lambda > 1$ and $\lambda < 1$. We set $N_0 = 100$, and time, and then pick three different $\lambda$.
