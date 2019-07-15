@@ -26,6 +26,8 @@ knitr::opts_chunk$set(
 suppressPackageStartupMessages({
   ### The book has an R package! 
   library(primer) # install.packages('primer')
+  library(cowplot)
+  library(magrittr)
   library(tidyverse)
 })
 ```
@@ -41,10 +43,23 @@ suppressPackageStartupMessages({
 Here we create two vectors: population size, $N$, and years. Using `c()` allows us to create an arbitrary vector, and the colon, `:`, provides a sequence of consecutive integers.
 
 ```{r}
+# Book default
 N <- c(1, 3, 9, 27, 81)
 year <- 2001:2005
 plot(year, N)
 ```
+
+```{r}
+# JC
+df <- tibble(N = c(1, 3, 9, 27, 81),
+             year = 2001:2005)
+
+ggplot(data = df,
+       mapping = aes(x = year, y = N)) +
+  geom_point() +
+  theme_minimal()
+```
+
 
 The lily population (Fig. 1.3) increases by a different amount each year. What about proportions — does it increase by a different proportion each year? Let’s divide each year’s population size by the previous year’s size, that is, perform $N_{t+1}/N_t$ for all $t$, where $t$ is any particular point in time, and $t + 1$ is the next point in time. For $N$, that amounts to 3/1, 9/3, . . . . What do we notice?
 
@@ -53,28 +68,36 @@ The lily population (Fig. 1.3) increases by a different amount each year. What a
 Here we divide each element of one vector (the second through fifth element of $N$) by each element of another vector (the first through fourth elements of $N$).
 
 ```{r}
+# Book default
 rates = N[2:5]/N[1:4]
 rates
-# [1] 3 3 3 3
 ```
+
+```{r}
+# JC
+df <- df %>% 
+  mutate(rates = N / lag(N)) #We can use lag instead of subindexing for N
+```
+
 
 ### 1.3.1 Projecting population size
 
 Here we calculate population sizes for 10 time points beyond the initial. First we assign values for $N_0$, $\lambda$, and time.
 
 ```{r}
+# Book default
 N0 <- 1
 lambda <- 2
 time <- 0:10
 ```
 
+
 Next we calculate $N_t$ directly using our general formula. 
 
 ``` {r}
+# Book default
 Nt <- N0 * lambda^time
 Nt
-# [1] 1 2 4 8 16 32 64 128 256 5121024
-
 ```
 
 ### 1.3.2 Effects of Initial Population Size
@@ -82,6 +105,7 @@ Nt
 We first set up several different initial values, provide a fixed $\lambda$, and set times from zero to 4.
 
 ```{r}
+# Book default
 N0 <- c(10, 20, 30)
 lambda <- 2
 time <- 0:4
@@ -90,15 +114,54 @@ time <- 0:4
 We calculate population sizes at once using `sapply` to _apply_ a function (`n*lambda^time`) to each element of the first argument (each element of `N0`).
 
 ```{r}
+# Book default
 Nt.s <- sapply(N0, function(n) n * lambda^time)
 Nt.s
-#      [,1] [,2] [,3]
-# [1,]   10   20   30
-# [2,]   20   40   60
-# [3,]   40   80  120
-# [4,]   80  160  240
-# [5,]  160  320  480
 ```
+
+```{r}
+# JC
+
+# A few points on what's wrong with the book's approach:
+# - The function is defined as a "lambda function", which means it doesn't exist and is only applied within the call to sapply (this is fine for functions that only take one argument)
+# - The lambda function is specified to take only argument n, but it should in fact take n, lambda and time
+# - By not having them as arguments, the function searches the global enviornment for a matching object and this is very very bad. It's an easy way to screw up your code and never notice it
+# 
+# Solutions? Yeah:
+# - Create an explicit function that takes the three parameters needed
+# - Call that function using whatever approach you feel more comfortable with
+
+# Define a function
+grow <- function(n, lambda, time) {
+  n * lambda^time
+}
+
+# Use the sapply approach, and take advantage of the "..." argument to pass lambda and time
+Nt.s <- sapply(N0, grow, lambda = lambda, time = time)
+Nt.s
+
+
+
+# A tidy approach is to use a tibble and mutate
+# Create a tibble with all combinations of time and N0
+Nt_s_df <- expand.grid(time = 0:4,
+                       N0 = c(10, 20, 30)) %>% 
+  as_tibble() %>% 
+  mutate(Nt = grow(n = N0, lambda = lambda, time = time))
+Nt_s_df
+
+# A functional programming approach is better, because it's easier to
+# parallelize and generalize across many more parameters
+# Create a tibble with all combinations of time and N0
+Nt_s_df_fp <- expand.grid(time = 0:4,
+                       N0 = c(10, 20, 30)) %>% 
+  as_tibble() %>% 
+  mutate(Nt = grow(n = N0, lambda = lambda, time = time)) %>% 
+  mutate(Nt = pmap_dbl(.l = list(n = N0, time = time),
+                       .f = grow, lambda = lambda))
+Nt_s_df_fp
+```
+
 
 The result is a matrix, and we see $N_0$ in the first row, and each population is in its own column. Note that population 2 is always twice as big as population 1.
 
@@ -107,18 +170,44 @@ The result is a matrix, and we see $N_0$ in the first row, and each population i
 We can use matplot to plot a matrix vs. a single vector on the X-axis. By default it labels the points according to the number of the column
 
 ```{r}
+# Book default
 matplot(time, Nt.s, pch = 1:3)
 ```
 
+```{r}
+# JC
+(plot_jc <- ggplot(data = Nt_s_df,
+                   mapping = aes(x = time,
+                                 y = Nt,
+                                 color = as.character(N0),
+                                 shape = as.character(N0))) +
+   geom_point(size = 3) +
+   theme_minimal() +
+   guides(color = guide_legend(title = bquote(N[0])),
+          shape = guide_legend(title = bquote(N[0])))
+ )
+```
+
+
 We can also plot it with a log scale on the y-axis. 
 ``` {r}
+# Book default
 matplot(time, Nt.s, log = "y", pch = 1:3)
 ```
+
+```{r}
+# JC
+#We can just transform the axis
+plot_jc +
+  scale_y_continuous(trans = "log")
+```
+
 
 ### 1.3.3 Effects of different per capita growth rates
 
 Here we demonstrate the effects on growth of $\lambda > 1$ and $\lambda < 1$. We set $N_0 = 100$, and time, and then pick three different $\lambda$.
 ```{r}
+# Book default
 N0 <- 100
 time <- 0:3
 lambdas <- c(0.5, 1, 1.5)
@@ -127,6 +216,7 @@ lambdas <- c(0.5, 1, 1.5)
 We use `sapply` again to apply the geometric growth function to each $\lambda$. This time, `x` stands for each $\lambda$, which our function then uses to calculate population size. We then plot it, and add a reference line and a little text.
 
 ```{r}
+# Book default
 N.all <- sapply(lambdas, function(x) N0 * x^time)
 matplot(time, N.all, xlab = "Years", ylab = "N", pch = 1:3)
 abline(h = N0, lty = 3)
@@ -134,7 +224,30 @@ text(0.5, 250, expression(lambda > 1), cex = 1.2)
 text(0.5, 20, expression(lambda < 1), cex = 1.2)
 ```
 
-The reference line is a ***h***orizontal line with the ***l***ine ***ty***pe dotted. Our text simply indicates the regions of positive and negative growth.
+```{r}
+# JC
+# Combinations of lambda and time
+expand.grid(time = 0:4,
+            lambda = c(0.5, 1, 1.5)) %>% 
+  as_tibble() %>% 
+  mutate(Nt = grow(n = N0, lambda = lambda, time = time)) %>% #Calculate Nt
+  ggplot(mapping = aes(x = time,
+                       y = Nt,
+                       color = as.character(lambda),
+                       shape = as.character(lambda))) +
+  geom_point(size = 3) +
+  theme_minimal() +
+   guides(color = guide_legend(title = bquote(lambda)),
+          shape = guide_legend(title = bquote(lambda))) +
+  geom_hline(yintercept = N0, linetype = "dashed") + #add horizontal line
+  annotate(geom = "text", x = 0.5, y = 250, label = expression(lambda > 1), size = 6) + # Add lambda text
+  annotate(geom = "text", x = 0.5, y = 20, label = expression(lambda < 1), size = 6) +
+  labs(x = "Years", y = "N")
+  
+```
+
+
+The reference line is a `h`orizontal line with the `l`ine `ty`pe dotted. Our text simply indicates the regions of positive and negative growth.
 
 ### 1.3.4 Average growth rate
 
@@ -143,23 +256,53 @@ The reference line is a ***h***orizontal line with the ***l***ine ***ty***pe dot
 First we select the number of observed $R$ $(t = 5)$; this will require that we use six years of Song Sparrow data.
 
 ```{r}
+# Book default
 t <- 5
 data(sparrows)
 SS6 <- sparrows[1:(t + 1), ]
 ```
 
+```{r}
+# JC
+data(sparrows)
+SS6_jc <- sparrows %>% 
+  head(n = t + 1) #Coincidentally, the default in head() is 6... but anyways
+```
+
+
 
 Next we calculate $\lambda$ for each generation, from $t$ to $t + 1$, and calculate the arithmetic and geometric means.
 
 ```{r}
+# Book default
 SSgr <- SS6$Count[2:(t + 1)]/SS6$Count[1:t]
 lam.A <- sum(SSgr)/t
+# (I actually think this is better...)
 lam.G <- prod(SSgr)^(1/t)
 ```
+
+```{r}
+# JC
+SS_gr_jc <- SS6_jc %>% 
+  mutate(SSgr = Count / lag(Count))
+
+# Note that this is does not use a normal pipe!!!
+# This is the "exposition operator", it's the equivalent of $
+# Fun fact, the pipe ( %>% ) is NOT from dplyr or tidyr - they stole it.
+# It comes from the magrittr package, which has many tidy-oriented functions
+# There's also a %<>% and a %T% operators!
+lam_A_jc <- SS_gr_jc %$% 
+  sum(SSgr, na.rm = T) / t
+
+lam_G_jc <- SS_gr_jc %$%
+  prod(SSgr, na.rm = T) ^ (1 / t)
+```
+
 
 Now we can plot the data, and the projections based on the two averages (Fig. 1.5).
 
 ```{r}
+# Book default
 N0 <- SS6$Count[1]
 plot(0:t, SS6$Count, ylab = "Projected Population Size")
 lines(0:t, N0 * lam.A^(0:t), lty = 2)
@@ -169,6 +312,34 @@ legend(0, 70,
        title = "Projections Based On:", 
        lty = 2:1, bty = "n", xjust = 0)
 ```
+
+```{r}
+# JC
+# First approach (looks tidy, but it's not perfect)
+SS_gr_jc %>% 
+  mutate(aritm = N0 * lam_A_jc^(0:t),
+         geome = N0 * lam_G_jc^(0:t)) %>% 
+  ggplot(mapping = aes(x = Year, y = Count)) +
+  geom_point() +
+  geom_line(aes(y = aritm), linetype = "dashed") +
+  geom_line(aes(y = geome)) +
+  theme_minimal()
+
+# The above approach made it difficult to add an automatic legend
+# This should be better
+SS_gr_jc %>% 
+  mutate(Arithmetic = N0 * lam_A_jc^(0:t),
+         Geometric = N0 * lam_G_jc^(0:t)) %>% 
+  select(Year, Count, Arithmetic, Geometric) %>% 
+  gather(Fit, value, -c(Year, Count)) %>% 
+  ggplot(mapping = aes(x = Year)) +
+  geom_point(aes(y = Count)) +
+  geom_line(aes(y = value, linetype = Fit)) +
+  theme_minimal() +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0, 1))
+```
+
 
 ## 1.4 Continuous Exponential Growth
 
@@ -203,12 +374,31 @@ Fig. 1.6: The limit to subdividing reproduction into smaller steps. We can compa
 #### Projecting a continuous population
 
 We select five different values for $r$: two negative, zero, and two positive. We let $t$ include the integers from 1 to 100. We then use `sapply` to apply our function of continuous exponential growth to each $r$, across all time steps. This results in a matrix where each row is the population size at each time $t$, and each column uses a different $r$.
+
 ```{r}
+# Book default
+
 r <- c(-0.03, -0.02, 0, 0.02, 0.03)
 N0 <- 2
 t <- 1:100
 cont.mat <- sapply(r, function(ri) N0 * exp(ri * t))
 ```
+
+```{r}
+# JC
+
+# Again, I explicitly define a function
+grow_cont <- function(n, r, t) {
+  n * exp(r * t)
+}
+
+# And use a tidy approach to it
+cont_mat_jc <- expand.grid(time = 1:100,
+                           r = c(-0.03, -0.02, 0, 0.02, 0.03)) %>% 
+  as_tibble() %>% 
+  mutate(N = grow_cont(n = N0, r = r, t = time))
+```
+
 
 Next we create side-by-side plots, using both arithmetic and logarithmic scales, and add a legend.
 ```{r}
@@ -219,6 +409,22 @@ legend("topleft", paste(rev(r)),
        title = "r")
 matplot(t, cont.mat, type = "l", ylab = "N", log = "y", col = 1)
 ```
+
+```{r}
+cont_mat_plot <- ggplot(data = cont_mat_jc,
+                        mapping = aes(x = time, y = N, linetype = as.character(r))) +
+  geom_line() +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0, 1)) +
+  guides(linetype = guide_legend(title = "Intrinsic growth rate (r)"))
+
+cont_mat_plot_log <- cont_mat_plot +
+  theme(legend.position = "None") + #remove the legend
+  scale_y_continuous(trans = "log", breaks = scales::log_breaks(6))
+
+plot_grid(cont_mat_plot, cont_mat_plot_log, ncol = 2)
+```
+
 
 ### 1.4.3 Doubling (and tripling) time
 
