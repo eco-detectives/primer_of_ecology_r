@@ -7,21 +7,27 @@ output:
     number_sections: false
     theme: cerulean
     highlight: haddock
+    code_folding: show
   pdf_document:
     toc: false
 ---
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/lobster',
-                      echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(
+  fig.width = 6, #sets default figure width
+  fig.height = 4,#sets default figure height
+  fig.path = 'Figs/lobster', #Sets default figure path (when knitting to pdf, figures are exported)
+  echo = TRUE, #Show the code
+  message = FALSE, #hide messages
+  warning = FALSE #hide warnings
+)
 
-library(tidyverse)
-library(RColorBrewer)
-
-### The book has an R package! 
-library(primer) # install.packages('primer')
-
+suppressPackageStartupMessages({
+  ### The book has an R package! 
+  library(primer) # install.packages('primer')
+  library(tidyverse)
+})
 ```
 
 ![](../img/slipper_lobster.jpg)
