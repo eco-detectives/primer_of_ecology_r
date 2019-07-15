@@ -431,17 +431,19 @@ plot_grid(cont_mat_plot, cont_mat_plot_log, ncol = 2)
 #### Creating a function for doubling time
 
 We can create a function for this formula, and then evaluate it for different values of $m$ and $r$. For $m = 2$, we refer to this as “doubling time.” When we define the function and include arguments $r$ and $m$, we also set a default value for `m = 2`. This way, we do not always have to type a value for $m$; by default the function will return the doubling time.
+
 ```{r}
+# Book default
 m.time <- function(r, m = 2) {
   log(m)/r
 }
 ```
 
 Now we create a vector of $r$, and then use `m.time` to generate a vector of doubling times.
+
 ```{r}
 rs <- c(0, 1, 2)
 m.time(rs)
-# [1]    Inf 0.6931 0.3466
 ```
 
 Note that R tells us that when $r = 0$, it takes an infinite (`Inf`) amount of time to double. This is what we get when we try to divide by zero!
@@ -451,28 +453,55 @@ Note that R tells us that when $r = 0$, it takes an infinite (`Inf`) amount of t
 ### 1.6.2 Looking at and collecting the data
 
 ```{r}
+# Book default
 names(sparrows)
-# [1] "Year"           "Count"          "ObserverNumber"
 attach(sparrows)
 ```
 
 Now we plot these counts through time (Fig. 1.8).
 
 ```{r}
+# Book default
 plot(Count ~ Year, type = "b")
 ```
+
 ```{r}
+# JC
+ggplot(data = sparrows,
+       mapping = aes(x = Year, y = Count)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal()
+```
+
+
+```{r}
+# Book default
 obs.R <- Count[-1]/Count[-length(Count)]
 ```
+
 
 ```{r}
 plot(obs.R ~ Year[-length(Count)])
 abline(h = 1, lty = 3)
 ```
 
+```{r}
+# JC
+sparrows_growth <- sparrows %>% 
+  mutate(obs_R = Count / lag(Count)) %>% 
+  drop_na()
+
+ggplot(data = sparrows_growth,
+       mapping = aes(x = Year, y = obs_R)) +
+  geom_point() +
+  geom_hline(yintercept = 1, linetype = "dashed")
+```
+
 ### 1.6.3 One simulation
 
 ```{r}
+# Book default
 years <- 50
 set.seed(3)
 sim.Rs <- sample(x = obs.R, size = years, replace = TRUE)
