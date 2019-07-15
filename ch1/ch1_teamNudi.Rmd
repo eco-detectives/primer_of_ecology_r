@@ -48,7 +48,7 @@ expGrw <- data.frame(N = c(1, 3, 9, 27, 81),
                          year = 2001:2005)
 ggplot(expGrw, aes(x = year, y = N)) +
   geom_point(color = 'blue', size = 3) +
-  labs(x = 'Year', y = 'Population',title = "Hypotehical water lily population")+
+  labs(x = 'Year', y = 'Population',title = "Hypotehical water lily population - JLC")+
   theme_bw()
 ```
 
@@ -173,7 +173,7 @@ exp_pop_plot
 # How do I change the scale on the right so it's not continuous but just reflects the three N0 values?
 ```
 
-```{r}
+```{r, fig.width=9}
 # JLC's version
 
 lamb<-2
@@ -194,7 +194,10 @@ ntsPlLg<-ggplot(nts,aes(time,ntsLog))+
   theme_bw()
 
 nts2<-plot_grid(ntsPl,ntsPlLg)
-nts2
+
+ntsTitle<-ggdraw() + draw_label("Effects of initial population size - JLC")
+  
+plot_grid(ntsTitle, nts2, ncol=1, rel_heights=c(0.1, 1))
 
 ```
 
@@ -238,6 +241,7 @@ head(nLam) # we don't get the easy-view N0 x time format in the tidy df, but its
 nLamPl<-ggplot(nLam,aes(time,nLam))+
   geom_point(aes(colour=factor(lamb)))+
   geom_line(aes(colour=factor(lamb)))+
+  labs(title="Effect of \u03bb - JLC", y="N")+
   theme_bw()
 
 nLamPl
@@ -311,7 +315,8 @@ ss6<-sparrows %>%
 ggplot(ss6,aes(time,Count))+
   geom_point()+
   geom_line(aes(time,nA),lty=2)+
-  geom_line(aes(time,nG),lty=1)
+  geom_line(aes(time,nG),lty=1)+
+  labs(title = "Population projections - JLC",y="N")
 
 ```
 
@@ -375,11 +380,12 @@ proj<-crossing(r=c(-0.03,-0.02,0,0.02,0.03),
                time=1:100)%>%
   mutate(expGrowth=n0*exp(r*time)) %>%
   mutate(logExpGrowth=log(expGrowth)) %>%
-  gather(key=rateDef,value=rate,-c(time,r))
+  gather(key=rateDef,value=pop,-c(time,r))
 
-projPlt<-ggplot(proj,aes(time,rate))+
+projPlt<-ggplot(proj,aes(time,pop))+
   geom_line(aes(lty=factor(r)))+
-  facet_wrap(~rateDef,scales = "free")
+  facet_wrap(~rateDef,scales = "free")+
+  labs(title="Effect of r - JLC",y="N")
   
 projPlt
 
@@ -405,6 +411,19 @@ m.time(rs)
 ```
 
 Note that R tells us that when $r = 0$, it takes an infinite (`Inf`) amount of time to double. This is what we get when we try to divide by zero!
+
+```{r}
+
+# JLCs version
+m=2
+
+doub<-data.frame(r=c(0,1,2))%>%
+  mutate(doubTime=log(m)/r)
+
+doub
+
+```
+
 
 ## 1.6 Modeling with Data: Simulated Dynamics
 
