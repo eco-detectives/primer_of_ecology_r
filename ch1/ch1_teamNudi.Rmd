@@ -224,6 +224,26 @@ text(0.5, 20, expression(lambda < 1), cex = 1.2)
 
 ```
 
+```{r}
+# JLC's version
+
+N_0<-100
+
+nLam<-crossing(lamb=c(0.5,1.0,1.5),
+              time=c(0:3)) %>%
+  mutate(nLam=N_0*lamb^time)
+
+head(nLam) # we don't get the easy-view N0 x time format in the tidy df, but its 'tidy' and easier to manipulate
+
+nLamPl<-ggplot(nLam,aes(time,nLam))+
+  geom_point(aes(colour=factor(lamb)))+
+  geom_line(aes(colour=factor(lamb)))+
+  theme_bw()
+
+nLamPl
+
+```
+
 The reference line is a ***h***orizontal line with the ***l***ine ***ty***pe dotted. Our text simply indicates the regions of positive and negative growth.
 
 ### 1.3.4 Average growth rate
@@ -235,7 +255,7 @@ First we select the number of observed $R$ $(t = 5)$; this will require that we 
 ```{r}
 t <- 5
 data(sparrows)
-SS6 <- sparrows[1:(t + 1), ]
+SS6 <- sparrows[1:(t + 1),]
 ```
 
 Next we calculate $\lambda$ for each generation, from $t$ to $t + 1$, and calculate the arithmetic and geometric means.
@@ -270,6 +290,31 @@ data(sparrows)
 
 
 ```
+
+```{r}
+# JLC's version
+
+data(sparrows)
+
+t<-5
+N0<-sparrows[1,"Count"]
+
+ss6<-sparrows %>%
+  slice(1:(t+1)) %>%
+  mutate(ssGr=Count/lag(Count)) %>%
+  mutate(lamA=sum(na.omit(ssGr))/t)%>%
+  mutate(lamG=prod(na.omit(ssGr))^(1/t)) %>%
+  mutate(time=Year-1966) %>%
+  mutate(nA=N0*lamA^(time)) %>%
+  mutate(nG=N0*lamG^(time))
+
+ggplot(ss6,aes(time,Count))+
+  geom_point()+
+  geom_line(aes(time,nA),lty=2)+
+  geom_line(aes(time,nG),lty=1)
+
+```
+
 
 ## 1.4 Continuous Exponential Growth
 
@@ -320,6 +365,26 @@ legend("topleft", paste(rev(r)),
        title = "r")
 matplot(t, cont.mat, type = "l", ylab = "N", log = "y", col = 1)
 ```
+
+```{r}
+### JLCs version
+
+n0<-2
+
+proj<-crossing(r=c(-0.03,-0.02,0,0.02,0.03),
+               time=1:100)%>%
+  mutate(expGrowth=n0*exp(r*time)) %>%
+  mutate(logExpGrowth=log(expGrowth)) %>%
+  gather(key=rateDef,value=rate,-c(time,r))
+
+projPlt<-ggplot(proj,aes(time,rate))+
+  geom_line(aes(lty=factor(r)))+
+  facet_wrap(~rateDef,scales = "free")
+  
+projPlt
+
+```
+
 
 ### 1.4.3 Doubling (and tripling) time
 
