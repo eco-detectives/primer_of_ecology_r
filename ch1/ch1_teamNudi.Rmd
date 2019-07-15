@@ -21,6 +21,7 @@ library(RColorBrewer) # Just additional color palettes you can use. Not necessar
 
 ### The book has an R package! 
 library(primer) # install.packages('primer')
+library(cowplot)
 
 ```
 
@@ -79,9 +80,9 @@ rates
 ### JLC's version
 
 expGrw<-expGrw %>%
-  mutate(rate=N/lag(N))
+  mutate(rate=N/lag(N)) #lag() lags the vector by given (k=) units of obs, default k=1
 
-expGrw$rate[2:nrow(expGrw)]
+expGrw$rate[2:nrow(expGrw)] # just to print the growth rates like stevens
 
 ```
 
@@ -91,6 +92,8 @@ expGrw$rate[2:nrow(expGrw)]
 Here we calculate population sizes for 10 time points beyond the initial. First we assign values for $N_0$, $\lambda$, and time.
 
 # Question: Can someone describe the use of notation $ and `\` in the text above? -Sean
+
+*The $ on either side gives you 'equation' notation between them. so when you Knit you'll see that N_0 comes out as N with a 0 in the subscript. (Double $$ on either side do the same but isolate  the equation apart from the text.) The backslash is common notation in equations to indicate a symbol. So that will turn out as the symbol for lambda. You also use the backslash for setting up fractions and other equation formatting.*
 
 ```{r}
 N0 <- 1
@@ -168,6 +171,31 @@ exp_pop_plot <- ggplot(exp_pop_df, aes(x = time, y = Nt, color = N0)) +
 exp_pop_plot
 
 # How do I change the scale on the right so it's not continuous but just reflects the three N0 values?
+```
+
+```{r}
+# JLC's version
+
+lamb<-2
+
+nts<-crossing(N0=c(10,20,30),
+              time=c(0:4)) %>%
+  mutate(nts=N0*lamb^time) %>%
+  mutate(ntsLog=log(nts))
+
+head(nts) # we don't get the easy-view N0 x time format in the tidy df, but its 'tidy' and easier to manipulate
+
+ntsPl<-ggplot(nts,aes(time,nts))+
+  geom_point(aes(colour=factor(N0)))+
+  theme_bw()
+
+ntsPlLg<-ggplot(nts,aes(time,ntsLog))+
+  geom_point(aes(colour=factor(N0)))+
+  theme_bw()
+
+nts2<-plot_grid(ntsPl,ntsPlLg)
+nts2
+
 ```
 
 ### 1.3.3 Effects of different per capita growth rates
