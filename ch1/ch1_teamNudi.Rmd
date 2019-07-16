@@ -167,7 +167,7 @@ exp_pop_plot <- ggplot(exp_pop_df, aes(x = time, y = Nt, color = N0)) +
   theme(plot.title = element_text(hjust = 0.5)) #to center the title
 exp_pop_plot
 
-# How do I change the scale on the right so it's not continuous but just reflects the three N0 values?
+# How do I change the scale on the right so it's not continuous but just reflects the three N0 values? Answer (which you've now done above): mutate the N0 data into factors. Before they were read as continuous, but now it knows to separate them.
 ```
 
 ### 1.3.3 Effects of different per capita growth rates
