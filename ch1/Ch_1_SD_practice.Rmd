@@ -13,15 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Questions:
 
-1. If I open RStudio, will all of the Github files already be updated/pulled? Or do I need to pull again?
-
-2. Can I only pull if someone has changed something? Or should I be able to pull regardless?
-
-3. What is the white M in the blue box next to our file name for teamNudi?
-
 4. Confused about the notation for sapply (chunk 10).
-
-5. What is RColorBrewer for?
 
 6. For graphing a matrix,how do I change the scale on the right so it's not continuous but just reflects the three N0 values?
 
