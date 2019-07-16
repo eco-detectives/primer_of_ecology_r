@@ -10,9 +10,6 @@ output:
   pdf_document:
     toc: false
 ---
-# Question for Casey: Can you review what you did here in the initial R chunk (apart from loading packages)? -Sean
-
-# Question: Why do we need to Commit before we Push? Do we ever Push without Committing? -Sean
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
@@ -20,10 +17,11 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
-library(RColorBrewer)
+library(RColorBrewer) # Just additional color palettes you can use. Not necessary to load this.
 
 ### The book has an R package! 
 library(primer) # install.packages('primer')
+library(cowplot)
 
 ```
 
@@ -50,7 +48,7 @@ expGrw <- data.frame(N = c(1, 3, 9, 27, 81),
                          year = 2001:2005)
 ggplot(expGrw, aes(x = year, y = N)) +
   geom_point(color = 'blue', size = 3) +
-  labs(x = 'Year', y = 'Population',title = "Hypotehical water lily population")+
+  labs(x = 'Year', y = 'Population',title = "Hypotehical water lily population - JLC")+
   theme_bw()
 ```
 
@@ -82,9 +80,9 @@ rates
 ### JLC's version
 
 expGrw<-expGrw %>%
-  mutate(rate=N/lag(N))
+  mutate(rate=N/lag(N)) #lag() lags the vector by given (k=) units of obs, default k=1
 
-expGrw$rate[2:nrow(expGrw)]
+expGrw$rate[2:nrow(expGrw)] # just to print the growth rates like stevens
 
 ```
 
@@ -94,6 +92,8 @@ expGrw$rate[2:nrow(expGrw)]
 Here we calculate population sizes for 10 time points beyond the initial. First we assign values for $N_0$, $\lambda$, and time.
 
 # Question: Can someone describe the use of notation $ and `\` in the text above? -Sean
+
+*The $ on either side gives you 'equation' notation between them. so when you Knit you'll see that N_0 comes out as N with a 0 in the subscript. (Double $$ on either side do the same but isolate  the equation apart from the text.) The backslash is common notation in equations to indicate a symbol. So that will turn out as the symbol for lambda. You also use the backslash for setting up fractions and other equation formatting.*
 
 ```{r}
 N0 <- 1
@@ -125,7 +125,8 @@ time <- 0:4
 We calculate population sizes at once using `sapply` to _apply_ a function (`n*lambda^time`) to each element of the first argument (each element of `N0`).
 
 ```{r}
-Nt.s <- sapply(N0, function(n) n * lambda^time)
+Nt.s <- sapply(N0, function(n) n*lambda^time) # n here is just a variable - it could be anything
+
 Nt.s
 #      [,1] [,2] [,3]
 # [1,]   10   20   30
@@ -157,14 +158,47 @@ matplot(time, Nt.s, log = "y", pch = 1:3)
 # Use mutate() to create a new column)
 
 exp_pop_df <- crossing(time, N0) %>% 
-  mutate(Nt = N0*lambda^time)
+  mutate(Nt = N0*lambda^time) %>% 
+  mutate(N0 = factor(N0))
 
 exp_pop_plot <- ggplot(exp_pop_df, aes(x = time, y = Nt, color = N0)) +
-  geom_point() +
+  geom_point(size = 2.5) +
   labs(x = 'Year', y = 'Population size (Nt)') +
-  geom_line(aes(group = N0)) +
-  theme_bw()
+  geom_line(aes(group = N0), size = 0.8) +
+  theme_bw() +
+  ggtitle("Population growth trajectories from different initial population sizes") +
+  theme(plot.title = element_text(hjust = 0.5)) #to center the title
 exp_pop_plot
+
+# How do I change the scale on the right so it's not continuous but just reflects the three N0 values?
+```
+
+```{r, fig.width=9}
+# JLC's version
+
+lamb<-2
+
+nts<-crossing(N0=c(10,20,30),
+              time=c(0:4)) %>%
+  mutate(nts=N0*lamb^time) %>%
+  mutate(ntsLog=log(nts))
+
+head(nts) # we don't get the easy-view N0 x time format in the tidy df, but its 'tidy' and easier to manipulate
+
+ntsPl<-ggplot(nts,aes(time,nts))+
+  geom_point(aes(colour=factor(N0)))+
+  theme_bw()
+
+ntsPlLg<-ggplot(nts,aes(time,ntsLog))+
+  geom_point(aes(colour=factor(N0)))+
+  theme_bw()
+
+nts2<-plot_grid(ntsPl,ntsPlLg)
+
+ntsTitle<-ggdraw() + draw_label("Effects of initial population size - JLC")
+  
+plot_grid(ntsTitle, nts2, ncol=1, rel_heights=c(0.1, 1))
+
 ```
 
 ### 1.3.3 Effects of different per capita growth rates
@@ -186,6 +220,34 @@ text(0.5, 250, expression(lambda > 1), cex = 1.2)
 text(0.5, 20, expression(lambda < 1), cex = 1.2)
 ```
 
+```{r}
+# Sean's version
+
+# TBD
+
+```
+
+```{r}
+# JLC's version
+
+N_0<-100
+
+nLam<-crossing(lamb=c(0.5,1.0,1.5),
+              time=c(0:3)) %>%
+  mutate(nLam=N_0*lamb^time)
+
+head(nLam) # we don't get the easy-view N0 x time format in the tidy df, but its 'tidy' and easier to manipulate
+
+nLamPl<-ggplot(nLam,aes(time,nLam))+
+  geom_point(aes(colour=factor(lamb)))+
+  geom_line(aes(colour=factor(lamb)))+
+  labs(title="Effect of \u03bb - JLC", y="N")+
+  theme_bw()
+
+nLamPl
+
+```
+
 The reference line is a ***h***orizontal line with the ***l***ine ***ty***pe dotted. Our text simply indicates the regions of positive and negative growth.
 
 ### 1.3.4 Average growth rate
@@ -197,9 +259,8 @@ First we select the number of observed $R$ $(t = 5)$; this will require that we 
 ```{r}
 t <- 5
 data(sparrows)
-SS6 <- sparrows[1:(t + 1), ]
+SS6 <- sparrows[1:(t + 1),]
 ```
-
 
 Next we calculate $\lambda$ for each generation, from $t$ to $t + 1$, and calculate the arithmetic and geometric means.
 
@@ -221,6 +282,44 @@ legend(0, 70,
        title = "Projections Based On:", 
        lty = 2:1, bty = "n", xjust = 0)
 ```
+
+```{r}
+# Sean's version
+
+# First, load data from the 'primer' package
+data(sparrows)
+
+# Next, 
+
+
+
+```
+
+```{r}
+# JLC's version
+
+data(sparrows)
+
+t<-5
+N0<-sparrows[1,"Count"]
+
+ss6<-sparrows %>%
+  slice(1:(t+1)) %>%
+  mutate(ssGr=Count/lag(Count)) %>%
+  mutate(lamA=sum(na.omit(ssGr))/t)%>%
+  mutate(lamG=prod(na.omit(ssGr))^(1/t)) %>%
+  mutate(time=Year-1966) %>%
+  mutate(nA=N0*lamA^(time)) %>%
+  mutate(nG=N0*lamG^(time))
+
+ggplot(ss6,aes(time,Count))+
+  geom_point()+
+  geom_line(aes(time,nA),lty=2)+
+  geom_line(aes(time,nG),lty=1)+
+  labs(title = "Population projections - JLC",y="N")
+
+```
+
 
 ## 1.4 Continuous Exponential Growth
 
@@ -272,6 +371,27 @@ legend("topleft", paste(rev(r)),
 matplot(t, cont.mat, type = "l", ylab = "N", log = "y", col = 1)
 ```
 
+```{r}
+### JLCs version
+
+n0<-2
+
+proj<-crossing(r=c(-0.03,-0.02,0,0.02,0.03),
+               time=1:100)%>%
+  mutate(expGrowth=n0*exp(r*time)) %>%
+  mutate(logExpGrowth=log(expGrowth)) %>%
+  gather(key=rateDef,value=pop,-c(time,r))
+
+projPlt<-ggplot(proj,aes(time,pop))+
+  geom_line(aes(lty=factor(r)))+
+  facet_wrap(~rateDef,scales = "free")+
+  labs(title="Effect of r - JLC",y="N")
+  
+projPlt
+
+```
+
+
 ### 1.4.3 Doubling (and tripling) time
 
 #### Creating a function for doubling time
@@ -291,6 +411,19 @@ m.time(rs)
 ```
 
 Note that R tells us that when $r = 0$, it takes an infinite (`Inf`) amount of time to double. This is what we get when we try to divide by zero!
+
+```{r}
+
+# JLCs version
+m=2
+
+doub<-data.frame(r=c(0,1,2))%>%
+  mutate(doubTime=log(m)/r)
+
+doub
+
+```
+
 
 ## 1.6 Modeling with Data: Simulated Dynamics
 
@@ -450,7 +583,7 @@ We know that $N_t = N_0 e^{rt}$. Hence, plugging in for the values in the statem
 rate <- (log(6.3)-log(0.630))/(2003-1700)
 ```
 
-So the intrinsic rate of growth is `r format(round(rate, 2), nsmall = 2)` new human per human per year. 
+So the intrinsic rate of growth is `r format(round(rate, 2), nsmall = 2)` new individual per human per year. 
 
 b. Graph the model of human population size population size from 1700 to 2020.
 c. Add points on the graph indicating the population doublings from 1700 onward.
