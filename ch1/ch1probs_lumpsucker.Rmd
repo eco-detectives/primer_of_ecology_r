@@ -29,7 +29,8 @@ Analyze the following data, relying on selected snippets of previous code.
 In the years 1996 through 2005, lily population sizes are N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150. Make a graph of population size versus time. 
 
 ```{r}
-lily_df <- data.frame(year = 1996:2005, N = c(150, 100, 125, 200, 225, 150, 100, 175, 100, 150))
+### molly
+lily_df <- data.frame(year = 1996:2005, count = c(150, 100, 125, 200, 225, 150, 100, 175, 100, 150))
 ggplot(lily_df, aes(x = year, y = N)) +
   theme_classic() +
   geom_point() +
@@ -40,8 +41,9 @@ ggplot(lily_df, aes(x = year, y = N)) +
 Calculate R for each year; graph R vs. time. 
 
 ```{r}
+### molly
 lily_df <- lily_df %>%
-  mutate(lambda = N / lag(N))
+  mutate(lambda = count / lag(count))
 
 ggplot(lily_df, aes(x = year, y = lambda)) +
   theme_classic() +
@@ -53,29 +55,148 @@ ggplot(lily_df, aes(x = year, y = lambda)) +
 Calculate arithmetic and geometric average growth rates of this population.
 
 ```{r}
+### molly
 lily_means <- lily_df %>%
   na.omit() %>%
-  summarize(lambda_am = sum(lambda) / n(),
-          lambda_gm = prod(lambda) ^ (1/n())
-    ) ### is this right? should check values...
+  summarize(lambda_a = sum(lambda) / n(),
+            lambda_g = prod(lambda) ^ (1/n())
+    ) ### not sure how to keep from rounding value, unless lambda_g is really that close to 1...?
 ```
 
 ### 1.1d 
 Based on the appropriate average growth rate, what would be the expected population size in 2025? What would the estimated population size be if you used the inappropriate mean? Do not use simulation for this. 
 
+```{r}
+### molly
+
+### assuming we are using a deterministic model then?
+N_0 = 150 ### count in 2005
+t = 20
+N_20_g <- N_0 * (lily_means$lambda_g)^t
+N_20_a <- N_0 * (lily_means$lambda_a)^t
+  
+lily_df_proj <- data.frame(year = 2006:2025, t = 1:20, N_0 = 150) %>%
+  mutate(geometric = N_0 * (lily_means$lambda_g)^t,
+         arithmetic = N_0 * (lily_means$lambda_a)^t
+  ) %>%
+  gather(mean, N, arithmetic, geometric)
+
+ggplot(lily_df_proj, aes(x = year, y = N, group = mean)) +
+  geom_point(aes(color = mean)) +
+  geom_line(aes(color = mean)) + 
+  theme_classic()
+```
+
 ###1.1.d* 
 Given these data, develop simulations as above with the user-defined function, PopSim. Describe the distribution of projected population sizes for 2010.
+```{r}
+### molly - PopSim version first, then will try and tidy-fy...?
+
+obs_r <- as.vector(na.omit(lily_df[,3])) ### establishing vector of observed r values
+
+PopSim <- function(rs, N0, years, sims) {
+  sim.RM = matrix(sample(rs, size = sims * years, replace = TRUE),
+                  nrow = years, ncol = sims)
+  output <- numeric(years + 1)
+  output[1] <- N0
+  outmat <- sapply(1:sims, function(i) {
+    for (t in 1:years) output[t + 1] <- round(output[t] * sim.RM[t, i], 0)
+    output
+  })
+  return(outmat)
+}
+ 
+output <- PopSim(rs = obs_r, N0 = 150, years = 50, sims = 1000)
+N.2010 <- output[15,]
+summary(N.2010, digits = 6)
+    # Min.  1st Qu.   Median     Mean  3rd Qu.     Max.
+    # 1.00    51.75   154.00   613.87   503.75 30172.00
+
+
+# trying to tidyfy...? adapted from Casey
+ps_single <- function(rs, N0, years) {
+  r_random <- sample(rs, size = years, replace = T) ### sample r randomly from observed values
+  pop_sim <- vector('numeric', length = years + 1) ### create empty vector to store simulated populations
+  pop_sim[1] <- N0 ### population in year 0
+  for (yr in 1:years) {
+    pop_sim[yr + 1] <- round(pop_sim[yr] * r_random[yr])
+  }
+}
+
+ps_multi <- function(rs, N0, years, sims) {
+  sim_list <- lapply(1:sims, FUN = function(x) {
+    ps_single(rs = rs, N0 = N0, years = years)
+  })
+  sim_matrix <- matrix(unlist(sim_list), nrow = years + 1, ncol = sims)
+}
+
+pop_output <- ps_multi(rs = obs_r, N0 = 150, years = 50, sims = 10)
+### error data type...
+N.2010_tidy <- pop_output[15,]
+
+ggplot(pop_output, aes(x = yr, y = ))
+```
 
 ## 1.2. Doubling Time
 
 ###1.2a
-Derive the formula for doubling time in a population with contiunous ex- ponential growth. 
+Derive the formula for doubling time in a population with contiunous exponential growth. 
+
+$N_t = N_0 * e^rt$
+$N_t = 2*N_0$
+$2 = e^rt$
+$ln(2) =r*t*ln(e)$
+$t = ln(2)/r$
 
 ###1.2b
 What is the formula for tripling time? 
 
+$t = ln(3)/r$
+
 ###1.2c
-If we are modeling humans or E. coli, would a model of geometric, or expo- nential growth be better? Why? 
+If we are modeling humans or E. coli, would a model of geometric, or exponential growth be better? Why? 
+
+_Geometric ($lambda$) for human populations because they reproduce in discrete time steps, and exponential ($r$) for E. coli because they reproduce continuously_
+
 
 ###1.2d
-If an E. coli population grew from 1000 cells to 2 × 109 cells in 6 h, what would its intrinsic rate of increase be? Its doubling time?
+If an E. coli population grew from $1000$ cells to $2 × 10^9$ cells in 6 h, what would its intrinsic rate of increase be? Its doubling time?
+```{r}
+N0 = 1000
+N6 = 2*10^9
+t = 6
+
+# Nt = N0*e^(r*t)
+# ln(Nt/N0) = r*t*ln(e)
+r <- ln(N6/N0)/(t)
+doubling <- ln(2)/r
+```
+
+## 1.3. Human Population Growth
+
+###1.3a 
+There were about 630 million people on the planet in 1700, and 6.3 billion in 2003 [33]. What was the intrinsic rate of increase, r?
+```{r}
+N0 = 630000000
+N303 = 6300000000
+t = 303
+
+r <- ln(N0/N303)/(303)
+```
+
+###1.3b 
+Graph the model of human population size population size from 1700 to 2020.
+```{r}
+humans <- data.frame(year = 1700:2020, t = 0:320, r = 1.2, N0 = 630000000) %>% # placeholder r
+  mutate(Nt = N0 * ln(e)^(r*t))
+
+```
+
+
+###1.3c
+Add points on the graph indicating the population doublings from 1700 onward.
+d. What will prevent humans from outweighing the planet by the end of this century? What controls human population growth? Do these controls vary spatially across the planet? See Cohen [33] to get going.
+
+## 1.4. R functions
+
+Find the R functions in Chapter 1. Demonstrate their uses.
