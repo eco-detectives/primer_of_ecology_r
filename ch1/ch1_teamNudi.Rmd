@@ -1,6 +1,6 @@
 ---
 title: 'PoER: Ch. 1 - Team Nudi'
-author: Jessica, Alberto, Sean, Vincent
+author: Jessica, Bertamus, Sean, Vincent
 output: 
   html_document:
     toc: false
