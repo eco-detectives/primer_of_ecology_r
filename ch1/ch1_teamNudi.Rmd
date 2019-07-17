@@ -168,7 +168,9 @@ exp_pop_plot <- ggplot(exp_pop_df, aes(x = time, y = Nt, color = N0)) +
   theme(plot.title = element_text(hjust = 0.5)) #to center the title
 exp_pop_plot
 
-# How do I change the scale on the right so it's not continuous but just reflects the three N0 values? Answer (which you've now done above): mutate the N0 data into factors. Before they were read as continuous, but now it knows to separate them.
+# Question: How do I change the scale on the right so it's not continuous but just reflects the three N0 values?
+
+# Answer (which you've now done above): mutate the N0 data into factors. Before they were read as continuous, but now it knows to separate them.
 ```
 
 
@@ -222,52 +224,29 @@ text(0.5, 20, expression(lambda < 1), cex = 1.2)
 ```{r}
 # Sean's version
 
-# TBD
+N0 <- 100
+time <- 0:3
+lambda <- c(0.5, 1.0, 1.5)
 
-```
+# Use crossing() to make a data frame for all combinations of N0 and lambda
+# Use mutate() to create a new column)
 
-```{r}
-### Casey's version of section 1.3.4
-data(sparrows) ### load data from the primer package
+df_lambda <- crossing(lambda, time) %>% 
+  mutate(Nt = N0*lambda^time) %>% 
+  mutate(N0 = N0) %>% 
+    mutate(lambda = factor(lambda))
 
-### Using the first six years of sparrow data... because that's the portion
-### of the data that is basically exponential growth?  let's check a plot:
-# ggplot(sparrows, aes(x = Year, y = Count)) +
-#   geom_point()
-### Kinda looks like it - after year 6 it flattens out
+#QUESTION How would I add N0 back in without  using mutate to create a new column? Also, how would I move my mutated column (above) to the left?
 
-### Calculate the growth rate from year t to year t-1 separately, then average
-sparrows_6yr <- sparrows %>%
-  setNames(tolower(names(.))) %>% ### I hate capitals in colnames
-  mutate(t = 0:(n()-1)) %>%  ### create a t column to use instead of year maybe
-  filter(t < 6) %>%
-  mutate(lambda = count / lag(count))
-
-l_means <- sparrows_6yr %>%
-  filter(!is.na(lambda)) %>%
-  summarize(lambda_arth = sum(lambda) / n(),
-            lambda_geom = prod(lambda) ^ (1/n()))
-### check that they match the base R values: yep!
-
-### for a stochastic simulation we'd need to calculate each year in turn
-### but for a deterministic, we can make a dataframe with the N0 column
-### and calculate each year by accounting for the amount of time passed
-pop_df <- sparrows_6yr %>%
-  select(t, count) %>% ### no need for the extra columns
-  mutate(N_0   = first(count),
-         N_t_arith = N_0 * (l_means$lambda_arth)^t,
-         N_t_geom = N_0 * (l_means$lambda_geom)^t) %>%
-  gather(mean, estimate, N_t_arith, N_t_geom) ### gather for ggplot
-
-ggplot(pop_df, aes(x = t, y = estimate, color = mean)) +
-  theme_bw() +
-  geom_line(aes(group = mean)) +
+lambda_plot <- ggplot(df_lambda, aes(x = time, y = Nt, color = lambda)) + 
   geom_point(size = 3) +
-  geom_point(aes(y = count), color = 'black', size = 3, alpha = .7)
-
-### looks like arithmetic mean overestimates results
+  geom_line(aes(group = lambda), size = 0.8) +
+  theme_bw() +
+  labs(x = "Time (year)", y = "Population size (N)") +
+  ggtitle("Population growth for different growth rates") +
+  theme(plot.title = element_text(hjust = 0.5))
+lambda_plot
 ```
-
 
 ```{r}
 # JLC's version
@@ -329,6 +308,12 @@ legend(0, 70,
 
 # First, load data from the 'primer' package
 data(sparrows)
+
+# Now, what am I trying to do?
+
+#QUESTION: Why are we using five years of data? Because they did?
+
+
 
 # Next, 
 
