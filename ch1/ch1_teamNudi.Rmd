@@ -308,16 +308,16 @@ legend(0, 70,
 
 # First, load data from the 'primer' package
 data(sparrows)
+t <- 5
+N0 <- sparrows$Count[1]
 
-# Now, what am I trying to do?
-
-#QUESTION: Why are we using five years of data? Because they did?
-
-
-
-# Next, 
-
-
+df_averages <- sparrows %>%
+  slice(1:(t+1)) %>% 
+  mutate(lambda = Count/lag(Count)) %>% 
+  mutate(lambda_a = sum(na.omit(lambda))/t) %>% 
+  mutate(lambda_g = prod(na.omit(lambda))^(1/t)) %>% 
+  mutate(N_lambda_a = N0*lambda_a^(Year-1966)) %>% 
+  mutate(N_lambda_g = N0*lambda^(Year-1966))
 
 ```
 
@@ -330,7 +330,7 @@ t<-5
 N0<-sparrows[1,"Count"]
 
 ss6<-sparrows %>%
-  slice(1:(t+1)) %>%
+  slice(1:(t+1)) %>% 
   mutate(ssGr=Count/lag(Count)) %>%
   mutate(lamA=sum(na.omit(ssGr))/t)%>%
   mutate(lamG=prod(na.omit(ssGr))^(1/t)) %>%
