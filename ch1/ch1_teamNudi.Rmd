@@ -21,6 +21,7 @@ library(RColorBrewer) # Just additional color palettes you can use. Not necessar
 
 ### The book has an R package! 
 library(primer) # install.packages('primer')
+library(cowplot)
 
 ```
 
@@ -170,6 +171,35 @@ exp_pop_plot
 # How do I change the scale on the right so it's not continuous but just reflects the three N0 values? Answer (which you've now done above): mutate the N0 data into factors. Before they were read as continuous, but now it knows to separate them.
 ```
 
+
+```{r, fig.width=9}
+# JLC's version
+
+lamb<-2
+
+nts<-crossing(N0=c(10,20,30),
+              time=c(0:4)) %>%
+  mutate(nts=N0*lamb^time) %>%
+  mutate(ntsLog=log(nts))
+
+head(nts) # we don't get the easy-view N0 x time format in the tidy df, but its 'tidy' and easier to manipulate
+
+ntsPl<-ggplot(nts,aes(time,nts))+
+  geom_point(aes(colour=factor(N0)))+
+  theme_bw()
+
+ntsPlLg<-ggplot(nts,aes(time,ntsLog))+
+  geom_point(aes(colour=factor(N0)))+
+  theme_bw()
+
+nts2<-plot_grid(ntsPl,ntsPlLg)
+
+ntsTitle<-ggdraw() + draw_label("Effects of initial population size - JLC")
+  
+plot_grid(ntsTitle, nts2, ncol=1, rel_heights=c(0.1, 1))
+
+```
+
 ### 1.3.3 Effects of different per capita growth rates
 
 Here we demonstrate the effects on growth of $\lambda > 1$ and $\lambda < 1$. We set $N_0 = 100$, and time, and then pick three different $\lambda$.
@@ -239,6 +269,26 @@ ggplot(pop_df, aes(x = t, y = estimate, color = mean)) +
 ```
 
 
+```{r}
+# JLC's version
+
+N_0<-100
+
+nLam<-crossing(lamb=c(0.5,1.0,1.5),
+              time=c(0:3)) %>%
+  mutate(nLam=N_0*lamb^time)
+
+head(nLam) # we don't get the easy-view N0 x time format in the tidy df, but its 'tidy' and easier to manipulate
+
+nLamPl<-ggplot(nLam,aes(time,nLam))+
+  geom_point(aes(colour=factor(lamb)))+
+  geom_line(aes(colour=factor(lamb)))+
+  labs(title="Effect of \u03bb - JLC", y="N")+
+  theme_bw()
+
+nLamPl
+```
+
 The reference line is a ***h***orizontal line with the ***l***ine ***ty***pe dotted. Our text simply indicates the regions of positive and negative growth.
 
 ### 1.3.4 Average growth rate
@@ -283,6 +333,31 @@ data(sparrows)
 # Next, 
 
 
+
+```
+
+```{r}
+# JLC's version
+
+data(sparrows)
+
+t<-5
+N0<-sparrows[1,"Count"]
+
+ss6<-sparrows %>%
+  slice(1:(t+1)) %>%
+  mutate(ssGr=Count/lag(Count)) %>%
+  mutate(lamA=sum(na.omit(ssGr))/t)%>%
+  mutate(lamG=prod(na.omit(ssGr))^(1/t)) %>%
+  mutate(time=Year-1966) %>%
+  mutate(nA=N0*lamA^(time)) %>%
+  mutate(nG=N0*lamG^(time))
+
+ggplot(ss6,aes(time,Count))+
+  geom_point()+
+  geom_line(aes(time,nA),lty=2)+
+  geom_line(aes(time,nG),lty=1)+
+  labs(title = "Population projections - JLC",y="N")
 
 ```
 
@@ -336,6 +411,26 @@ legend("topleft", paste(rev(r)),
 matplot(t, cont.mat, type = "l", ylab = "N", log = "y", col = 1)
 ```
 
+```{r}
+### JLCs version
+
+n0<-2
+
+proj<-crossing(r=c(-0.03,-0.02,0,0.02,0.03),
+               time=1:100)%>%
+  mutate(expGrowth=n0*exp(r*time)) %>%
+  mutate(logExpGrowth=log(expGrowth)) %>%
+  gather(key=rateDef,value=pop,-c(time,r))
+
+projPlt<-ggplot(proj,aes(time,pop))+
+  geom_line(aes(lty=factor(r)))+
+  facet_wrap(~rateDef,scales = "free")+
+  labs(title="Effect of r - JLC",y="N")
+  
+projPlt
+
+```
+
 ### 1.4.3 Doubling (and tripling) time
 
 #### Creating a function for doubling time
@@ -355,6 +450,18 @@ m.time(rs)
 ```
 
 Note that R tells us that when $r = 0$, it takes an infinite (`Inf`) amount of time to double. This is what we get when we try to divide by zero!
+
+```{r}
+
+# JLCs version
+m=2
+
+doub<-data.frame(r=c(0,1,2))%>%
+  mutate(doubTime=log(m)/r)
+
+doub
+
+```
 
 ## 1.6 Modeling with Data: Simulated Dynamics
 
