@@ -646,11 +646,18 @@ a. There were about 630 million people on the planet in 1700, and 6.3 billion in
 
 ```{r}
 
-rate <- (log(6.3)-log(0.630))/(2003-1700)
+# Vincent's answer
+
+calc_intric_rate <- function(final_pop = 6.3, initial_pop = 0.630, final_period = 2003, initial_period = 1700){
+  
+  rate <- (log(final_pop)-log(initial_pop))/(final_period-initial_period)
+  
+  return(rate)
+}
 
 ```
 
-So the intrinsic rate of growth is `r format(round(rate, 2), nsmall = 2)` new individual per human per year.
+So the intrinsic rate of growth is `r format(round(calc_intric_rate(), 2), nsmall = 2)` new individual per human per year.
 
 b. Graph the model of human population size population size from 1700 to 2020.
 c. Add points on the graph indicating the population doublings from 1700 onward.
