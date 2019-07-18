@@ -390,6 +390,24 @@ text(50, 1.6,
      bquote((1+frac("r"["d"],"n"))^"n" == .(round(N1[101]/N0, + 3))))
 ```
 
+```{r}
+# Sean's version
+
+#How do you use data.frame? What goes into making a dataset?
+
+e_df_sd <- data.frame(n = 1:200, N0 = 1, r_d = 1) %>% 
+  mutate (N1 = N0*(1 + r_d/n)^n)
+
+e_plot <- ggplot(e_df_sd, aes(x = n, y = N1)) +
+  geom_point() +
+  geom_hline(yintercept = exp(1), color = 'blue', lty = 2) +
+  labs(x = "Time cycle (n)", y = "Population size (N)") +
+  ggtitle("Approximating numerical value of e using continuous growth")
+e_plot
+             
+```
+
+
 Fig. 1.6: The limit to subdividing reproduction into smaller steps. We can compare this numerical approximation to the true value, $e^1 = 2.718$.
 
 #### Projecting a continuous population
