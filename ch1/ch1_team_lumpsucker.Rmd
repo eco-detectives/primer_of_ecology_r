@@ -13,7 +13,7 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/lumpsucker',
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/lumpsucker',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
@@ -506,8 +506,21 @@ system.time(pop_output <- pop_sim_multi(r_vec = obs_r_df$r_obs, n_0 = 43, years 
 ```
 
 ```{r}
+
+nums <- c(1:40, NA)
+
+calc_geom_mean <- function(num_vec) {
+  x <- prod(num_vec, na.rm = TRUE)
+  n <- length(num_vec[!is.na(num_vec)])
+  y <- x^(1/n)
+  print(x)
+  return(y)
+}
+
+x <- calc_geom_mean(num_vec = nums)
+  
 ### Casey's function(s) higher performance
-pop_sim_one <- function(r_vec = 1.1, n_0 = 100, years = 50) {
+pop_sim_one <- function(r_vec, n_0, years = 50, print = FALSE) {
   ### resample the r vector
   r_vec_rand <- sample(r_vec, size = years, replace = TRUE)
   sim_vec <- vector('numeric', length = years + 1)
@@ -516,6 +529,7 @@ pop_sim_one <- function(r_vec = 1.1, n_0 = 100, years = 50) {
   for(yr in 1:years) { ### yr <- 1
     sim_vec[yr + 1] <- round(sim_vec[yr] * r_vec_rand[yr])
   }
+  if(print == TRUE) print(sim_vec)
   ### return the simulated vector - no need for year (assume in order) and
   ### no need for r (unobservable anyway)
   
