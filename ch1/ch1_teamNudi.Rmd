@@ -432,6 +432,14 @@ projPlt
 
 ```
 
+```{r}
+# Sean's version
+
+
+
+```
+ 
+
 ### 1.4.3 Doubling (and tripling) time
 
 #### Creating a function for doubling time
