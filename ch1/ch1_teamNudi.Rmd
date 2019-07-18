@@ -13,8 +13,8 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4,
+                      echo = TRUE, message = FALSE, warning = FALSE) # JLC removed the argument 'fig.path' and now the figs aren't written each time :D
 
 library(tidyverse)
 library(RColorBrewer) # Just additional color palettes you can use. Not necessary to load this.
