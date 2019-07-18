@@ -312,13 +312,14 @@ t <- 5
 N0 <- sparrows$Count[1]
 
 df_averages <- sparrows %>%
-  slice(1:(t+1)) %>% 
+  slice(1:(t+1)) %>% # you've made t a value above. It's five.
   mutate(lambda = Count/lag(Count)) %>% 
   mutate(lambda_a = sum(na.omit(lambda))/t) %>% 
   mutate(lambda_g = prod(na.omit(lambda))^(1/t)) %>% 
   mutate(N_lambda_a = N0*lambda_a^(Year-1966)) %>% 
   mutate(N_lambda_g = N0*lambda^(Year-1966))
 
+#slice is like filter but instead of choosing rows based on values you choose rows based on the row number.
 ```
 
 ```{r}
