@@ -317,9 +317,22 @@ df_averages <- sparrows %>%
   mutate(lambda_a = sum(na.omit(lambda))/t) %>% 
   mutate(lambda_g = prod(na.omit(lambda))^(1/t)) %>% 
   mutate(N_lambda_a = N0*lambda_a^(Year-1966)) %>% 
-  mutate(N_lambda_g = N0*lambda^(Year-1966))
+  mutate(N_lambda_g = N0*lambda_g^(Year-1966))
 
 #slice is like filter but instead of choosing rows based on values you choose rows based on the row number.
+
+# Now, make the plot:
+
+lambda_plot <- ggplot(df_averages, aes(x = (Year-1966), y = Count)) +
+  geom_point(size = 1.5) +
+  geom_line(aes(x = (Year-1966), y = N_lambda_a), lty = 2) +
+  geom_line(aes(x = (Year-1966), y = N_lambda_g), lty = 1) +
+  labs(x = "Time (year)", y = "Population size (N)") +
+  ggtitle("Population growth using different averages for growth rate")
+lambda_plot
+
+# QUESTION: How did Jess just plot time below? Do we also not need to specify "x =" and "y="?
+
 ```
 
 ```{r}
@@ -344,6 +357,8 @@ ggplot(ss6,aes(time,Count))+
   geom_line(aes(time,nA),lty=2)+
   geom_line(aes(time,nG),lty=1)+
   labs(title = "Population projections - JLC",y="N")
+
+# Could also change size and color of lines by adding these in, outside of aes(). Remember, the names/codes for colors go in quotes.
 
 ```
 
