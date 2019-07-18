@@ -395,6 +395,8 @@ text(50, 1.6,
 
 #How do you use data.frame? What goes into making a dataset?
 
+#r_d is the intrinsic rate of increase or instantaneous per capita rate of increase
+
 e_df_sd <- data.frame(n = 1:200, N0 = 1, r_d = 1) %>% 
   mutate (N1 = N0*(1 + r_d/n)^n)
 
