@@ -23,9 +23,11 @@ library(primer) # install.packages('primer')
 # Chapter 1: Problems
 
 ## 1.1. Geometric growth
+
 Analyze the following data, relying on selected snippets of previous code.
 
 ### 1.1a 
+
 In the years 1996 through 2005, lily population sizes are N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150. Make a graph of population size versus time. 
 
 ```{r}
@@ -38,6 +40,7 @@ ggplot(lily_df, aes(x = year, y = count)) +
 ```
 
 ### 1.1b
+
 Calculate R for each year; graph R vs. time. 
 
 ```{r}
@@ -49,9 +52,11 @@ ggplot(lily_df, aes(x = year, y = lambda)) +
   theme_classic() +
   geom_point() +
   geom_hline(yintercept = 1, linetype = 'dotted')
+
 ```
 
 ### 1.1c 
+
 Calculate arithmetic and geometric average growth rates of this population.
 
 ```{r}
@@ -64,6 +69,7 @@ lily_means <- lily_df %>%
 ```
 
 ### 1.1d 
+
 Based on the appropriate average growth rate, what would be the expected population size in 2025? What would the estimated population size be if you used the inappropriate mean? Do not use simulation for this. 
 
 ```{r}
@@ -87,8 +93,12 @@ ggplot(lily_df_proj, aes(x = year, y = N, group = mean)) +
   theme_classic()
 ```
 
+> Casey comment: from a conceptual standpoint: I think the "appropriate" mean is the geometric in general; for r = 1, then the (deterministic) population is constant, which is what we see in Molly's graph. Based on 1.1a, it is hardly conclusive that the population is changing over time in either direction...
+
 ###1.1.d* 
+
 Given these data, develop simulations as above with the user-defined function, PopSim. Describe the distribution of projected population sizes for 2010.
+
 ```{r}
 ### molly - PopSim version first, then will try and tidy-fy...?
 
@@ -132,17 +142,79 @@ ps_multi <- function(rs, N0, years, sims) {
   sim_matrix <- matrix(unlist(sim_list), nrow = years + 1, ncol = sims)
 }
 
-pop_output <- ps_multi(rs = obs_r, N0 = 150, years = 50, sims = 10)
-### error data type...
-N.2010_tidy <- pop_output[15,]
-
-ggplot(pop_output, aes(x = yr, y = ))
+# pop_output <- ps_multi(rs = obs_r, N0 = 150, years = 50, sims = 10)
+# ### error data type...
+# N.2010_tidy <- pop_output[15,]
+# 
+# ggplot(pop_output, aes(x = yr, y = ))
 ```
+
+
+```{r}
+### Casey's attempt
+
+sim_pop_single <- function(n_0, n_years, l_vec) {
+  count_vec <- vector(length = n_years + 1)
+  count_vec[1] <- n_0
+  l_sims <- sample(l_vec, size = n_years, replace = TRUE)
+  
+  for(i in 1:n_years) {
+    ### project the following year's pop based on this year's pop and lambda.
+    ### Note, fudging a little since lambda is defined as this year's count
+    ### div by last year's count, here I'm using it more like next year's
+    ### count div by this year's count...
+    count_vec[i + 1] <- round(count_vec[i] * l_sims[i])
+  }
+  ### return whole shebang as a dataframe
+  df <- data.frame(year = 0:n_years,
+                   count = count_vec,
+                   lambda = c(NA, l_sims)) 
+                     ### why the NA? b/c lambda(t = 0) is NA
+  
+  return(df)
+}
+
+### copied from Molly and adapted:
+lily_df <- data.frame(year = 1996:2005, 
+                      count = c(150, 100, 125, 200, 225, 150, 100, 175, 100, 150)) %>%
+  mutate(lambda = count / lag(count))
+  
+lambda_vec <- lily_df$lambda %>%
+  .[!is.na(.)] ### drop the NA
+
+n_0 <- last(lily_df$count)
+year_0 <- last(lily_df$year)
+year_final <- 2010
+n_years <- year_final - year_0
+sims <- 1000
+
+x <- lapply(1:sims, FUN = function(x) {
+  y <- sim_pop_single(n_0 = n_0, n_years = n_years, l_vec = lambda_vec) %>%
+    mutate(sim = x)
+})
+
+sims_df <- bind_rows(x)
+
+pop_final_year <- sims_df %>%
+  filter(year == max(year))
+
+ggplot(pop_final_year, aes(x = count)) +
+  theme_bw() +
+  geom_histogram()
+
+ggplot(pop_final_year, aes(x = count)) +
+  theme_bw() +
+  geom_histogram() +
+  scale_x_log10() +
+  labs(title = 'Log(pop)')
+```
+
+> Casey's comment: interesting that since the lowest $\lambda$ is 0.57 (> 0.5) and each year's pop is rounded to the nearest integer (organism), the population can never go extinct.  However, since the highest $\lambda$ is > 1.5, the pop can drop to 1 then recover to higher populations.
 
 ## 1.2. Doubling Time
 
 ###1.2a
-Derive the formula for doubling time in a population with contiunous exponential growth. 
+Derive the formula for doubling time in a population with continuous exponential growth. 
 
 ```{r}
 ### molly
@@ -154,7 +226,21 @@ Derive the formula for doubling time in a population with contiunous exponential
 # t = ln(2)/r
 ```
 
+#### Casey:
+
+\begin{align*}
+  & N_t = N_0 e^{rt}\\
+  & N_t = aN_0\\
+  \Rightarrow & aN_0 = N_0 e^{rt}\\
+  \Rightarrow & a = e^{rt}\\
+  \Rightarrow & \ln a = rt\\
+  \Rightarrow & t_{ax} = \frac{\ln a}{r}
+\end{align*}
+
+For doubling time, let $a = 2$ so $t_{2x} = \frac{\ln 2}{r}$.  For tripling time, $t_{3x} = \frac{\ln 3}{r}$
+
 ###1.2b
+
 What is the formula for tripling time? 
 
 ```{r}
@@ -165,6 +251,7 @@ What is the formula for tripling time?
 
 
 ###1.2c
+
 If we are modeling humans or E. coli, would a model of geometric, or exponential growth be better? Why? 
 
 ```{r}
@@ -173,7 +260,10 @@ If we are modeling humans or E. coli, would a model of geometric, or exponential
 # Geometric ($lambda$) for human populations because they reproduce in discrete time steps, and exponential ($r$) for E. coli because they reproduce continuously
 ```
 
+> Casey: I'd say both would be exponential, if we're talking the global population of humans (or some very large population) since on that scale human babies are being born essentially continuously.  Perhaps for a small population it would be more like geometric?  though the time intervals are not discrete per se, which seems to be a common definition of geometric growth - human babies are not limited to specific times of the year, like many other types of organisms with specific mating seasons. 
+
 ###1.2d
+
 If an E. coli population grew from $1000$ cells to $2 × 10^9$ cells in 6 h, what would its intrinsic rate of increase be? Its doubling time?
 ```{r}
 ### molly
@@ -233,6 +323,18 @@ ggplot(humans, aes(x = year, y = Nt)) +
   geom_point(aes(x = t_x2 + 1700, y = N0 * exp(1)^(r_humans*t_x2)), shape = 1, size = 4, colour = "hotpink") +
   geom_point(aes(x = t_x4 + 1700, y = N0 * exp(1)^(r_humans*t_x4)), shape = 1, size = 4, colour = "hotpink") +
   geom_point(aes(x = t_x8 + 1700, y = N0 * exp(1)^(r_humans*t_x8)), shape = 1, size = 4, colour = "hotpink") +
+  theme_classic()
+```
+
+```{r}
+### Casey's version, starting from Molly's - using vline for doublings
+
+pop_double_vec <- c(2, 4, 8)
+t_double_vec <- log(pop_double_vec) / r_humans + 1700
+
+ggplot(humans, aes(x = year, y = Nt)) +
+  geom_point(size = .5) +
+  geom_vline(xintercept = t_double_vec, colour = "hotpink") +
   theme_classic()
 ```
 
