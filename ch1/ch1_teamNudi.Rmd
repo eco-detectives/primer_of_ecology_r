@@ -660,7 +660,31 @@ calc_intric_rate <- function(final_pop = 6.3, initial_pop = 0.630, final_period 
 So the intrinsic rate of growth is `r format(round(calc_intric_rate(), 2), nsmall = 2)` new individual per human per year.
 
 b. Graph the model of human population size population size from 1700 to 2020.
+
+```{r}
+
+#Vincent's answer
+
+initial_pop <- 0.630
+first_year <- 1700
+last_year <- 2020
+
+pop <- data.frame(year = first_year:last_year, 
+                  population = c(initial_pop,initial_pop*exp(calc_intric_rate()*1:(last_year - first_year))))
+
+library(cowplot)
+
+ggplot(pop, aes(x=year, y=population)) + 
+  geom_line() +
+  labs(x = "Year", y = "Humans (in billions)") +
+  theme(axis.text = element_text(size=rel(0.55)))
+  
+
+```
+
+
 c. Add points on the graph indicating the population doublings from 1700 onward.
+
 d. What will prevent humans from outweighing the planet by the end of this century? What controls human population growth? Do these controls vary spatially across the planet? See Cohen [33] to get going.
 
 ### 1.4. R functions
