@@ -650,9 +650,10 @@ a. In the years 1996 through 2005, lily population sizes are $N = 150, 100, 125,
 lily_df <- data.frame(N = c(150, 100, 125, 200, 225, 150, 100, 175, 100, 150), year = 1996:2005)
 
 lily_plot <- ggplot(lily_df, aes(x = year, y = N)) +
-  geom_point() +
-  theme_bw() +
-  labs(title = "Problem 1.1", x = "Year", y = "Population size")
+  geom_point(size = 2) +
+  geom_line(lty = 2) +
+  ggtitle('Lily Population Size from 1996-2005') +
+  scale_x_continuous(breaks = 1996:2005)
 lily_plot
 
 ```
