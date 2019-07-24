@@ -455,7 +455,22 @@ projPlt
 ```{r}
 # Sean's version
 
+N0 <-2
+proj_cont <- crossing(r = c(-0.03, -0.02, 0, 0.02, 0.03), time = 1:100) %>% 
+  mutate(exp_growth = N0*(r*time)) %>% 
+  mutate(log_exp_growth <- log(exp_growth)) %>% 
+  gather(key=rateDef,value=pop,-c(time,r))
 
+# What did Jess do in the last line (above)?
+
+  
+
+projPlt<-ggplot(proj,aes(time,pop))+
+  geom_line(aes(lty=factor(r)))+ # What does a line type of factor(r) mean?
+  facet_wrap(~rateDef,scales = "free")+
+  labs(title="Effect of r - JLC",y="N") # So we don't need to separately add the title?
+  
+projPlt
 
 ```
  
