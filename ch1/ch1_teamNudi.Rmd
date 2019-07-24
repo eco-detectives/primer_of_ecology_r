@@ -665,25 +665,62 @@ b. Graph the model of human population size population size from 1700 to 2020.
 
 #Vincent's answer
 
-initial_pop <- 0.630
-first_year <- 1700
-last_year <- 2020
 
-pop <- data.frame(year = first_year:last_year, 
+## Function to create population data frame
+create_pop_data <- function(initial_pop = 0.630, first_year = 1700, last_year = 2020){
+
+  pop <- data.frame(year = first_year:last_year, 
                   population = c(initial_pop,initial_pop*exp(calc_intric_rate()*1:(last_year - first_year))))
 
-library(cowplot)
+  return(pop)
+  
+}
 
-ggplot(pop, aes(x=year, y=population)) + 
+
+## Graphing
+graph1b <- ggplot(create_pop_data(), aes(x=year, y=population)) + 
   geom_line() +
   labs(x = "Year", y = "Humans (in billions)") +
-  theme(axis.text = element_text(size=rel(0.55)))
+  theme(axis.text = element_text(size=rel(0.55))) + 
+  theme_classic()
   
 
 ```
 
+\begin{center}\textbf{Figure X: Model of human population size from `r format(create_pop_data()$year[1])` to `r format(create_pop_data()$year[nrow(create_pop_data())])`}\end{center}
+```{r , eval=TRUE, echo=FALSE}
+graph1b
+```
+
 
 c. Add points on the graph indicating the population doublings from 1700 onward.
+
+```{r}
+
+max_double <- log(create_pop_data()$population[nrow(create_pop_data())]/create_pop_data()$population[1])/log(2)
+
+doublings <- create_pop_data()$population[1]*2^(1:round(max_double))
+
+##Lot's of adhoc stuff here
+
+data <- create_pop_data()
+data$double <- NA
+
+for (i in 1:(length(doublings)-1)){
+  temp <- which(abs(create_pop_data()$population-doublings[i])==min(abs(create_pop_data()$population-doublings[i])))
+  data$double[temp] <- 1
+}
+
+graph1c <- graph1b + 
+           geom_point(data=data, aes(shape=as.factor(double))) + 
+           theme_classic() + 
+           theme(legend.position = "none") 
+
+```
+
+```{r , eval=TRUE, echo=FALSE}
+graph1c
+```
 
 d. What will prevent humans from outweighing the planet by the end of this century? What controls human population growth? Do these controls vary spatially across the planet? See Cohen [33] to get going.
 
