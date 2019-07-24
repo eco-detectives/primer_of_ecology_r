@@ -725,21 +725,16 @@ So the intrinsic rate of growth is `r format(round(calc_intric_rate(), 2), nsmal
 
 Alternatively, we could use a regression based method to figure this out. Indeed, since we know that $N_{t+1} - N_t \approx\frac{dN_t}{dt} = N_tr$, we can run the following linear model: 
 
-\begin{align}
- \&(N_{t+1} - N_t) = \beta N_t + \epsilon_t
-\end{align}
-
 $(N_{t+1} - N_t) = \beta N_t + \epsilon_t$
 
-
-\noindent where $\beta = r$. Below I estimate sing World Bank global population data 
+\noindent where $\beta = r$ and $\epsilon_t$ an error term. Below I estimate sing World Bank global population data 
 
 ```{r}
 
 library("wbstats")
-library("plm")
+library("dplyr")
 
-#pop_wb <- wb(indicator = "SP.POP.TOTL")
+pop_wb <- wb(indicator = "SP.POP.TOTL")
 
 pop_wb_w <- pop_wb %>%
   filter(country == "World") %>%
@@ -748,6 +743,8 @@ pop_wb_w <- pop_wb %>%
 lm_pop <- lm(change ~  0 + lead_value, data=pop_wb_w)
 
 ```
+
+Using the 1960 to 2018 world population data, we find a similar intrinsic growth rate as $\hat{\beta}=$`r format(round(lm_pop$coef[1], 3), nsmall = 3)`.
 
 b. Graph the model of human population size population size from 1700 to 2020.
 c. Add points on the graph indicating the population doublings from 1700 onward.
