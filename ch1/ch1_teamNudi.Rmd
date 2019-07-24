@@ -636,9 +636,48 @@ e. Given these data, develop simulations as above with the user-defined function
 ### 1.2. Doubling Time
 
 a. Derive the formula for doubling time in a population with continuous exponential growth.
+
+```{r}
+
+doubTime<-function(r,m=2){
+  log(m)/r
+}
+
+doubTime(c(0,1,2))
+
+```
+
+
 b. What is the formula for tripling time?
+
+```{r}
+
+doubTime(c(0,1,2),3)
+
+```
+
+
 c. If we are modeling humans or _E. coli_, would a model of geometric, or exponential growth be better? Why?
+
+*Geometric growth = discrete growth*  
+*Exponential growth = continuous growth*  
+
+The answer depends a bit on the scale, but humans are usually best modeled with geometric growth since humans cannot have more than one reproduction event in a year, for example. _E. coli_ more appropriately modeled with exponential growth since they grow rapidly and asexually, so with few limitations. 
+
+
 d. If an _E. coli_ population grew from 1000 cells to 2 × 10^9^ cells in 6 h, what would its intrinsic rate of increase be? Its doubling time?
+
+$$N_t = N_0e^{rt}$$
+
+$$2*10^{9}=(1*10^{3})e^{6r}$$
+
+$$2*10^{6}=e^{6r}$$
+
+$$ln(2*10^{6})=6r$$
+
+$$r=\frac{ln(2*10^{6})}{6}$$
+r = `r log(2*10^6)/6`
+
 
 ### 1.3. Human Population Growth
 
