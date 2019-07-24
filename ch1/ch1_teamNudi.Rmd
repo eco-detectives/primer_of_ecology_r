@@ -333,6 +333,8 @@ lambda_plot
 
 # QUESTION: How did Jess just plot time below? Do we also not need to specify "x =" and "y="?
 
+#Answer: NOPE
+
 ```
 
 ```{r}
@@ -644,6 +646,14 @@ qqline(scale(logOR))
 
 a. In the years 1996 through 2005, lily population sizes are $N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150$. Make a graph of population size versus time. 
 ```{r}
+
+lily_df <- data.frame(N = c(150, 100, 125, 200, 225, 150, 100, 175, 100, 150), year = 1996:2005)
+
+lily_plot <- ggplot(lily_df, aes(x = year, y = N)) +
+  geom_point() +
+  theme_bw() +
+  labs(title = "Problem 1.1", x = "Year", y = "Population size")
+lily_plot
 
 ```
 
