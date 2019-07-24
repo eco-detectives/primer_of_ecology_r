@@ -755,7 +755,7 @@ Alternatively, we could use a regression based method to figure this out. Indeed
 
 $(N_{t+1} - N_t) = \beta N_t + \epsilon_t$
 
-\noindent where $\beta = r$ and $\epsilon_t$ an error term. Below I estimate sing World Bank global population data 
+\noindent where $\beta = r$ and $\epsilon_t$ an error term. Below I estimate the above equation using World Bank global population data 
 
 ```{r}
 
@@ -772,15 +772,77 @@ lm_pop <- lm(change ~  0 + lead_value, data=pop_wb_w)
 
 ```
 
-Using the 1960 to 2018 world population data, we find a similar intrinsic growth rate as $\hat{\beta}=$`r format(round(lm_pop$coef[1], 3), nsmall = 3)`.
+Using the 1960 to 2018 world population data, we find a similar intrinsic growth rate as $\hat{\beta}=$ `r format(round(lm_pop$coef[1], 3), nsmall = 3)`.
 
 b. Graph the model of human population size population size from 1700 to 2020.
+
+```{r}
+
+# Vincent's answer
+
+## Function to create population data frame
+create_pop_data <- function(initial_pop = 0.630, first_year = 1700, last_year = 2020){
+  
+  pop <- data.frame(year = first_year:last_year, 
+                  population = c(initial_pop,initial_pop*exp(calc_intric_rate()*1:(last_year -  first_year))))
+  
+  return(pop)
+  
+}
+
+## Graphing
+
+graph1b <- ggplot(create_pop_data(), aes(x=year, y=population)) + 
+                  geom_line() +
+                  labs(x = "Year", y = "Humans (in billions)") +
+                  theme(axis.text = element_text(size=rel(0.55))) + 
+                  theme_classic()
+```
+
+\begin{center}\textbf{Figure X: Model of human population size from `r format(create_pop_data()$year[1])` to `r format(create_pop_data()$year[nrow(create_pop_data())])`}\end{center}
+```{r , eval=TRUE, echo=FALSE}
+graph1b
+```
+
 c. Add points on the graph indicating the population doublings from 1700 onward.
+
+```{r}
+
+# Vincent's answer
+
+
+max_double <- log(create_pop_data()$population[nrow(create_pop_data())]/create_pop_data()$population[1])/log(2)
+
+doublings <- create_pop_data()$population[1]*2^(1:round(max_double))
+
+##Lot's of adhoc stuff here
+
+data <- create_pop_data()
+data$double <- NA
+
+for (i in 1:(length(doublings)-1)){
+  
+  temp <- which(abs(create_pop_data()$population-doublings[i])==min(abs(create_pop_data()$population-doublings[i])))
+ 
+  data$double[temp] <- 1
+   
+}
+
+graph1c <- graph1b + 
+           geom_point(data=data, aes(shape=as.factor(double))) + 
+           theme_classic() + 
+           theme(legend.position = "none") 
+```
+
+```{r , eval=TRUE, echo=FALSE}
+graph1c
+```
+
 d. What will prevent humans from outweighing the planet by the end of this century? What controls human population growth? Do these controls vary spatially across the planet? See Cohen [33] to get going.
 
 We known from ESM201 that there are four assumptions behind the exponential growth model: (1) homogeneous population, (2) continuous reproduction, (3) homogeneous habitat and (4) unlimited resources. 
 
-
+Loosening assumption (4) will get us the density-dependent growth model.
 
 ### 1.4. R functions
 
