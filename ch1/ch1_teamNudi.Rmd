@@ -696,6 +696,8 @@ e. Given these data, develop simulations as above with the user-defined function
 
 ```{r}
 
+
+
 ```
 
 
