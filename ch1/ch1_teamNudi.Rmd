@@ -643,10 +643,34 @@ qqline(scale(logOR))
 ### 1.1. Geometric growth Analyze the following data, relying on selected snippets of previous code.
 
 a. In the years 1996 through 2005, lily population sizes are $N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150$. Make a graph of population size versus time. 
+```{r}
+
+```
+
 b. Calculate $R$ for each year; graph $R$ vs. time.
-c. Calculate arithmetic and geometric average growth rates of this population. 
+
+```{r}
+
+```
+
+c. Calculate arithmetic and geometric average growth rates of this population.
+
+```{r}
+
+```
+
 d. Based on the appropriate average growth rate, what would be the expected population size in 2025? What would the estimated population size be if you used the inappropriate mean? Do not use simulation for this.
+
+```{r}
+
+```
+
 e. Given these data, develop simulations as above with the user-defined function, `PopSim`. Describe the distribution of projected population sizes for 2010.
+
+```{r}
+
+```
+
 
 ### 1.2. Doubling Time
 
