@@ -725,9 +725,14 @@ So the intrinsic rate of growth is `r format(round(calc_intric_rate(), 2), nsmal
 
 Alternatively, we could use a regression based method to figure this out. Indeed, since we know that $N_{t+1} - N_t \approx\frac{dN_t}{dt} = N_tr$, we can run the following linear model: 
 
+\begin{align}
+ \&(N_{t+1} - N_t) = \beta N_t + \epsilon_t
+\end{align}
+
 $(N_{t+1} - N_t) = \beta N_t + \epsilon_t$
 
-\noindent where $\beta = r$. Using World
+
+\noindent where $\beta = r$. Below I estimate sing World Bank global population data 
 
 ```{r}
 
@@ -740,7 +745,7 @@ pop_wb_w <- pop_wb %>%
   filter(country == "World") %>%
   mutate(change = value - dplyr::lead(value), lead_value = dplyr::lead(value))
 
-lm(change ~  0 + lead_value, data=pop_wb_w)
+lm_pop <- lm(change ~  0 + lead_value, data=pop_wb_w)
 
 ```
 
