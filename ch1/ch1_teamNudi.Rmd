@@ -654,7 +654,7 @@ lily_plot <- ggplot(lily_df, aes(x = year, y = N)) +
   geom_line(lty = 2) +
   ggtitle('Lily Population Size from 1996-2005') +
   scale_x_continuous(breaks = 1996:2005) +
-  labs(x = "Year", y = "Population Size (N)") +
+  labs(x = "Year", y = "Population Size (N)") 
 lily_plot
 
 ```
@@ -664,7 +664,7 @@ b. Calculate $R$ for each year; graph $R$ vs. time.
 ```{r}
 
 lily_df <- lily_df %>% 
-  mutate(r = N/lag(N)) %>% 
+  mutate(r = N/lag(N))  
   
 lily_rate <- ggplot(lily_df, aes(x = year, y = r)) +
                       geom_point(size = 2) +
