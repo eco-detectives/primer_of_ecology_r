@@ -333,6 +333,8 @@ lambda_plot
 
 # QUESTION: How did Jess just plot time below? Do we also not need to specify "x =" and "y="?
 
+#Answer: NOPE
+
 ```
 
 ```{r}
@@ -455,7 +457,22 @@ projPlt
 ```{r}
 # Sean's version
 
+N0 <-2
+proj_cont <- crossing(r = c(-0.03, -0.02, 0, 0.02, 0.03), time = 1:100) %>% 
+  mutate(exp_growth = N0*(r*time)) %>% 
+  mutate(log_exp_growth <- log(exp_growth)) %>% 
+  gather(key=rateDef,value=pop,-c(time,r))
 
+# What did Jess do in the last line (above)?
+
+  
+
+projPlt<-ggplot(proj,aes(time,pop))+
+  geom_line(aes(lty=factor(r)))+ # What does a line type of factor(r) mean?
+  facet_wrap(~rateDef,scales = "free")+
+  labs(title="Effect of r - JLC",y="N") # So we don't need to separately add the title?
+  
+projPlt
 
 ```
  
@@ -628,56 +645,64 @@ qqline(scale(logOR))
 ### 1.1. Geometric growth Analyze the following data, relying on selected snippets of previous code.
 
 a. In the years 1996 through 2005, lily population sizes are $N = 150, 100, 125, 200, 225, 150, 100, 175, 100, 150$. Make a graph of population size versus time. 
+```{r}
+
+lily_df <- data.frame(N = c(150, 100, 125, 200, 225, 150, 100, 175, 100, 150), year = 1996:2005)
+
+lily_plot <- ggplot(lily_df, aes(x = year, y = N)) +
+  geom_point(size = 2) +
+  geom_line(lty = 2) +
+  ggtitle('Lily Population Size from 1996-2005') +
+  scale_x_continuous(breaks = 1996:2005) +
+  labs(x = "Year", y = "Population Size (N)")
+lily_plot
+
+```
+
 b. Calculate $R$ for each year; graph $R$ vs. time.
-c. Calculate arithmetic and geometric average growth rates of this population. 
+
+```{r}
+
+lily_df <- lily_df %>% 
+  mutate(r = N/lag(N)) %>% 
+  
+lily_rate <- ggplot(lily_df, aes(x = year, y = r)) +
+                      geom_point(size = 2) +
+  geom_line(lty = 2) +
+  ggtitle('Lily Population Size from 1996-2005') +
+  scale_x_continuous(breaks = 1996:2005) +
+  labs(x = "Year", y = "Growth rate (r)")
+lily_rate
+  
+```
+
+c. Calculate arithmetic and geometric average growth rates of this population.
+
+```{r}
+
+```
+
 d. Based on the appropriate average growth rate, what would be the expected population size in 2025? What would the estimated population size be if you used the inappropriate mean? Do not use simulation for this.
+
+```{r}
+
+
+
+```
+
 e. Given these data, develop simulations as above with the user-defined function, `PopSim`. Describe the distribution of projected population sizes for 2010.
+
+```{r}
+
+```
+
 
 ### 1.2. Doubling Time
 
 a. Derive the formula for doubling time in a population with continuous exponential growth.
-
-```{r}
-
-doubTime<-function(r,m=2){
-  log(m)/r
-}
-
-doubTime(c(0,1,2))
-
-```
-
-
 b. What is the formula for tripling time?
-
-```{r}
-
-doubTime(c(0,1,2),3)
-
-```
-
-
 c. If we are modeling humans or _E. coli_, would a model of geometric, or exponential growth be better? Why?
-
-*Geometric growth = discrete growth*  
-*Exponential growth = continuous growth*  
-
-The answer depends a bit on the scale, but humans are usually best modeled with geometric growth since humans cannot have more than one reproduction event in a year, for example. _E. coli_ more appropriately modeled with exponential growth since they grow rapidly and asexually, so with few limitations. 
-
-
 d. If an _E. coli_ population grew from 1000 cells to 2 × 10^9^ cells in 6 h, what would its intrinsic rate of increase be? Its doubling time?
-
-$$N_t = N_0e^{rt}$$
-
-$$2*10^{9}=(1*10^{3})e^{6r}$$
-
-$$2*10^{6}=e^{6r}$$
-
-$$ln(2*10^{6})=6r$$
-
-$$r=\frac{ln(2*10^{6})}{6}$$
-r = `r log(2*10^6)/6`
-
 
 ### 1.3. Human Population Growth
 
@@ -720,68 +745,7 @@ lm(change ~  0 + lead_value, data=pop_wb_w)
 ```
 
 b. Graph the model of human population size population size from 1700 to 2020.
-
-```{r}
-
-#Vincent's answer
-
-
-## Function to create population data frame
-create_pop_data <- function(initial_pop = 0.630, first_year = 1700, last_year = 2020){
-
-  pop <- data.frame(year = first_year:last_year, 
-                  population = c(initial_pop,initial_pop*exp(calc_intric_rate()*1:(last_year - first_year))))
-
-  return(pop)
-  
-}
-
-
-## Graphing
-graph1b <- ggplot(create_pop_data(), aes(x=year, y=population)) + 
-  geom_line() +
-  labs(x = "Year", y = "Humans (in billions)") +
-  theme(axis.text = element_text(size=rel(0.55))) + 
-  theme_classic()
-  
-
-```
-
-\begin{center}\textbf{Figure X: Model of human population size from `r format(create_pop_data()$year[1])` to `r format(create_pop_data()$year[nrow(create_pop_data())])`}\end{center}
-```{r , eval=TRUE, echo=FALSE}
-graph1b
-```
-
-
 c. Add points on the graph indicating the population doublings from 1700 onward.
-
-```{r}
-
-max_double <- log(create_pop_data()$population[nrow(create_pop_data())]/create_pop_data()$population[1])/log(2)
-
-doublings <- create_pop_data()$population[1]*2^(1:round(max_double))
-
-##Lot's of adhoc stuff here
-
-data <- create_pop_data()
-data$double <- NA
-
-for (i in 1:(length(doublings)-1)){
-  temp <- which(abs(create_pop_data()$population-doublings[i])==min(abs(create_pop_data()$population-doublings[i])))
-  data$double[temp] <- 1
-}
-
-graph1c <- graph1b + 
-           geom_point(data=data, aes(shape=as.factor(double))) + 
-           theme_classic() + 
-           theme(legend.position = "none") 
-
-```
-
-```{r , eval=TRUE, echo=FALSE}
-graph1c
-```
-
 d. What will prevent humans from outweighing the planet by the end of this century? What controls human population growth? Do these controls vary spatially across the planet? See Cohen [33] to get going.
 
 We known from ESM201 that there are four assumptions behind the exponential growth model: (1) homogeneous population, (2) continuous reproduction, (3) homogeneous habitat and (4) unlimited resources. 
