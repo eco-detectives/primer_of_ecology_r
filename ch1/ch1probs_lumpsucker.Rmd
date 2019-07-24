@@ -249,6 +249,24 @@ What is the formula for tripling time?
 # t = ln(3)/r
 ```
 
+```{r}
+### Casey creating a generic function:
+doub_time <- function(r, x = 2) {
+  if(length(x) > 1 & length(r) > 1) {
+    ### both are vectors!  calculate all combos and return dataframe
+    df <- tidyr::crossing(x, r) %>%
+      mutate(t_double = log(x) / r)
+    return(df)
+  } else {
+    ### just numbers or one vector, calculate and return a vector
+    t_double <- log(x) / r
+    return(t_double)
+  }
+}
+
+doub_time(r = 1.2, x = c(2, 3, 4)) ### 4x time should be 2 x 2x time
+doub_time(r = c(1.1, 1.3, 1.5), x = c(2, 3, 4))
+```
 
 ###1.2c
 
@@ -281,9 +299,27 @@ t_doubling_hr <- log(2)/r ### in hours - so about...
 t_doubling_min <- t_doubling_hr*60 ### ~ 17 min?
 ```
 
+```{r}
+### Casey using function above and a new function
+
+calc_r <- function(n_0, n_f, t) {
+  if(length(n_0) > 1 | length(n_f) > 1 | length(t) > 1) {
+    stop('Initial and final pops and time must be length 1')
+  }
+  r <- log(n_f / n_0) / t
+}
+
+r1 <- calc_r(n_0 = 1000, n_f = 2e9, t = 6)
+
+doub_hr <- doub_time(r1, 2)
+
+doub_hr * 60
+```
+
 ## 1.3. Human Population Growth
 
 ###1.3a 
+
 There were about 630 million people on the planet in 1700, and 6.3 billion in 2003 [33]. What was the intrinsic rate of increase, r?
 ```{r}
 ### molly
@@ -293,9 +329,13 @@ N303 = 6300000000
 t = 303
 
 r_humans <- log(N303/N0)/(303)
+
+### Casey's from function above:
+r_hum <- calc_r(n_0 = 6.3e8, n_f = 6.3e9, t = (2003 - 1700))
 ```
 
 ###1.3b 
+
 Graph the model of human population size population size from 1700 to 2020.
 ```{r}
 ### molly
@@ -309,6 +349,7 @@ ggplot(humans, aes(x = year, y = Nt)) +
 ```
 
 ###1.3c
+
 Add points on the graph indicating the population doublings from 1700 onward.
 
 ```{r}
