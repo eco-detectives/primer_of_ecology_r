@@ -2,13 +2,13 @@
 title: 'PoER: Ch. 1 - Team Nudi'
 author: Jessica, Bertamus, Sean, Vincent
 output: 
+  pdf_document:
+    toc: false
   html_document:
     toc: false
     number_sections: false
     theme: cerulean
     highlight: haddock
-  pdf_document:
-    toc: false
 ---
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
@@ -735,6 +735,9 @@ r = `r log(2*10^6)/6`
 
 
 ### 1.3. Human Population Growth
+
+<!-- look, we can comment out text here like this! -->
+<!-- and morelines too -->
 
 a. There were about 630 million people on the planet in 1700, and 6.3 billion in 2003 [33]. What was the intrinsic rate of increase, r?
 
