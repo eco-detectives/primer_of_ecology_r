@@ -1,0 +1,591 @@
+---
+title: 'Primer of Ecology with R: chapter 2'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 2 {.tabset}
+
+> Casey's note: in this chapter, if we're using matrices for a lot of things, not sure that Tidyverse functions will help us too much (they're focused on data.frames).  So maybe our coding practice can focus on expanding the examples in the text, and/or writing functions to apply the examples?
+
+## 2.1 A Hypothetical Example
+
+### 2.1.2 A brief primer on matrices
+
+#### Matrices in R
+
+Let’s define two $2 \times 2$ matrices, filling in one by rows, and the other by columns.
+
+``` {r}
+
+M <- matrix(1:4, nr = 2, byrow = T) 
+#      [,1] [,2]
+# [1,]    1    2
+# [2,]    3    4
+
+N <- matrix(c(10, 20, 30, 40), nr = 2)
+#      [,1] [,2]
+# [1,]   10   30
+# [2,]   20   40
+```
+
+
+Following our rules above, we would multiply and then sum the first row of $M$ by the first column of $N$, and make this element $a_{11}$ of the resulting matrix product.
+
+``` {r}
+1 * 10 + 2 * 20
+# [1] 50
+
+### We multiply matrices using %*% to signify that we mean matrix multiplication. 
+M %*% N
+#      [,1] [,2]
+# [1,]   50  110
+# [2,]  110  250
+```
+
+### 2.1.3 Population projection
+
+#### Stage structured growth - one step
+
+First, we create a population projection matrix, and a vector of stage class abundances for year zero.
+
+```{r}
+A <- matrix(c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), nr = 3,
+            byrow = TRUE)
+N0 <- matrix(c(100, 250, 50), ncol = 1)
+```
+
+Now we perform matrix multiplication between the projection matrix and `N0`. 
+
+``` {r}
+N1 <- A %*% N0
+#      [,1]
+# [1,] 1125
+# [2,]   30
+# [3,]  170
+
+```
+
+Note that the first stage declined, while the second and third stages increased.
+
+#### Stage structured growth - multiple steps
+
+Now we project our population over six years, using a for-loop. We use a for-loop, rather than sapply, because each year depends on the previous year (see the Appendix, sec. B.6). First, we set the number of years we want to project, and then create a matrix to hold the results. We put `N0` in the first column.
+
+``` {r}
+years <- 6
+N.projections <- matrix(0, nrow = nrow(A), ncol = years + 1)
+N.projections[, 1] <- N0
+```
+
+Now we perform the iteration with the for-loop.
+
+> Casey's note: this is a weird way of using for loops - on a single line.  Reformat it using Hadley's style guide
+
+```{r}
+for (i in 1:years) N.projections[, i + 1] <- A %*% N.projections[, i]
+```
+
+Last, we graph the results for each stage (Fig. 2.3a). To graph a matrix, R is expecting that the data will be in columns, not rows, and so we need to transpose the projection matrix.
+
+``` {r}
+matplot(0:years, t(N.projections), type = "l", lty = 1:3,
+        col = 1, ylab = "Stage Abundance", xlab = "Year")
+legend("topleft", legend = c("Seeds", "Small Adult", "Large Adult"),
+       lty = 1:3, col = 1, bty = "n")
+```
+
+### 2.1.4 Population growth
+
+#### Annual growth rate
+
+Now let’s calculate $R_t = N_{t+1}/N_t$ for each year $t$. We first need to sum all the stages, by applying the sum function to each column.
+
+``` {r}
+N.totals <- apply(N.projections, 2, sum)
+
+### Now we get each Rt by dividing all the Nt+1 by each Nt. 
+### Using negative indices cause R to drop that element.
+Rs <- N.totals[-1]/N.totals[-(years + 1)]
+### We have one fewer Rs than we do years, so let’s plot each R 
+### in each year t, rather than each year t + 1 (Fig. 2.3b).
+
+plot(0:(years - 1), Rs, type = "b", xlab = "Year", ylab = "R")
+```
+
+## 2.2 Analyzing the Projection Matrix
+
+### Eigenanalysis in R
+
+Here we perform eigenanalysis on A.
+
+``` {r}
+eigs.A <- eigen(A)
+
+# $values
+# [1]  1.834+0.000i -0.467+1.159i -0.467-1.159i
+# $vectors
+#            [,1]              [,2]              [,3]
+# [1,] 0.98321+0i  0.97033+0.00000i  0.97033+0.00000i
+# [2,] 0.16085+0i -0.08699-0.21603i -0.08699+0.21603i
+# [3,] 0.08613+0i -0.02048+0.06165i -0.02048-0.06165i
+```
+
+Each eigenvalue and its corresponding eigenvector provides a solution to eq. 2.8.
+
+### 2.2.2 Finite rate of increase – $\lambda$
+
+#### Finding $\lambda$
+
+Next we explicitly find the index position of the largest absolute value of the eigenvalues. In most cases, it is the first eigenvalue.
+``` {r}
+dom.pos <- which.max(eigs.A[["values"]])
+```
+
+We use that index to extract the largest eigenvalue. We keep the real part, using `Re`, dropping the imaginary part. (Note that although the dominant eigenvalue will be real, R will include an imaginary part equal to zero (0i) as a place holder if any of the eigenvalues have a non-zero imaginary part).
+``` {r}
+L1 <- Re(eigs.A[["values"]][dom.pos])
+# [1] 1.834
+```
+
+`L1` is $\lambda_1$, the aysmptotic finite rate of increase.
+
+#### Power iteration method of eigenanalysis
+
+Because growth is an exponential process, we can figure out what is most important in a projection matrix by multiplying it by the stage structure many times. This is actually one way of performing eigenanalysis, and it is called the power iteration method. It is not terribly efficient, but it works well in some specific applications. (This method is not used by modern computational languages such as R.) The population size will grow toward infinity, or shrink toward zero, so we keep rescaling $N$, dividing the stages by the total $N$, just to keep things manageable.
+Let $t$ be big, and rescale $N$. 
+
+``` {r}
+t <- 20
+Nt <- N0/sum(N0)
+```
+
+We then create a for-loop that re-uses `Nt` for each time step, making sure we have an empty numeric vector to hold the output.
+
+> Casey's note: this is an even weirder format for a for loop - reformat it!
+
+``` {r}
+R.t <- numeric(t)
+for (i in 1:t) R.t[i] <- {
+     Nt1 <- A %*% Nt
+     R <- sum(Nt1)/sum(Nt)
+ Nt <- Nt1/sum(Nt1) +R
+}
+```
+Let’s compare the result directly to the point estimate of $\lambda_1$ (Fig. 2.4).
+``` {r}
+par(mar = c(5, 4, 3, 2))
+plot(1:t, R.t, type = "b", 
+     main = quote("Convergence Toward  " * lambda))
+points(t, L1, pch = 19, cex = 1.5)
+```
+
+
+### 2.2.3 Stable stage distribution
+
+#### Calculating the stable stage distribution
+
+The dominant eigenvector, $\mathbf w$, is in the same position as the dominant eigenvalue. We extract $\mathbf w$, keeping just the real part, and divide it by its sum to get the stable stage distribution.
+``` {r}
+w <- Re(eigs.A[["vectors"]][, dom.pos])
+
+ssd <- w/sum(w)
+
+# round(ssd, 3)
+# [1] 0.799 0.131 0.070
+```
+
+This shows us that if the projection matrix does not change over time, the popu- lation will eventually be composed of 80% seeds, 13% small adults, and 7% large adults. Iterating the population projection will also eventually provide the stable stage distribution (e.g., Fig. 2.3a).
+
+### 2.2.4 Reproductive value
+
+#### Calculating reproductive value
+
+We get the left eigenvalues and -vectors by performing eigenanalysis on the transpose of the projection matrix. The positions of the dominant right and left eigenvalues are the same, and typically they are the first. We perform eigenanalysis, extracting just the the dominant left eigenvector; we then scale it, so the stage 1 has a reproductive value of 1.0.
+``` {r}
+M <- eigen(t(A))
+v <- Re(M$vectors[, which.max(Re(M$values))])
+RV <- v/v[1]
+# [1]  1.000  6.113 21.418
+```
+
+Here we see a common pattern, that reproductive value, $v$, increases with age. In general, reproductive value of individuals in a stage increases with increasing probability of reaching fecund stages.
+
+### 2.2.5 Sensitivity and elasticity
+
+#### Sensitivity of projection matrices
+
+Let’s calculate sensitivities now. First we calculate the numerator for eq. 2.13.
+``` {r}
+vw.s <- v %*% t(w)
+```
+
+Now we sum these to get the denominator, and then divide to get the sensitivities. (The dot product $\mathbf v \cdot \mathbf w$ yields a $1 \times 1$ matrix; in order to divide by this quantity, the simplest thing is to cause the dot product to be a simple scalar rather than a matrix (using `as.numeric`), and then R will multiply each element.)
+
+``` {r}
+S <- vw.s/as.numeric(v %*% w)
+#       [,1]    [,2]   [,3]
+# [1,] 0.258 0.04221 0.0226
+# [2,] 1.577 0.25798 0.1381
+# [3,] 5.526 0.90396 0.4840
+```
+
+We see from this that the most important transition exhibited by the plant is $s_{21}$, surviving from the seed stage to the second stage (the element $s_{31}$ is larger, but is not a transition that the plant undergoes).
+
+#### Elasticity of projection matrices
+
+In R, this is also easy. 
+
+``` {r}
+elas <- (A/L1) * S
+# round(elas, 3)
+#       [,1]  [,2]  [,3]
+# [1,] 0.000 0.012 0.246
+# [2,] 0.258 0.000 0.000
+# [3,] 0.000 0.246 0.238
+```
+
+## 2.3 Confronting Demographic Models with Data
+
+### 2.3.3 Preliminary data management
+
+Let’s import the data and have a look at it. For these purposes, we will assume that the data are clean and correct. Obviously, if I were doing this for the first time, data-checking and clean-up would be an important first step. Here we simply load them from the primer package.
+
+``` {r}
+data(stagedat)
+data(fruitdat)
+data(seeddat)
+```
+
+Now I look at the structure of the data to make sure it is at least approximately what I think it is.
+``` {r}
+str(stagedat)
+```
+
+The stage data provide the stage of each individual in the study. Each row is an individual, and its ID number is in column 1. Data in columns 2–4 identify its stage in years 2003–2005.
+
+We can count, or tabulate, the number of individuals in each stage in 2004.
+
+``` {r}
+table(stagedat[["Y2004"]])
+```
+
+We see, for instance, that in 2004 there were 165 individuals in stage 5. We also see that 17 individuals were dead in 2004 (stage = 0); these were alive in either 2003 or 2005.
+
+The fruit data have a different structure. Each row simply identifies the stage of each individual (col 1) and its fertility (number of seeds) for 2004.
+
+``` {r}
+str(fruitdat)
+```
+
+We can tabulate the numbers of seeds (columns) of each stage (rows).
+
+``` {r}
+table(fruitdat[["Stage"]], fruitdat[["Y2004"]])
+```
+
+For instance, of the individuals in stage 4 (row 1), 28 individuals had no seeds, and one individual had 6 seeds. Note also that only stage 4 and 5 had plants with any seeds.
+
+The seed data are the fates of each seed in a sample of 400 seeds, in a data frame with only one column.
+
+``` {r}
+table(seeddat)
+```
+Seeds may have germinated (2), remained viable (1), or died (0).
+
+### 2.3.4 Estimating projection matrix
+
+Now we work through the steps to create the projection matrix from individuals tagged in year 2003 and re-censused in 2004. If we convert the life cycle graph (Fig. 2.5) into a transition matrix.
+
+Along the major diagonal (where $i = j$) the $P_{ij}$ represent the probability that a palm stays in the same stage. In the lower off-diagonal $(i > j)$ the $P_{ij}$ represent the probability of growth, that an individual grows from stage $j$ into stage $i$. In the upper off-diagonal $(i < j)$ the $P_{ij}$ represent the probability of regression, that an individual regresses from stage $j$ back into stage $i$. The $F_i$ represent the fertility of stage $i$.
+
+As a practical matter, we will use basic data manipulation in R to transform the raw data into transition elements. We had no particular reason for having the data in this form, this is simply how the data were available.
+
+$$\begin{pmatrix}
+P_{11} &      0 &      0 &    F_4 &    F_5\\
+P_{21} & P_{22} & P_{23} &      0 &      0\\
+0      & P_{32} & P_{33} & P_{34} &      0\\
+0      &      0 & P_{43} & P_{44} & P_{45}\\
+0      &      0 &      0 & P_{54} & P_{55}
+\end{pmatrix}$$
+
+We first create a zero matrix that we will then fill.
+
+``` {r}
+mat1 <- matrix(0, nrow = 5, ncol = 5)
+```
+
+#### Fertilities
+
+For each stage, we get mean fertility by applying mean to each stage of the 2004 fertility data. Here Stage is a factor and tapply will caculate a mean for each level of the factor. We will assume that half of the seeds are male. Therefore, we divide fertility by 2 to calculate the fertility associated with just the female seeds.
+
+``` {r}
+ferts <- tapply(fruitdat$Y2004, fruitdat$Stage, mean)/2
+ferts
+```
+
+These fertilities, $F_4$ and $F_5$, are the transitions from stages 4 and 5 (adults) to stage 1 (seeds). Next we insert the fertilities (`ferts`) into the matrix we established above.
+
+``` {r}
+mat1[1, 4] <- ferts[1]
+mat1[1, 5] <- ferts[2]
+```
+
+#### Seed transitions
+Now we get the frequencies of each seed fate (die, remain viable but dormant, or germinate), and then divide these by the number of seeds tested (the length of the seed vector); this results in proportions and probabilities.
+``` {r}
+seed.freqs <- table(seeddat[, 1])
+seedfates <- seed.freqs/length(seeddat[, 1])
+seedfates
+```
+
+The last of these values is $P_{21}$, the transition from the first stage (seeds) to the stage 2 (seedlings). The second value is the transition of seed dormancy ($P_{11}$), that is, the probability that a seed remains a viable seed rather than dying or becoming a seedling.
+
+Next we insert the seed transitions into our projection matrix.
+
+``` {r}
+mat1[1, 1] <- seedfates[2]
+mat1[2, 1] <- seedfates[3]
+```
+
+#### Vegetative stage transitions
+
+Here we calculate the transition probabilities for the vegetative stages. The pair of for-loops will calculate these transitions and put them into stages 2–5.The functions inside the for-loops (a) subset the data for each stage in 2003, (b) count the total number of individuals in each stage in 2003 (year j), (c) sum the number of individuals in each stage in 2004, given each stage for 2003, and then (d) calculate the proportion of each stage in 2003 that shows up in each stage in 2004.
+
+
+``` {r}
+for (i in 2:5) {
+  for (j in 2:5) mat1[i, j] <- {
+    x <- subset(stagedat, stagedat$Y2003 == j)
+    jT <- nrow(x)
+    iT <- sum(x$Y2004 == i)
+    iT/jT
+  }
+}
+
+round(mat1, 2)
+
+```
+Here we can see the key parts of a real projection matrix.
+
+Compare these probabilities and fertilities to the life cycle graph and its matrix (Fig. 2.5, eq. (2.15)).
+
+The diagonal elements $P_{jj}$ are stasis probabilities, that an individual remains in that stage. Growth, from one stage to the next, is the lower off-diagonal, $P_{j+1,j}$. Regression, moving back one stage, is the upper off diagonal, $P_{j−1,j}$. The fertilities are in the top row, in columns 4 and 5. Note that there is a transition element in our data that is not in eq. (2.15): $P_{53}$. This corresponds to very rapid growth — a real event, albeit highly unusual.
+
+
+#### A function for all transitions
+
+What a lot of work! The beauty, of course, is that we can put all of those lines of code into a single function, called, for instance, `ProjMat`, and all we have to supply are the three data sets. You could examine this function by typing `ProjMat` on the command line, with no parentheses, to see the code and compare it to our code above. You code also try it with data.
+
+``` {r}
+ProjMat(stagedat, fruitdat, seeddat)
+```
+
+This provides the observed transition matrix (results not shown).
+
+### 2.3.5 Eigenanalyses
+
+Next we want to do all those eigenanalyses and manipulations that gave us $\lambda$, the stable age distribution,reproductive value, and the sensitivity and elasticity matrices. All of this code is wrapped up in the function `DemoInfo`. Convince yourself it is the same code by typing DemoInfo with no parentheses at the prompt. Here we try it out on the projection matrix we created above, and examine the components of the output.
+
+``` {r}
+str(DemoInfo(mat1))
+# List of 6
+#  $ lambda
+#  $ SSD
+#  $ RV
+# : num 1.13
+# : num [1:5] 0.5632 0.195 0.0685 0.0811 0.0922
+# : num [1:5] 1 7.76 14.37 20.18 33.95
+# $ Sensitivities: num [1:5, 1:5] 0.072 0.559 1.034 1.452 2.442 ...
+# $ Elasticities : num [1:5, 1:5] 0.00174 0.0702 0 0 0 ...
+# $ PPM          : num [1:5, 1:5] 0.0275 0.1425 0 0 0 ...
+```
+
+We find that `DemoInfo` returns a list with six named components. The first component is a scalar, the second two are numeric vectors, and the last three are numeric matrices. The last of these is the projection matrix itself; it is often useful to return that to prove to ourselves that we analyzed the matrix we intended to.
+
+### 2.3.6 Bootstrapping a demographic matrix
+
+All of the above was incredibly useful and provides the best estimates of most or all the parameters we might want. However, it does not provide any idea of the certainty of those parameters. By bootstrapping these estimates by resampling our data, we get an idea of the uncertainty.
+
+Here we work through the steps of resampling our data, as we build a function, step by step, inch by inch. The basic idea of resampling is that we assume that our sample data are the best available approximation of the entire popu- lation. Therefore, we draw, with replacement, new data sets from the original one. See the last section in Chapter 1 for ideas regarding simulations and bootstrapping.
+
+We will create new resampled (bootstrapped) data sets, where the rows of the original data sets are selected at random with replacement. We then apply `ProjMat` and `DemoInfo`.
+
+The first step is to get the number of observations in the original data.
+
+``` {r}
+nL <- nrow(stagedat)
+nF <- nrow(fruitdat)
+nS <- nrow(seeddat)
+```
+
+With these numbers, we will be able to resample our original data sets getting the correct number of resampled observations.  
+
+Now we are going to use lapply to perform everything multiple times. By “everything,” I mean
+
+1. resample the observations to get bootstrapped data sets for vegetative stages, seed fates, and fertilities,
+2. calculate the projection matrix based on the three bootstrapped data sets,
+3. perform eigenanalysis and calculate $\lambda$, stage structure, sensitivities, and
+elasticities.
+
+All of that is one replicate simulation, $n = 1$.
+For now, let’s say n = 5 times as a trial. Eventually this step is the one we
+will ask R to do 1000 or more times.
+``` {r}
+n <- 5
+```
+
+Next we use `lapply` to do everything, that is, a replicate simulation, $n$ times. It will store the $n$ replicates in a list, $n$ components long. Each of the $n$ components will be the output of `DemoInfo`, which is itself a list.
+
+> Casey's note: the `lapply()` here has a function built on-the-fly.  What is actually going into the output?  throw a `return()` in there just to make it absolutely clear...
+``` {r}
+n <- 5
+out <- lapply(1:n, function(i) {
+  stageR <- stagedat[sample(1:nL, nL, replace = TRUE), ]
+  fruitR <- fruitdat[sample(1:nF, nF, replace = TRUE), ]
+  seedR  <- as.data.frame(seeddat[sample(1:nS, nS, replace = TRUE), ])
+  matR   <- ProjMat(stagedat = stageR, fruitdat = fruitR, seeddat = seedR)
+  DemoInfo(matR)
+})
+```
+
+This code above uses `sample` to draw row numbers at random and with replacement to create random draws of data (`stageR`, `fruitR`, and `seedR`). We then use `ProjMat` to generate the projection matrix with the random data, and use `DemoInfo` to perform all the eigenanalysis and demographic calculations.
+
+Let’s look at a small subset of this output, just the five $\lambda$ generated from five different bootstrapped data sets. The object out is a list, so using sapply on it will do the same thing to each component of the list. In this case, that something is to merely extract the bootstrapped $\lambda$.
+``` {r}
+sapply(out, function(x) x$lambda)
+# [1] 1.084 1.137 1.134 1.126 1.158
+```
+We see that we have five different estimates of $\lambda$, each the dominant eigenvalue of a projection matrix calculated from bootstrapped data.
+We now have all the functions we need to analyze these demographic data. I have put all these together in a function called `DemoBoot`, whose arguments (inputs) are the raw data, and $n$, the number of bootstrapped samples.
+
+``` {r}
+args(DemoBoot)
+# function (stagedat = NULL, fruitdat = NULL, seeddat = NULL, n = 1)
+# NULL
+```
+
+
+### 2.3.7 The demographic analysis
+
+Now we are armed with everything we need, including estimates and means to evaluate uncertainty, and we can move on to the ecology. We first interpret point estimates of of demographic information, including $\lambda$ and elasticities. Then we ask whether $\lambda$ differs significantly from 1.0 using our bootstrapped confidence interval.
+
+First, point estimates based on original data.
+``` {r}
+estims <- DemoInfo(ProjMat(stagedat, fruitdat, seeddat))
+estims$lambda
+# [1] 1.134
+```
+Our estimate of $\lambda$ is greater than one, so the population seems to be growing. Which transitions seem to be the important ones?
+``` {r}
+round(estims$Elasticities, 4)
+```
+
+It appears that the most important transition is persistence in the largest adult stage ($a_{55}$ = 0.3). Specifically, proportional changes to the persistence in this stage, neither regressing nor dying, are predicted to have the largest postive effect on the lambda of this population.
+
+We stated above that the population appears to be growing. However, this was based on a sample of the population, and not the entire population. One way to make inferences about the population is to ask whether the confidence interval for $\lambda$ lies above 1.0. Let’s use DemoBoot to bootstrap our confidence interval for $\lambda$. First, we’ll run the bootstrap, and plot the $\lambda$’s.
+``` {r}
+system.time(out.boot <- DemoBoot(stagedat, fruitdat, seeddat,
+                                 n = 1000))
+ #   user  system elapsed
+ # 12.539   0.022  12.561
+lambdas <- sapply(out.boot, function(out) out$lambda)
+hist(lambdas, prob = T)
+lines(density(lambdas))
+```
+
+From this it seems clear that the population is probably growing ($\lambda$ > 1.0), because the lower limit of the histogram is relatively large (Fig. 2.6). We need to get a real confidence interval, however. Here we decide on a conventional α and then calculate quantiles, which will provide the median (the 50th percentile), and the lower and upper limits to the 95% confidence interval.
+
+``` {r}
+alpha <- 0.05
+quantile(lambdas, c(alpha/2, 0.5, 1 - alpha/2))
+#  2.5%   50% 97.5%
+# 1.062 1.129 1.193
+```
+
+From this we see that the 95% confidence interval (i.e. the 0.025 and 0.975 quantiles) does not include 1.0. Therefore, we conclude that under the conditions experienced by this population in this year, this _Chamaedorea_ population, from which we drew a sample, could be characterized as having a long-term asymptotic growth rate, $\lambda$, that is greaater than 1.0, and therefore would be likely to increase in abundance, if the environment remains the same.
+
+
+#### A caveat and refinement
+
+Bootstrapping as we have done above, known variously as the basic or percentile bootstrap, is not a cure-all, and it can give inappropriate estimation and inferrence under some circumstances. A number of refinements have been proposed that make bootstrapping a more precise and accurate procedure. The problems are worst when the data are such that the bootstrap replicates are highly skewed, so that the mean and median are quite different. When the data are relatively symmetric, as ours is (Fig. 2.6), the inference is relatively reliable.
+Often skewness will cause the mean of the bootstrap samples to differ from our observed estimate, and we refer to this as bias. We should adjust the boot- strapped samples for this bias [140]. Here we calculate the bias.
+``` {r}
+bias <- mean(lambdas) - estims$lambda
+bias
+# [1] -0.004208
+```
+We find that the bias is very small; this gives us confidence the our confidence intervals are pretty good. Nonetheless, we can be thorough and correct our samples for this bias. We subtract the bias from the bootstrapped $\lambda$ to get our confidence interval.
+``` {r}
+quantile(lambdas - bias, c(alpha/2, 0.5, 1 - alpha/2))
+#  2.5%   50% 97.5%
+# 1.067 1.133 1.197
+```
+These bias-corrected quantiles also indicate that this population in this year can be characterized by a $\lambda$ > 1.
+
+If we want to infer something about the future success of this population, we need to make additional assumptions. First, we must assume that our sample was representative of the population; we have every reason to expect it is. Second, we need to assume that this year was representative of other years. In particular, we need to assume that the weather, the harvest intensity, and the browsing intensity are all representative. Clearly, it would be nice to repeat this for other years, and to try to get other sources of information regarding these factors.
+
+
+## Problems
+
+### 2.1. Demographic analysis of a plant population
+
+Goldenseal (_Hydrastis canadensis_) is a wild plant with medicinal properties that is widely harvested in eastern North American. Its rhizome (the thick underground stem) is dug up, and so harvesting can and frequently does have serious negative impacts on populations. A particular population of goldenseal is tracked over several years and investigators find, tag, and monitor several sizes of individuals. After several years of surveys, they identify six relevant stages: dormant seed, seedling, small 1-leaved plant, medium 1-leaved plant, large 1-leaved plant, fertile plant (flowering, with 2 leaves). They determine that the population project matrix is:
+
+$$A = \begin{pmatrix}
+0     & 0     & 0     & 0     & 0     & 1.642\\
+0.098 & 0     & 0     & 0     & 0     & 0.437 \\
+0     & 0.342 & 0.591 & 0.050 & 0.095 & 0\\
+0     & 0.026 & 0.295 & 0.774 & 0.177 & 0.194\\
+0     & 0     & 0     & 0.145 & 0.596 & 0.362\\
+0     & 0     & 0     & 0.016 & 0.277 & 0.489
+\end{pmatrix}$$
+
+a) Draw a life cycle graph of this population of goldenseal. Include the matrix elements associated with each transition.
+b) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph population dynamics for all stages for 10 years.
+c) Determine the stable stage distribution.
+d) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
+f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
+
+### 2.2. Demographic analysis of an animal population
+
+Crouse et al. performed a demographic analysis of an endangered sea turtle species, the loggerhead (_Caretta caretta_). Management of loggerhead populations seemed essential for their long term survival, and a popular management strategy had been and still is to protect nesting females, eggs, and hatchlings. The ground breaking work by Crouse11 and her colleagues compiled data to create a stage-based projection matrix to analyze quantitatively which stages are important and least important in influencing long-term growth rate. This work led to US Federal laws requiring that US shrimp fishermen use nets that include Turtle Excluder Devices (TEDs, http://www.nmfs.noaa.gov/pr/species/turtles/teds.htm). Crouse et al. determined the transition matrix for their loggerhead populations:
+
+$$A = \begin{pmatrix}
+0      & 0      & 0      & 0      & 127    & 4      & 80\\
+0.6747 & 0.7370 & 0      & 0      & 0      & 0      & 0 \\
+0      & 0.0486 & 0.6610 & 0      & 0      & 0      & 0\\
+0      & 0      & 0.0147 & 0.6907 & 0      & 0      & 0\\
+0      & 0      &      0 & 0.0518 & 0      & 0      & 0\\
+0      & 0      &      0 & 0      & 0.8091 & 0      & 0\\
+0      & 0      &      0 & 0      & 0      & 0.8091 & 0.8089
+\end{pmatrix}$$
+
+a) Draw a life cycle graph of this loggerhead population. Include the matrix elements associated with each transition.
+b) Determine the stable stage distribution.
+c) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+d) Determine the elasticities. Which transition(s) are most influential in deter- mining growth rate?
+e) What is the predicted long-term relative abundance of all stages? What do we call this?
+f) If your interest is to maximize long-term growth rate, in which stage(s) should you invest protection measures? Which stages are least likely to enhance long-term growth rate, regardless of protective measures?
+g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for all stages for 10 years. ___Casey note:___ _I think $\mathbf N$ should have seven elements, for the $7 \times 7$ matrix?  but the book only has six?_
