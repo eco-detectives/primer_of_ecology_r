@@ -106,6 +106,13 @@ Now we perform the iteration with the for-loop.
 for (i in 1:years) N.projections[, i + 1] <- A %*% N.projections[, i]
 ```
 
+```{r}
+###Mireia's version: loop using Hadley's style
+for (i in 1:years) {
+N.projections[, i + 1] <- A %*% N.projections[, i]
+}
+```
+
 Last, we graph the results for each stage (Fig. 2.3a). To graph a matrix, R is expecting that the data will be in columns, not rows, and so we need to transpose the projection matrix.
 
 ``` {r}
@@ -182,16 +189,34 @@ Nt <- N0/sum(N0)
 
 We then create a for-loop that re-uses `Nt` for each time step, making sure we have an empty numeric vector to hold the output.
 
-> Casey's note: this is an even weirder format for a for loop - reformat it!
+> Casey's note: this is an even weirder format for a for loop - reformat it! 
+> I made a correction to the transcription, now the for loop it is writen as it is in the book
 
 ``` {r}
 R.t <- numeric(t)
 for (i in 1:t) R.t[i] <- {
-     Nt1 <- A %*% Nt
-     R <- sum(Nt1)/sum(Nt)
- Nt <- Nt1/sum(Nt1) +R
+    Nt1 <- A %*% Nt
+    R <- sum(Nt1)/sum(Nt)
+    Nt <- Nt1/sum(Nt1) 
+    R
 }
 ```
+
+``` {r}
+###Mireia's version: reformating for loop
+
+R.t <- numeric(t)
+
+for (i in 1:t) {
+      R.t[i] <- {
+      Nt1 <- A %*% Nt
+      R <- sum(Nt1)/sum(Nt)
+      Nt <- Nt1/sum(Nt1)
+      R
+      }
+}      
+```
+
 Let’s compare the result directly to the point estimate of $\lambda_1$ (Fig. 2.4).
 ``` {r}
 par(mar = c(5, 4, 3, 2))
