@@ -49,7 +49,6 @@ N <- matrix(c(10, 20, 30, 40), nr = 2)
 # [2,]   20   40
 ```
 
-
 Following our rules above, we would multiply and then sum the first row of $M$ by the first column of $N$, and make this element $a_{11}$ of the resulting matrix product.
 
 ``` {r}
@@ -61,6 +60,11 @@ M %*% N
 #      [,1] [,2]
 # [1,]   50  110
 # [2,]  110  250
+
+## Vincent was not aware that M*N is not equivalent to M %*% N in R. I believe it's simply M*N in matlab for example 
+
+M <- data.frame(1:4)
+
 ```
 
 ### 2.1.3 Population projection
@@ -84,6 +88,48 @@ N1 <- A %*% N0
 # [2,]   30
 # [3,]  170
 
+```
+
+```{r}
+
+### Vincent's 3-stage structured growth function for X years and plots (covers the next chunks before 2.2)
+
+project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c(100, 250, 50), year=1){
+  
+  projected <- c()
+  
+  for (i in 1:year){
+    
+  A <- matrix(project, nr = 3,
+            byrow = TRUE)
+  N0 <- matrix(pop, ncol = 1)
+  N1 <- A %*% N0
+  pop <- N1
+  
+  temp <- cbind(i,c("Seeds","Small adult", "Large adult"),N1)
+  projected <-rbind(projected,temp)
+  
+  
+  }
+  
+  return_list <- list(N1, as.data.frame(projected))
+  
+  return(return_list)
+    
+}
+
+##Ugliest ggplot command
+
+graph1 <- ggplot(project_pop(year=6)[[2]], aes(x=as.numeric(as.character(i)),y=as.numeric(as.character(V3)),color=as.factor(V2))) +
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
+
+
+```
+
+```{r , eval=TRUE, echo=FALSE}
+graph1
 ```
 
 Note that the first stage declined, while the second and third stages increased.
