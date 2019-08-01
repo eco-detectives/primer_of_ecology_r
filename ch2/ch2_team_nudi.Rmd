@@ -92,10 +92,12 @@ N1 <- A %*% N0
 
 ```{r}
 
-### Vincent's 3-stage structured growth function for X years
+### Vincent's 3-stage structured growth function for X years 
 
 project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c(100, 250, 50), year=1){
-
+  
+  projected <- c()
+  
   for (i in 1:year){
     
   A <- matrix(project, nr = 3,
@@ -104,14 +106,28 @@ project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c
   N1 <- A %*% N0
   pop <- N1
   
+  temp <- cbind(i,c("Seeds","Small adult", "Large adult"),N1)
+  projected <-rbind(projected,temp)
+  
+  
   }
   
-  return(N1)
+  return_list <- list(N1, as.data.frame(projected))
+  
+  return(return_list)
     
 }
 
-## Check for yoursel that project_pop(,pop = project_pop()) = project_pop(year=2)
+##Ugliest ggplot command
 
+graph1 <- ggplot(project_pop(year=6)[[2]], aes(x=as.numeric(as.character(i)),y=as.numeric(as.character(V3)),color=as.factor(V2))) +
+  geom_line()
+
+
+```
+
+```{r , eval=TRUE, echo=FALSE}
+graph1
 ```
 
 Note that the first stage declined, while the second and third stages increased.
