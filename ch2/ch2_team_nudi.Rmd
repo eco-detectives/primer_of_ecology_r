@@ -92,35 +92,47 @@ N1 <- A %*% N0
 
 ```{r}
 
-### Vincent's 3-stage structured growth function for X years and plots (covers the next chunks before 2.2)
+### Vincent's N-stage structured growth function for X years and plots
 
 project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c(100, 250, 50), year=1){
   
-  projected <- c()
+  ## Set-up empty object for data.frame and calculate number of stages
+  stage_pop <- c()
+  number_stages <- sqrt(length(project))
   
+  ## Error message
+  if(number_stages%%1!=0){ 
+    stop('Projection matrix should be square.')
+  }
+  
+  ## Loop to project population
   for (i in 1:year){
     
-  A <- matrix(project, nr = 3,
-            byrow = TRUE)
-  N0 <- matrix(pop, ncol = 1)
-  N1 <- A %*% N0
-  pop <- N1
-  
-  temp <- cbind(i,c("Seeds","Small adult", "Large adult"),N1)
-  projected <-rbind(projected,temp)
-  
+    project_matrix <- matrix(project, nr = number_stages,
+              byrow = TRUE)
+    base_pop <- matrix(pop, ncol = 1)
+    predicted_pop <- project_matrix %*% base_pop
+    pop <- predicted_pop
+    
+    temp <- cbind(i,1:number_stages,predicted_pop)
+    stage_pop <-rbind(stage_pop,temp)
   
   }
   
-  return_list <- list(N1, as.data.frame(projected))
+  ## Format data.frame of projected population
+  stage_pop_df <- as.data.frame(stage_pop)
+  colnames(stage_pop_df) <- c("year", "stage", "pop")
+  
+  ## Return list of last period population and full data.frame
+  return_list <- list(predicted_pop, stage_pop_df)
   
   return(return_list)
     
 }
 
-##Ugliest ggplot command
+## Better ggplot graph
 
-graph1 <- ggplot(project_pop(year=6)[[2]], aes(x=as.numeric(as.character(i)),y=as.numeric(as.character(V3)),color=as.factor(V2))) +
+graph1 <- ggplot(project_pop(year=6)[[2]], aes(x=year,y=pop,color=as.factor(stage))) +
   geom_line() +  
   labs(x = "Year", y = "Stage abundance", color="Stage") +
   theme_classic()
