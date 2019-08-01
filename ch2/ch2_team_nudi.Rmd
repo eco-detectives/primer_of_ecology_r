@@ -121,7 +121,9 @@ project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c
 ##Ugliest ggplot command
 
 graph1 <- ggplot(project_pop(year=6)[[2]], aes(x=as.numeric(as.character(i)),y=as.numeric(as.character(V3)),color=as.factor(V2))) +
-  geom_line()
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
 
 
 ```
