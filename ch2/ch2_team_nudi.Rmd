@@ -92,7 +92,7 @@ N1 <- A %*% N0
 
 ```{r}
 
-### Vincent's 3-stage structured growth function for X years 
+### Vincent's 3-stage structured growth function for X years and plots (covers the next chunks before 2.2)
 
 project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c(100, 250, 50), year=1){
   
