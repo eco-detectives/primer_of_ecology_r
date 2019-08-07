@@ -593,6 +593,67 @@ d) Determine $\lambda$. Explain what this tells us about the population, includi
 e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
 f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
 
+```{r}
+### molly's attempts:
+
+### a) life cycle graph: see paper...
+
+### b) graphing pop dynamics:
+A <- matrix(c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0, 0.342, 0.591, 0.050, 0.095, 0, 0, 0.026, 0.295, 0.774, 0.177, 0.194, 0, 0, 0, 0.145, 0.596, 0.362, 0, 0, 0, 0.016, 0.277, 0.489), 
+            nr = 6,
+            byrow = TRUE)
+N0 <- matrix(c(0, 10, 10, 10, 10, 10))
+years <- 10
+N.projections <- matrix(0, nrow = nrow(A), ncol = years + 1)
+N.projections[, 1] <- N0
+for (i in 1:years) {
+  N.projections[, i + 1] <- A %*% N.projections[, i]
+}
+matplot(0:years, t(N.projections), type = "l", lty = 1:6,
+        col = 1, ylab = "Stage Abundance", xlab = "Year")
+
+### using vincent's function:
+project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c(100, 250, 50), year=1){
+  ## Set-up empty object for data.frame and calculate number of stages
+  stage_pop <- c()
+  number_stages <- sqrt(length(project))
+  ## Error message
+  if(number_stages%%1!=0){ 
+    stop('Projection matrix should be square.')
+  }
+  ## Loop to project population
+  for (i in 1:year){
+    project_matrix <- matrix(project, nr = number_stages,
+              byrow = TRUE)
+    base_pop <- matrix(pop, ncol = 1)
+    predicted_pop <- project_matrix %*% base_pop
+    pop <- predicted_pop
+    temp <- cbind(i,1:number_stages,predicted_pop)
+    stage_pop <-rbind(stage_pop,temp)
+  }
+  ## Format data.frame of projected population
+  stage_pop_df <- as.data.frame(stage_pop)
+  colnames(stage_pop_df) <- c("year", "stage", "pop")
+  ## Return list of last period population and full data.frame
+  return_list <- list(predicted_pop, stage_pop_df)
+  return(return_list)
+}
+
+ggplot(project_pop(project = c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0, 0.342, 0.591, 0.050, 0.095, 0, 0, 0.026, 0.295, 0.774, 0.177, 0.194, 0, 0, 0, 0.145, 0.596, 0.362, 0, 0, 0, 0.016, 0.277, 0.489), pop = c(0, 10, 10, 10, 10, 10), year = 10)[[2]], aes(x=year,y=pop,color=as.factor(stage))) +
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
+
+#### got different graph results - need to double check these!
+
+### c) stable stage distribution:
+
+### d) determining lambda:
+
+### e) determining elasticities
+```
+
+
 ### 2.2. Demographic analysis of an animal population
 
 Crouse et al. performed a demographic analysis of an endangered sea turtle species, the loggerhead (_Caretta caretta_). Management of loggerhead populations seemed essential for their long term survival, and a popular management strategy had been and still is to protect nesting females, eggs, and hatchlings. The ground breaking work by Crouse11 and her colleagues compiled data to create a stage-based projection matrix to analyze quantitatively which stages are important and least important in influencing long-term growth rate. This work led to US Federal laws requiring that US shrimp fishermen use nets that include Turtle Excluder Devices (TEDs, http://www.nmfs.noaa.gov/pr/species/turtles/teds.htm). Crouse et al. determined the transition matrix for their loggerhead populations:
