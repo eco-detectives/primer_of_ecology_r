@@ -24,6 +24,8 @@ library(primer) # install.packages('primer')
 
 ```
 
+![](../img/lumpsucker.jpg)
+
 # Chapter 2 {.tabset}
 
 > Casey's note: in this chapter, if we're using matrices for a lot of things, not sure that Tidyverse functions will help us too much (they're focused on data.frames).  So maybe our coding practice can focus on expanding the examples in the text, and/or writing functions to apply the examples?
@@ -653,6 +655,66 @@ ggplot(project_pop(project = c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0
 ### e) determining elasticities
 ```
 
+#### Casey's attempt
+
+a) Draw a life cycle graph of this population of goldenseal. Include the matrix elements associated with each transition.
+    * see drawing
+b) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph population dynamics for all stages for 10 years.
+
+```{r}
+### set up a function (based on Vincent's!):
+proj_pop <- function(p_mat, n_0, yrs) {
+  ### error checking
+  if(dim(p_mat)[1] != dim(p_mat)[2]) {
+    stop('Projection matrix should be square.')
+  }
+  if(length(n_0) != dim(p_mat)[1]) {
+    stop('Pop vector should be same dimension as matrix')
+  }
+  
+  ## Loop to project population
+  ### initialize population as matrix
+  n_stages <- dim(p_mat)[1]
+  pop <- n_0
+  
+  results_mat <- matrix(nrow = yrs, ncol = n_stages)
+  for (yr in 1:yrs){
+    ### multiply projection matrix by current pop:
+    pred_pop <- p_mat %*% pop
+    ### put results into results matrix (transpose the pop vector):
+    results_mat[yr, ] <- t(pred_pop) 
+    ### update population:
+    pop <- pred_pop
+  }
+  return(results_mat)
+}
+
+n_0 <- c(0, 10, 10, 10, 10, 10)
+p_mat <- c(    0,     0,     0,     0,     0, 1.642, 
+           0.098,     0,     0,     0,     0, 0.437, 
+               0, 0.342, 0.591, 0.050, 0.095,     0, 
+               0, 0.026, 0.295, 0.774, 0.177, 0.194, 
+               0,     0,     0, 0.145, 0.596, 0.362, 
+               0,     0,     0, 0.016, 0.277, 0.489) %>%
+  matrix(nrow = 6, byrow = TRUE)
+
+pop_projection <- proj_pop(p_mat, n_0, yrs = 10)
+
+pop_proj_df <- pop_projection %>%
+  as.data.frame() %>%
+  setNames(c('seed', 'seedling', 'sm 1 leaf', 'med 1 leaf', 'lg 1 leaf', 'flower')) %>%
+  mutate(year = 1:n()) %>%
+  gather(class, pop, -year)
+
+ggplot(pop_proj_df, aes(x = year, y = pop, color = class)) +
+  geom_line(aes(group = class)) +
+  theme_classic()
+```
+
+c) Determine the stable stage distribution.
+d) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
+f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
 
 ### 2.2. Demographic analysis of an animal population
 
