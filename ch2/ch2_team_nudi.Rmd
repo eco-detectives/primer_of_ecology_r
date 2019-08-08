@@ -124,7 +124,7 @@ project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c
   colnames(stage_pop_df) <- c("year", "stage", "pop")
   
   ## Return list of last period population and full data.frame
-  return_list <- list(predicted_pop, stage_pop_df)
+  return_list <- list(predicted_pop, stage_pop_df, project_matrix)
   
   return(return_list)
     
@@ -641,7 +641,56 @@ $$A = \begin{pmatrix}
 \end{pmatrix}$$
 
 a) Draw a life cycle graph of this loggerhead population. Include the matrix elements associated with each transition.
+
+### Vincent's attempt
+
+Not sure how to do this with R. 
+
+```{r}
+
+#install.packages('igraph', repo='http://nbcgib.uesc.br/mirrors/cran/')
+library(igraph)
+
+## Format projection matrix
+
+project_vect <- c(0      , 0      , 0      , 0      , 127    , 4      , 80,
+0.6747 , 0.7370 , 0      , 0      , 0      , 0      , 0 ,
+0      , 0.0486 , 0.6610 , 0      , 0      , 0      , 0,
+0      , 0      , 0.0147 , 0.6907 , 0      , 0      , 0,
+0      , 0      ,      0 , 0.0518 , 0      , 0      , 0,
+0      , 0      ,      0 , 0      , 0.8091 , 0      , 0,
+0      , 0      ,      0 , 0      , 0      , 0.8091 , 0.8089)
+
+
+number_stages <- sqrt(length(project_vect))
+
+
+project_matrix <- matrix(project_vect, nr = number_stages, byrow = TRUE)
+
+life_fail <- plot(graph.adjacency(get.adjacency(graph.data.frame(project_matrix),sparse=FALSE)))
+
+```
+
+```{r , eval=TRUE, echo=FALSE}
+life_fail
+```
 b) Determine the stable stage distribution.
+
+```{r}
+### Vincent's attempt
+
+eig_proj <- eigen(project_matrix)
+dom_pos <- which.max(eig_proj$values)
+
+dom_vector <- Re(eig_proj$vectors[,dom_pos])
+
+ssd <- dom_vector/sum(dom_vector)
+
+```
+
+If the projection matrix is constant over time, the population will eventually (stable state concept?) be composed of `r paste0(format(round(ssd[1],2)*100), "%")` of stage 1, `r paste0(format(round(ssd[2],2)*100), "%")` of stage 2, `r paste0(format(round(ssd[3],2)*100), "%")` of stage 3, `r paste0(format(round(ssd[4],2)*100), "%")` of stage 4. `r paste0(format(round(ssd[5],2)*100), "%")` of stage 5, `r paste0(format(round(ssd[6],2)*100), "%")` of stage 6 and `r paste0(format(round(ssd[7],2)*100), "%")` of stage 7.
+
+
 c) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
 d) Determine the elasticities. Which transition(s) are most influential in deter- mining growth rate?
 e) What is the predicted long-term relative abundance of all stages? What do we call this?
