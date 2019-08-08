@@ -734,7 +734,7 @@ g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for 
 
 ### Vincent's answer
 
-data <- project_pop(project = project_vect, pop = c(0, rep(10,times=6)),year=10)[[2]]
+data <- project_pop(project = project_vect, pop = c(0, rep(10,times=6)),year=100)[[2]]
 
 ## Better ggplot graph
 
@@ -743,9 +743,20 @@ graph2g <- ggplot(data, aes(x=year,y=pop,color=as.factor(stage))) +
   labs(x = "Year", y = "Stage abundance", color="Stage") +
   theme_classic()
 
+## Different initial values
+
+data2 <-  project_pop(project = project_vect, pop = c(0, rep(100,times=6)),year=100)[[2]]
+
+graph2g2 <- ggplot(data2, aes(x=year,y=pop,color=as.factor(stage))) +
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
 
 ```
 
 ```{r , eval=TRUE, echo=FALSE}
 graph2g
+```
+```{r , eval=TRUE, echo=FALSE}
+graph2g2
 ```
