@@ -675,6 +675,22 @@ life_fail <- plot(graph.adjacency(get.adjacency(graph.data.frame(project_matrix)
 life_fail
 ```
 b) Determine the stable stage distribution.
+
+```{r}
+### Vincent's attempt
+
+eig_proj <- eigen(project_matrix)
+dom_pos <- which.max(eig_proj$values)
+
+dom_vector <- Re(eig_proj$vectors[,dom_pos])
+
+ssd <- dom_vector/sum(dom_vector)
+
+```
+
+If the projection matrix is constant over time, the population will eventually (stable state concept?) be composed of `r paste0(format(round(ssd[1],2)*100), "%")` of stage 1, `r paste0(format(round(ssd[2],2)*100), "%")` of stage 2, `r paste0(format(round(ssd[3],2)*100), "%")` of stage 3, `r paste0(format(round(ssd[4],2)*100), "%")` of stage 4. `r paste0(format(round(ssd[5],2)*100), "%")` of stage 5, `r paste0(format(round(ssd[6],2)*100), "%")` of stage 6 and `r paste0(format(round(ssd[7],2)*100), "%")` of stage 7.
+
+
 c) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
 d) Determine the elasticities. Which transition(s) are most influential in deter- mining growth rate?
 e) What is the predicted long-term relative abundance of all stages? What do we call this?
