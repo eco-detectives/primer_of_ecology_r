@@ -713,11 +713,39 @@ S <- vw.s/as.numeric(v %*% dom_vector)
 
 elas <- (project_matrix/L1) * S
 
+elas
+
 which(elas == max(elas), arr.ind = TRUE)
 ```
 
 We see that the most important stage is the (7,7) element of the elasticity matrix, i.e. surviving the adult stage. Furthermore, it seems that most of the important stage are along the diagonal, which is surviving within stage.
 
 e) What is the predicted long-term relative abundance of all stages? What do we call this?
+
+Not sure. 
+
 f) If your interest is to maximize long-term growth rate, in which stage(s) should you invest protection measures? Which stages are least likely to enhance long-term growth rate, regardless of protective measures?
+
+If I base myself off of the elasticity estimate, then it should be the last adult stage. 
+
 g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for all stages for 10 years. ___Casey note:___ _I think $\mathbf N$ should have seven elements, for the $7 \times 7$ matrix?  but the book only has six?_
+
+```{r}
+
+### Vincent's answer
+
+data <- project_pop(project = project_vect, pop = c(0, rep(10,times=6)),year=10)[[2]]
+
+## Better ggplot graph
+
+graph2g <- ggplot(data, aes(x=year,y=pop,color=as.factor(stage))) +
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
+
+
+```
+
+```{r , eval=TRUE, echo=FALSE}
+graph2g
+```
