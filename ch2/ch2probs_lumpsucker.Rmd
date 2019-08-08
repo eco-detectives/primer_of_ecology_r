@@ -1,0 +1,144 @@
+---
+title: 'Primer of Ecology with R: chapter 2'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+
+# Chapter 2: Problems
+
+## 2.1. Demographic analysis of a plant population
+
+Goldenseal (_Hydrastis canadensis_) is a wild plant with medicinal properties that is widely harvested in eastern North American. Its rhizome (the thick underground stem) is dug up, and so harvesting can and frequently does have serious negative impacts on populations. A particular population of goldenseal is tracked over several years and investigators find, tag, and monitor several sizes of individuals. After several years of surveys, they identify six relevant stages: dormant seed, seedling, small 1-leaved plant, medium 1-leaved plant, large 1-leaved plant, fertile plant (flowering, with 2 leaves). They determine that the population project matrix is:
+
+$$A = \begin{pmatrix}
+0     & 0     & 0     & 0     & 0     & 1.642\\
+0.098 & 0     & 0     & 0     & 0     & 0.437 \\
+0     & 0.342 & 0.591 & 0.050 & 0.095 & 0\\
+0     & 0.026 & 0.295 & 0.774 & 0.177 & 0.194\\
+0     & 0     & 0     & 0.145 & 0.596 & 0.362\\
+0     & 0     & 0     & 0.016 & 0.277 & 0.489
+\end{pmatrix}$$
+
+### 2.1a) Draw a life cycle graph of this population of goldenseal. Include the matrix elements associated with each transition.
+
+
+### 2.1b) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph population dynamics for all stages for 10 years.
+
+### 2.1c) Determine the stable stage distribution.
+
+
+### 2.1d) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+
+### 2.1e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
+
+### 2.1f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
+
+```{r}
+### molly's attempts:
+
+### a) life cycle graph: see paper...
+
+### b) graphing pop dynamics:
+A <- matrix(c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0, 0.342, 0.591, 0.050, 0.095, 0, 0, 0.026, 0.295, 0.774, 0.177, 0.194, 0, 0, 0, 0.145, 0.596, 0.362, 0, 0, 0, 0.016, 0.277, 0.489), 
+            nr = 6,
+            byrow = TRUE)
+N0 <- matrix(c(0, 10, 10, 10, 10, 10))
+years <- 10
+N.projections <- matrix(0, nrow = nrow(A), ncol = years + 1)
+N.projections[, 1] <- N0
+for (i in 1:years) {
+  N.projections[, i + 1] <- A %*% N.projections[, i]
+}
+matplot(0:years, t(N.projections), type = "l", lty = 1:6,
+        col = 1, ylab = "Stage Abundance", xlab = "Year")
+
+### using vincent's function:
+project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c(100, 250, 50), year=1){
+  ## Set-up empty object for data.frame and calculate number of stages
+  stage_pop <- c()
+  number_stages <- sqrt(length(project))
+  ## Error message
+  if(number_stages%%1!=0){ 
+    stop('Projection matrix should be square.')
+  }
+  ## Loop to project population
+  for (i in 1:year){
+    project_matrix <- matrix(project, nr = number_stages,
+              byrow = TRUE)
+    base_pop <- matrix(pop, ncol = 1)
+    predicted_pop <- project_matrix %*% base_pop
+    pop <- predicted_pop
+    temp <- cbind(i,1:number_stages,predicted_pop)
+    stage_pop <-rbind(stage_pop,temp)
+  }
+  ## Format data.frame of projected population
+  stage_pop_df <- as.data.frame(stage_pop)
+  colnames(stage_pop_df) <- c("year", "stage", "pop")
+  ## Return list of last period population and full data.frame
+  return_list <- list(predicted_pop, stage_pop_df)
+  return(return_list)
+}
+
+ggplot(project_pop(project = c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0, 0.342, 0.591, 0.050, 0.095, 0, 0, 0.026, 0.295, 0.774, 0.177, 0.194, 0, 0, 0, 0.145, 0.596, 0.362, 0, 0, 0, 0.016, 0.277, 0.489), pop = c(0, 10, 10, 10, 10, 10), year = 10)[[2]], aes(x=year,y=pop,color=as.factor(stage))) +
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
+
+#### got different graph results - need to double check these!
+
+### c) stable stage distribution:
+
+### d) determining lambda:
+
+### e) determining elasticities
+```
+
+
+### 2.2. Demographic analysis of an animal population
+
+Crouse et al. performed a demographic analysis of an endangered sea turtle species, the loggerhead (_Caretta caretta_). Management of loggerhead populations seemed essential for their long term survival, and a popular management strategy had been and still is to protect nesting females, eggs, and hatchlings. The ground breaking work by Crouse11 and her colleagues compiled data to create a stage-based projection matrix to analyze quantitatively which stages are important and least important in influencing long-term growth rate. This work led to US Federal laws requiring that US shrimp fishermen use nets that include Turtle Excluder Devices (TEDs, http://www.nmfs.noaa.gov/pr/species/turtles/teds.htm). Crouse et al. determined the transition matrix for their loggerhead populations:
+
+$$A = \begin{pmatrix}
+0      & 0      & 0      & 0      & 127    & 4      & 80\\
+0.6747 & 0.7370 & 0      & 0      & 0      & 0      & 0 \\
+0      & 0.0486 & 0.6610 & 0      & 0      & 0      & 0\\
+0      & 0      & 0.0147 & 0.6907 & 0      & 0      & 0\\
+0      & 0      &      0 & 0.0518 & 0      & 0      & 0\\
+0      & 0      &      0 & 0      & 0.8091 & 0      & 0\\
+0      & 0      &      0 & 0      & 0      & 0.8091 & 0.8089
+\end{pmatrix}$$
+
+### 2.2a) Draw a life cycle graph of this loggerhead population. Include the matrix elements associated with each transition.
+
+### 2.2b) Determine the stable stage distribution.
+
+### 2.2c) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+
+### 2.2d) Determine the elasticities. Which transition(s) are most influential in deter- mining growth rate?
+
+### 2.2e) What is the predicted long-term relative abundance of all stages? What do we call this?
+
+### 2.2f) If your interest is to maximize long-term growth rate, in which stage(s) should you invest protection measures? Which stages are least likely to enhance long-term growth rate, regardless of protective measures?
+
+### 2.2g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for all stages for 10 years. ___Casey note:___ _I think $\mathbf N$ should have seven elements, for the $7 \times 7$ matrix?  but the book only has six?_
