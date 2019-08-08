@@ -646,8 +646,6 @@ ggplot(project_pop(project = c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0
   labs(x = "Year", y = "Stage abundance", color="Stage") +
   theme_classic()
 
-### got different graph results - need to double check these!
-
 ## c) stable stage distribution: (calculate eigenvector wi)
 eigs.A <- eigen(A)
 dom.pos <- which.max(eigs.A[["values"]])
@@ -659,6 +657,7 @@ round(ssd, 3)
 L1 <- Re(eigs.A[["values"]][dom.pos])
 
 ## e) determining elasticities
+```
 
 #### Casey's attempt
 
@@ -721,7 +720,6 @@ d) Determine $\lambda$. Explain what this tells us about the population, includi
 e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
 f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
 
-```
 
 ### 2.2. Demographic analysis of an animal population
 
