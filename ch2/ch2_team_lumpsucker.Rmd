@@ -598,9 +598,9 @@ f) Discuss which stages might be most suitable for harvesting; consider this que
 ```{r}
 ### molly's attempts:
 
-### a) life cycle graph: see paper...
+## a) life cycle graph: see paper...
 
-### b) graphing pop dynamics:
+## b) graphing pop dynamics:
 A <- matrix(c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0, 0.342, 0.591, 0.050, 0.095, 0, 0, 0.026, 0.295, 0.774, 0.177, 0.194, 0, 0, 0, 0.145, 0.596, 0.362, 0, 0, 0, 0.016, 0.277, 0.489), 
             nr = 6,
             byrow = TRUE)
@@ -646,14 +646,19 @@ ggplot(project_pop(project = c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0
   labs(x = "Year", y = "Stage abundance", color="Stage") +
   theme_classic()
 
-#### got different graph results - need to double check these!
+### got different graph results - need to double check these!
 
-### c) stable stage distribution:
+## c) stable stage distribution: (calculate eigenvector wi)
+eigs.A <- eigen(A)
+dom.pos <- which.max(eigs.A[["values"]])
+w <- Re(eigs.A[["vectors"]][, dom.pos])
+ssd <- w/sum(w)
+round(ssd, 3)
 
-### d) determining lambda:
+## d) determining lambda: (dominant eigenvalue of the projection matrix)
+L1 <- Re(eigs.A[["values"]][dom.pos])
 
-### e) determining elasticities
-```
+## e) determining elasticities
 
 #### Casey's attempt
 
@@ -715,6 +720,8 @@ c) Determine the stable stage distribution.
 d) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
 e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
 f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
+
+```
 
 ### 2.2. Demographic analysis of an animal population
 
