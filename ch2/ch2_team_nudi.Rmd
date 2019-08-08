@@ -697,6 +697,66 @@ The $\lambda$ is `r format(round(Re(eig_proj$values[dom_pos]), 3), nsmall = 3)`,
 
 
 d) Determine the elasticities. Which transition(s) are most influential in deter- mining growth rate?
+
+```{r}
+
+## vincent's regurgitation of the code in the text book without much understanding
+
+M <- eigen(t(project_matrix))
+v <- Re(M$vectors[, which.max(Re(M$values))])
+RV <- v/v[1]
+
+L1 <- Re(eig_proj$values[dom_pos])
+
+vw.s <- v %*% t(dom_vector)
+S <- vw.s/as.numeric(v %*% dom_vector)
+
+elas <- (project_matrix/L1) * S
+
+elas
+
+which(elas == max(elas), arr.ind = TRUE)
+```
+
+We see that the most important stage is the (7,7) element of the elasticity matrix, i.e. surviving the adult stage. Furthermore, it seems that most of the important stage are along the diagonal, which is surviving within stage.
+
 e) What is the predicted long-term relative abundance of all stages? What do we call this?
+
+Not sure. 
+
 f) If your interest is to maximize long-term growth rate, in which stage(s) should you invest protection measures? Which stages are least likely to enhance long-term growth rate, regardless of protective measures?
+
+If I base myself off of the elasticity estimate, then it should be the last adult stage. 
+
 g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for all stages for 10 years. ___Casey note:___ _I think $\mathbf N$ should have seven elements, for the $7 \times 7$ matrix?  but the book only has six?_
+
+```{r}
+
+### Vincent's answer
+
+data <- project_pop(project = project_vect, pop = c(0, rep(10,times=6)),year=100)[[2]]
+
+## Better ggplot graph
+
+graph2g <- ggplot(data, aes(x=year,y=pop,color=as.factor(stage))) +
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
+
+## Different initial values
+
+data2 <-  project_pop(project = project_vect, pop = c(0, rep(100,times=6)),year=100)[[2]]
+
+graph2g2 <- ggplot(data2, aes(x=year,y=pop,color=as.factor(stage))) +
+  geom_line() +  
+  labs(x = "Year", y = "Stage abundance", color="Stage") +
+  theme_classic()
+
+```
+
+```{r , eval=TRUE, echo=FALSE}
+graph2g
+```
+```{r , eval=TRUE, echo=FALSE}
+graph2g2
+```
