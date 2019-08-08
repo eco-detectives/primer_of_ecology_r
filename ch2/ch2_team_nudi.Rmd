@@ -692,6 +692,10 @@ If the projection matrix is constant over time, the population will eventually (
 
 
 c) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+
+The $\lambda$ is `r format(round(Re(eig_proj$values[dom_pos]), 3), nsmall = 3)`, which represents the asymptotic finite rate of increase for the whole population (?). If guess it requires a constant relative share of stage individuals.  
+
+
 d) Determine the elasticities. Which transition(s) are most influential in deter- mining growth rate?
 e) What is the predicted long-term relative abundance of all stages? What do we call this?
 f) If your interest is to maximize long-term growth rate, in which stage(s) should you invest protection measures? Which stages are least likely to enhance long-term growth rate, regardless of protective measures?
