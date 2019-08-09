@@ -663,7 +663,28 @@ L1 <- Re(eigs.A[["values"]][dom.pos])
 #### Casey's attempt
 
 a) Draw a life cycle graph of this population of goldenseal. Include the matrix elements associated with each transition.
-    * see drawing
+
+``` {r}
+### set up the initial vectors and matrices to feed into the function
+n_0 <- c(0, 10, 10, 10, 10, 10)
+p_mat <- c(    0,     0,     0,     0,     0, 1.642, 
+           0.098,     0,     0,     0,     0, 0.437, 
+               0, 0.342, 0.591, 0.050, 0.095,     0, 
+               0, 0.026, 0.295, 0.774, 0.177, 0.194, 
+               0,     0,     0, 0.145, 0.596, 0.362, 
+               0,     0,     0, 0.016, 0.277, 0.489) %>%
+  matrix(nrow = 6, byrow = TRUE)
+
+stages <- c('seed', 'seedling', 'sm 1 leaf', 
+            'med 1 leaf', 'lg 1 leaf', 'flower')
+
+```
+
+```{r}
+source('plot_projmat.R')
+plot_projmat(p_mat, stages = stages)
+```
+
 b) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph population dynamics for all stages for 10 years.
 
 ```{r}
@@ -726,25 +747,13 @@ proj_pop2 <- function(p_mat, n_0, yrs) {
 
 ```
 
-
 ``` {r}
-### set up the initial vectors and matrices to feed into the function
-n_0 <- c(0, 10, 10, 10, 10, 10)
-p_mat <- c(    0,     0,     0,     0,     0, 1.642, 
-           0.098,     0,     0,     0,     0, 0.437, 
-               0, 0.342, 0.591, 0.050, 0.095,     0, 
-               0, 0.026, 0.295, 0.774, 0.177, 0.194, 
-               0,     0,     0, 0.145, 0.596, 0.362, 
-               0,     0,     0, 0.016, 0.277, 0.489) %>%
-  matrix(nrow = 6, byrow = TRUE)
-
 # pop_projection <- proj_pop(p_mat, n_0, yrs = 10)
 pop_projection <- proj_pop2(p_mat, n_0, yrs = 20)
 
 pop_proj_df <- pop_projection %>%
   as.data.frame() %>%
-  setNames(c('seed', 'seedling', 'sm 1 leaf', 
-             'med 1 leaf', 'lg 1 leaf', 'flower')) %>%
+  setNames(stages) %>%
   mutate(year = 0:(n() - 1)) %>%
   gather(class, pop, -year) %>%
   mutate(class = fct_inorder(class))
@@ -881,9 +890,6 @@ g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for 
 #### Casey's attempt
 
 a) Draw a life cycle graph of this loggerhead population. Include the matrix elements associated with each transition.
-    * again, see drawing
-b) Determine the stable stage distribution.
-
 ``` {r}
 ### set up the initial vectors and matrices
 n_0 <- c(0, 10, 10, 10, 10, 10, 10)
@@ -897,7 +903,17 @@ p_mat <- c( 0      , 0      , 0      , 0      , 127    , 4      , 80 ,
             0      , 0      ,      0 , 0      , 0      , 0.8091 , 0.8089) %>%
   matrix(nrow = 7, byrow = TRUE)
 
+stages <- c('egg', 'hatchling', 'baby', 'juvenile',
+             'young adult', 'adult', 'mature adult')
 ```
+
+```{r}
+# source('plot_projmat.R')
+plot_projmat(p_mat, stages = stages)
+```
+
+b) Determine the stable stage distribution.
+
 
 ```{r}
 
@@ -964,8 +980,7 @@ pop_projection <- proj_pop2(p_mat, n_0, yrs = 50)
 
 pop_proj_df <- pop_projection %>%
   as.data.frame() %>%
-  setNames(c('egg', 'hatchling', 'baby', 'juvenile',
-             'young adult', 'adult', 'mature adult')) %>%
+  setNames(stages) %>%
   mutate(year = 0:(n() - 1)) %>%
   gather(class, pop, -year) %>%
   mutate(class = fct_inorder(class))
