@@ -5,6 +5,7 @@ output:
   html_document:
     toc: false
     number_sections: false
+    code_folding: hide
     theme: cerulean
     highlight: haddock
   pdf_document:
@@ -690,9 +691,44 @@ proj_pop <- function(p_mat, n_0, yrs) {
     ### update population:
     pop <- pred_pop
   }
+  results_mat <- rbind(n_0, results_mat) ### add year zero
+
   return(results_mat)
 }
 
+proj_pop2 <- function(p_mat, n_0, yrs) {
+  ### for this one, try raising p_mat to the power of yrs
+  ### error checking
+  if(dim(p_mat)[1] != dim(p_mat)[2]) {
+    stop('Projection matrix should be square.')
+  }
+  if(length(n_0) != dim(p_mat)[1]) {
+    stop('Pop vector should be same dimension as matrix')
+  }
+  
+  ## Loop to project population
+  ### initialize population as matrix
+  n_stages <- dim(p_mat)[1]
+  pop <- n_0
+  
+  results_list <- lapply(0:yrs, FUN = function(x) {
+    pred_pop <- expm::`%^%`(p_mat , x) %*% pop
+    ### NOTE: expm::`%^%`(p_mat , x) is the same as (p_mat %^% x) but
+    ### allows me to include the package namespace for reference
+  }) %>%
+    setNames(0:yrs)
+  
+  results_mat <- bind_rows(results_list) %>%
+    t()
+  
+  return(results_mat)
+}
+
+```
+
+
+``` {r}
+### set up the initial vectors and matrices to feed into the function
 n_0 <- c(0, 10, 10, 10, 10, 10)
 p_mat <- c(    0,     0,     0,     0,     0, 1.642, 
            0.098,     0,     0,     0,     0, 0.437, 
@@ -702,24 +738,122 @@ p_mat <- c(    0,     0,     0,     0,     0, 1.642,
                0,     0,     0, 0.016, 0.277, 0.489) %>%
   matrix(nrow = 6, byrow = TRUE)
 
-pop_projection <- proj_pop(p_mat, n_0, yrs = 10)
+# pop_projection <- proj_pop(p_mat, n_0, yrs = 10)
+pop_projection <- proj_pop2(p_mat, n_0, yrs = 20)
 
 pop_proj_df <- pop_projection %>%
   as.data.frame() %>%
-  setNames(c('seed', 'seedling', 'sm 1 leaf', 'med 1 leaf', 'lg 1 leaf', 'flower')) %>%
-  mutate(year = 1:n()) %>%
-  gather(class, pop, -year)
+  setNames(c('seed', 'seedling', 'sm 1 leaf', 
+             'med 1 leaf', 'lg 1 leaf', 'flower')) %>%
+  mutate(year = 0:(n() - 1)) %>%
+  gather(class, pop, -year) %>%
+  mutate(class = fct_inorder(class))
+
+ggplot(pop_proj_df %>% filter(year <= 10), 
+       aes(x = year, y = pop, color = class)) +
+  geom_line(aes(group = class)) +
+  theme_classic() +
+  labs(x = 'year', y = 'abundance')
 
 ggplot(pop_proj_df, aes(x = year, y = pop, color = class)) +
   geom_line(aes(group = class)) +
-  theme_classic()
+  theme_classic() +
+  scale_y_log10() +
+  labs(x = 'year', y = 'log(abundance)')
 ```
 
-c) Determine the stable stage distribution.
-d) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
-e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
-f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
+The straight lines on the log plot indicate all stages increasing at the same rate as the overall population (intrinsic rate of growth).  Where it hits those straight lines, we've reached the stable stage distribution (and can calc that from the ratios of pop at any point thereafter).
 
+c) Determine the stable stage distribution.
+    * From the book:
+
+> The first, or dominant, eigenvalue is the long term asymptotic finite rate of increase λ. Its corresponding eigenvector provides the stable stage distribution.
+
+First, do it by determining eigenvector corresponding with dominant eigenvalue.  Then, do it by looking at long-term projections and determining the proportion of population in each class.
+```{r}
+
+eigs_pmat <- eigen(p_mat)
+
+### find the eigenvector that corresponds to the dominant eigenvalue
+dom_pos <- which.max(eigs_pmat$values) ### typically the first value
+w <- Re(eigs_pmat$vectors[ , dom_pos])
+ssd <- w/sum(w)
+round(ssd, 3)
+
+### could also look at long-term ratios
+stable_state <- pop_proj_df %>%
+  filter(year == max(year)) %>%
+  mutate(pct_of_pop = round(pop / sum(pop), 3))
+ stable_state$pct_of_pop
+```
+
+d) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+    * Find the real portion of the dominant eigenvalue.
+```{r}
+### find the dominant eigenvalue
+lambda <- Re(eigs_pmat$values[dom_pos]) ### extract just the real component
+
+lambda
+```
+
+This tells us the overall asymptotic growth rate of the population.  I believe the assumption is that the stable stage distribution is... stable? so each state also grows at rate $\lambda$.
+
+Let's also look at the reproductive value of each stage, since it's related.  This is calculated as the dominant "left" eigenvector, i.e. $\mathbf{vA} = \lambda \mathbf{v}$ (as opposed to the "right" eigenvector that is related to the asymptotic rate of pop increase, i.e. the $\mathbf w$ in $\mathbf{Aw} = \lambda \mathbf{w}$).  We can find the left eigenvector by finding the dominant eigenvector in the transpose of the projection matrix, i.e. `t(p_mat)`.
+
+```{r}
+
+eigs_t_pmat <- eigen(t(p_mat))
+
+### find the eigenvector that corresponds to the dominant eigenvalue
+dom_pos <- which.max(eigs_t_pmat$values) ### typically the first value
+
+v <- Re(eigs_t_pmat$vectors[ , dom_pos])
+ssd <- v/v[1] ### normalize so the first stage = 1
+round(ssd, 3)
+
+```
+
+So as expected, the older an individual is, the greater its reproductive value - though the second-to-last and last stages are pretty close!
+
+e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
+    * From the book:
+
+> The stable stage distribution provides the relative abundance of individuals in each stage. Reproductive value provides the contribution to future population growth of individuals in each stage. Sensitivity and elasticity combine these to tell us the relative importance of each transition in determining λ.
+
+First determine the sensitivity:
+
+$$\frac{\partial \lambda}{\partial a_{ij}} = \frac{v_{ij} w_{ij}}{\mathbf{v \cdot w}}$$
+```{r}
+### v and w vectors are calculated above...
+vw_mat <- v %*% t(w)
+v_dot_w <- as.numeric(v %*% w)
+
+sens_mat <- vw_mat / v_dot_w
+
+```
+then this is weighted by the transition probabilities, i.e. $\mathbf A / \lambda$:
+$$e_{ij} = \frac{a_{ij}}{\lambda} \frac{\partial \lambda}{\partial a_{ij}}$$
+```{r}
+elas_mat <- p_mat / lambda * sens_mat ### why not %*%?
+elas_mat %>% round(5)
+```
+From the book: 
+
+> Although these values do not tell us which stages and transitions will, in reality, be influenced by natural phenomona or management practices, they provide us with the predicted effects on λ of a proportional change in a demographic rate, P or F. This is particularly important in the management of invasive (or endangered) species where we seek to have the maximum impact for the minimum amount of effort and resources [23,48].
+
+f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
+    * It seems as if you'd want to find a stage with a low elasticity - i.e. a change in that parameter has little effect on the pop growth rate.  You'd also want to find a stage with a high abundance at the stable stage - so you have more available to harvest?  Maybe this corresponds with reproductive value?
+
+|          stage          | pct of pop | total elasticity |
+|:----------------------- | ----------:| ----------------:|
+| seeds                   |       17%  |           0.004  |
+| seedlings               |        6%  |           0.016  |
+| small one-leaved plants |       12%  |           0.09   |
+| med one-leaved plants   |       34%  |           0.38   |
+| lg one-leaved plants    |       20%  |           0.32   |
+| flowers                 |       11%  |           0.19   |
+
+Small one-leaved plants and flowering plants would be better to harvest than medium and large one-leaved plants.  But seeds might be the best bet if they have the desired properties - very low elasticity and a sixth of total population at stable state.
 
 ### 2.2. Demographic analysis of an animal population
 
@@ -742,3 +876,114 @@ d) Determine the elasticities. Which transition(s) are most influential in deter
 e) What is the predicted long-term relative abundance of all stages? What do we call this?
 f) If your interest is to maximize long-term growth rate, in which stage(s) should you invest protection measures? Which stages are least likely to enhance long-term growth rate, regardless of protective measures?
 g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for all stages for 10 years. ___Casey note:___ _I think $\mathbf N$ should have seven elements, for the $7 \times 7$ matrix?  but the book only has six?_
+
+
+#### Casey's attempt
+
+a) Draw a life cycle graph of this loggerhead population. Include the matrix elements associated with each transition.
+    * again, see drawing
+b) Determine the stable stage distribution.
+
+``` {r}
+### set up the initial vectors and matrices
+n_0 <- c(0, 10, 10, 10, 10, 10, 10)
+
+p_mat <- c( 0      , 0      , 0      , 0      , 127    , 4      , 80 ,
+            0.6747 , 0.7370 , 0      , 0      , 0      , 0      , 0  ,
+            0      , 0.0486 , 0.6610 , 0      , 0      , 0      , 0  ,
+            0      , 0      , 0.0147 , 0.6907 , 0      , 0      , 0  ,
+            0      , 0      ,      0 , 0.0518 , 0      , 0      , 0  ,
+            0      , 0      ,      0 , 0      , 0.8091 , 0      , 0  ,
+            0      , 0      ,      0 , 0      , 0      , 0.8091 , 0.8089) %>%
+  matrix(nrow = 7, byrow = TRUE)
+
+```
+
+```{r}
+
+eigs_pmat <- eigen(p_mat)
+
+### find the eigenvector that corresponds to the dominant eigenvalue
+dom_pos <- which.max(eigs_pmat$values) ### typically the first value
+w <- Re(eigs_pmat$vectors[ , dom_pos])
+ssd <- w/sum(w)
+round(ssd, 4)
+
+```
+
+c) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+
+```{r}
+lambda <- Re(eigs_pmat$values[dom_pos])
+lambda
+```
+
+Because $\lambda$ is less than 1, this tells us the population is declining.  
+
+d) Determine the elasticities. Which transition(s) are most influential in deter- mining growth rate?
+    * Let's first look at reproductive value (to get $\mathbf v$):
+    
+```{r}
+
+eigs_t_pmat <- eigen(t(p_mat))
+
+### find the eigenvector that corresponds to the dominant eigenvalue
+dom_pos <- which.max(eigs_t_pmat$values) ### typically the first value
+
+v <- Re(eigs_t_pmat$vectors[ , dom_pos])
+ssd <- v/v[1] ### normalize so the first stage = 1
+round(ssd, 2)
+
+```
+
+Then we can calculate the sensitivity matrix, then multiply that by the projection matrix (divided by $\lambda$).
+```{r}
+vw_mat <- v %*% t(w)
+v_dot_w <- v %*% w %>% as.numeric()
+
+sens_mat <- vw_mat / v_dot_w
+
+elas_mat <- p_mat / lambda * sens_mat ### again, why not %*%?
+elas_mat %>% round(5)
+```
+
+e) What is the predicted long-term relative abundance of all stages? What do we call this?
+    * Isn't this just the stable stage distribution calculated in b) above?
+f) If your interest is to maximize long-term growth rate, in which stage(s) should you invest protection measures? Which stages are least likely to enhance long-term growth rate, regardless of protective measures?
+    * First note the reproductive value of mature old adults is huge.
+    * Note then that the population proportion of these old adults is tiny.
+    * If we look at the sum of elasticities for a given stage, then stages 2, 3, and 4 are all important to the growth rate - so protecting these stages would be beneficial (to get them up to the stage 5 where reproductive value really kicks in).
+    * But stage 7 is even more important - maintaining this portion of the population ($p_{77}$) and allowing them to lay their eggs ($F_7$) contributes more in total than each of the stages 2, 3, and 4.
+
+g) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph dynamics for all stages for 10 years. 
+
+``` {r}
+
+# pop_projection <- proj_pop(p_mat, n_0, yrs = 10)
+pop_projection <- proj_pop2(p_mat, n_0, yrs = 50)
+
+pop_proj_df <- pop_projection %>%
+  as.data.frame() %>%
+  setNames(c('egg', 'hatchling', 'baby', 'juvenile',
+             'young adult', 'adult', 'mature adult')) %>%
+  mutate(year = 0:(n() - 1)) %>%
+  gather(class, pop, -year) %>%
+  mutate(class = fct_inorder(class))
+
+ggplot(pop_proj_df %>% filter(year <= 10), 
+       aes(x = year, y = pop, color = class)) +
+  geom_line(aes(group = class)) +
+  theme_classic() +
+  labs(x = 'year', y = 'abundance')
+
+ggplot(pop_proj_df, aes(x = year, y = pop, color = class)) +
+  geom_line(aes(group = class)) +
+  theme_classic() +
+  scale_y_log10() +
+  labs(x = 'year', y = 'log(abundance)')
+```
+
+The straight lines on the log plot indicate all stages increasing at the same rate as the overall population (intrinsic rate of growth).  Where it hits those straight lines, we've reached the stable stage distribution (and can calc that from the ratios of pop at any point thereafter).
+
+
+
