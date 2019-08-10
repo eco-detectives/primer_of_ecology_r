@@ -596,69 +596,114 @@ d) Determine $\lambda$. Explain what this tells us about the population, includi
 e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
 f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
 
+#### Molly's attempts:
+
+a) Draw a life cycle graph of this population of goldenseal. Include the matrix elements associated with each transition.
+
 ```{r}
-### molly's attempts:
+library(diagram)
+proj_mat <- c(    0,     0,     0,     0,     0, 1.642, 
+           0.098,     0,     0,     0,     0, 0.437, 
+               0, 0.342, 0.591, 0.050, 0.095,     0, 
+               0, 0.026, 0.295, 0.774, 0.177, 0.194, 
+               0,     0,     0, 0.145, 0.596, 0.362, 
+               0,     0,     0, 0.016, 0.277, 0.489) %>%
+  matrix(nrow = 6, byrow = TRUE)
+stage_names <- c("seed","seedling","S 1-leaf","M 1-leaf","L 1-leaf","fertile plant")
 
-## a) life cycle graph: see paper...
+proj_df <- as.data.frame(proj_mat) %>% setNames(stage_names) %>% `rownames<-` (stage_names) ### is there a cleaner way to set all row names in dplyr pipe?
 
-## b) graphing pop dynamics:
-A <- matrix(c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0, 0.342, 0.591, 0.050, 0.095, 0, 0, 0.026, 0.295, 0.774, 0.177, 0.194, 0, 0, 0, 0.145, 0.596, 0.362, 0, 0, 0, 0.016, 0.277, 0.489), 
-            nr = 6,
-            byrow = TRUE)
+curves <- matrix(nrow = ncol(proj_df), ncol = ncol(proj_df), .5)
+curves[2, 1] <- curves[3, 2] <- curves[4, 3] <- curves[5, 4] <- curves[6, 5] <- 0 ### setting all arrows from one stage to subsequent stage to be straight, while remainder will be curved
+plotmat(proj_df, pos = 6, curve = curves,
+        box.size = 0.05, shadow.size = 0,
+        self.cex = .5, self.shiftx = 0, self.shifty = -.07, ### can't get arrows to reappear on 'self' loops once I've changed the position...
+        main = "Goldenseal population model")
+```
+
+b) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph population dynamics for all stages for 10 years. 
+
+```{r}
+### regurgitating chapter code
 N0 <- matrix(c(0, 10, 10, 10, 10, 10))
 years <- 10
-N.projections <- matrix(0, nrow = nrow(A), ncol = years + 1)
+N.projections <- matrix(0, nrow = nrow(proj_mat), ncol = years + 1)
 N.projections[, 1] <- N0
 for (i in 1:years) {
-  N.projections[, i + 1] <- A %*% N.projections[, i]
+  N.projections[, i + 1] <- proj_mat %*% N.projections[, i]
 }
 matplot(0:years, t(N.projections), type = "l", lty = 1:6,
         col = 1, ylab = "Stage Abundance", xlab = "Year")
-
-### using vincent's function:
-project_pop <- function(project = c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), pop = c(100, 250, 50), year=1){
-  ## Set-up empty object for data.frame and calculate number of stages
-  stage_pop <- c()
-  number_stages <- sqrt(length(project))
-  ## Error message
-  if(number_stages%%1!=0){ 
-    stop('Projection matrix should be square.')
+```
+```{r}
+### using adaptation of vincent's/casey's functions:
+project_pop <- function(proj_mat, N0, years){
+  ### set up
+  n_stages <- dim(proj_mat)[1]
+  pop <- N0
+  results_mat <- matrix(nrow = years, ncol = n_stages)
+  ### loop
+  for (yr in 1:years){
+    pred_pop <- proj_mat %*% pop ### results will be long (single column)
+    results_mat[yr, ] <- t(pred_pop) ### transpose results from single column to single row, results_mat stores each year as a row
+    pop <- pred_pop ### update current population
   }
-  ## Loop to project population
-  for (i in 1:year){
-    project_matrix <- matrix(project, nr = number_stages,
-              byrow = TRUE)
-    base_pop <- matrix(pop, ncol = 1)
-    predicted_pop <- project_matrix %*% base_pop
-    pop <- predicted_pop
-    temp <- cbind(i,1:number_stages,predicted_pop)
-    stage_pop <-rbind(stage_pop,temp)
-  }
-  ## Format data.frame of projected population
-  stage_pop_df <- as.data.frame(stage_pop)
-  colnames(stage_pop_df) <- c("year", "stage", "pop")
-  ## Return list of last period population and full data.frame
-  return_list <- list(predicted_pop, stage_pop_df)
-  return(return_list)
+  ### return results as matrix
+  results_mat <- rbind(t(N0), results_mat) ### add year zero, transposed to add as single row
+  return(results_mat)
 }
+ 
+pop_proj_df <- project_pop(proj_mat = proj_mat, N0 = c(0, 10, 10, 10, 10, 10), years = 10) %>%
+  as.data.frame() %>%
+  setNames(stage_names) %>%
+  mutate(year = 0:(n() - 1)) %>%
+  gather(stage, pop, -year) %>% ### column names become 'stage' variable, 'year' column is retained
+  mutate(stage = fct_inorder(stage)) ### clean way to keep stage names in order for graph - thanks Casey!
 
-ggplot(project_pop(project = c(0, 0, 0, 0, 0, 1.642, 0.098, 0, 0, 0, 0, 0.437, 0, 0.342, 0.591, 0.050, 0.095, 0, 0, 0.026, 0.295, 0.774, 0.177, 0.194, 0, 0, 0, 0.145, 0.596, 0.362, 0, 0, 0, 0.016, 0.277, 0.489), pop = c(0, 10, 10, 10, 10, 10), year = 10)[[2]], aes(x=year,y=pop,color=as.factor(stage))) +
+ggplot(pop_proj_df, aes(x = year, y = pop, color = as.factor(stage))) +
   geom_line() +  
   labs(x = "Year", y = "Stage abundance", color="Stage") +
   theme_classic()
 
-## c) stable stage distribution: (calculate eigenvector wi)
-eigs.A <- eigen(A)
-dom.pos <- which.max(eigs.A[["values"]])
-w <- Re(eigs.A[["vectors"]][, dom.pos])
-ssd <- w/sum(w)
-round(ssd, 3)
-
-## d) determining lambda: (dominant eigenvalue of the projection matrix)
-L1 <- Re(eigs.A[["values"]][dom.pos])
-
-## e) determining elasticities
 ```
+
+c) Determine the stable stage distribution.
+
+```{r}
+eigs_right <- eigen(proj_mat) ### determine eigenvalues and vectors for projection matrix
+dom.pos <- which.max(eigs_right[["values"]]) ### determine dominant eigenvalue
+w <- Re(eigs_right[["vectors"]][, dom.pos]) ### determine corresponding eigenvector (w)
+ssd <- w/sum(w) ### divide each vector value by total so you end up with proportional values
+round(ssd, 3)
+```
+
+d) Determine $\lambda$. Explain what this tells us about the population, including any assumptions regarding the stable stage distribution.
+
+```{r}
+### lambda is determined by dominant eigenvalue of the projection matrix
+lambda <- Re(eigs_right[["values"]][dom.pos])
+lambda
+```
+
+e) Determine the elasticities. Which transition(s) are most influential in determining growth rate?
+
+From book: "Sensitivity and elasticity combine these to tell us the relative importance of each transition in determining $\lambda$"
+- *Sensitivities*: changes in $\lambda$ given changes in each element of the transition matrix
+- *Elasticities*: sensitivities weighted by transition probabilities
+```{r}
+eigs_left <- eigen(t(proj_mat))
+eigs_left
+v <- Re(eigs_left$vectors[, which.max(Re(eigs_left$values))])
+w <- Re(eigs_right[["vectors"]][, dom.pos])
+sens_mat <- v %*% t(w)/as.numeric(v %*% w)
+sens_mat ### will include sensitivies to some transitions that do not exist
+elas_mat <- proj_mat/lambda * sens_mat
+elas_mat ### elasticities include only real transitions
+```
+
+f) Discuss which stages might be most suitable for harvesting; consider this question from both a financial and ecological perspective.
+
+Highest elasticity values rein [4,4] and [5,5]- surviving as medium and large 1-leaved individual. Maybe harvest as small 1-leaved indv. or as flowering adults...?
 
 #### Casey's attempt
 
