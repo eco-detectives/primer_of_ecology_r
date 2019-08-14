@@ -49,6 +49,23 @@ N <- matrix(c(10, 20, 30, 40), nr = 2)
 # [2,]   20   40
 ```
 
+```{r}
+#Sean practice
+
+M <- matrix(1:4, nr = 2, byrow = T)
+N <- matrix(c(2, 4, 6, 8), nr = 2)
+
+M %*% N
+
+# The way this works:
+
+#####################################
+# Row 1, Column 1 # Row 1, Column 2 #
+#####################################
+# Row 2, Column 1 # Row 2, Column 2 #
+#####################################
+```
+
 Following our rules above, we would multiply and then sum the first row of $M$ by the first column of $N$, and make this element $a_{11}$ of the resulting matrix product.
 
 ``` {r}
