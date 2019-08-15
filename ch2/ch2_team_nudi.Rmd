@@ -114,9 +114,9 @@ N1 <- A %*% N0
 # [2,]   30
 # [3,]  170
 
-# What does the output (above) of one-step stage-structured growth actually mean? Confused by interpretation in text (pg. 39).
+# Sean: What does the output (above) of one-step stage-structured growth actually mean? Confused by interpretation in text (pg. 39).
 
-# Other questions:
+# Sean: Other questions:
 
 # 1. Can someone remind me when we use arrows '<-' versus equal sign '=' to make arguments/vectors? Is that right, an argument?
 
@@ -242,6 +242,8 @@ Rs <- N.totals[-1]/N.totals[-(years + 1)]
 ### in each year t, rather than each year t + 1 (Fig. 2.3b).
 
 plot(0:(years - 1), Rs, type = "b", xlab = "Year", ylab = "R")
+
+# Sean: Did group review this last week?
 ```
 
 ## 2.2 Analyzing the Projection Matrix
