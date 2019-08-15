@@ -118,17 +118,6 @@ N1 <- A %*% N0
 
 ```
 
-```{r}
-# Sean
-
-> years <- 6 > N.projections <- matrix(0, nrow = nrow(A), ncol = years + + 1) > N.projections[, 1] <- N0
-Now we perform the iteration with the for-loop.
-> for (i in 1:years) N.projections[, i + 1] <- A %*% N.projections[, + i]
-Last, we graph the results for each stage (Fig. 2.3a). To graph a matrix, R is expecting that the data will be in columns, not rows, and so we need to transpose the projection matrix.
-> matplot(0:years, t(N.projections), type = "l", lty = 1:3, + col = 1, ylab = "Stage Abundance", xlab = "Year") > legend("topleft", legend = c("Seeds", "Small Adult", "Large Adult"), +
-
-```
-
 
 ```{r}
 
