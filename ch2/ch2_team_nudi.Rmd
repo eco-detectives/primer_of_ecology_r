@@ -114,7 +114,11 @@ N1 <- A %*% N0
 # [2,]   30
 # [3,]  170
 
-#What does the output (above) of one-step stage-structured growth actually mean? Confused by interpretation in text (pg. 39).
+# What does the output (above) of one-step stage-structured growth actually mean? Confused by interpretation in text (pg. 39).
+
+# Other questions:
+
+# 1. Can someone remind me when we use arrows <- versus = signs to make arguments/vectors? Is that right, an argument?
 
 ```
 
@@ -184,6 +188,18 @@ years <- 6
 N.projections <- matrix(0, nrow = nrow(A), ncol = years + 1)
 N.projections[, 1] <- N0
 ```
+
+```{r}
+# Sean practice
+
+years <- 6
+
+# Creating a  matrix - cool
+
+N_projection <- matrix(0, nrow = nrow(A), ncol = years + 1)
+
+```
+
 
 Now we perform the iteration with the for-loop.
 
