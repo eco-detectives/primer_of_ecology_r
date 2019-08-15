@@ -49,6 +49,23 @@ N <- matrix(c(10, 20, 30, 40), nr = 2)
 # [2,]   20   40
 ```
 
+```{r}
+#Sean practice
+
+M <- matrix(1:4, nr = 2, byrow = T)
+N <- matrix(c(2, 4, 6, 8), nr = 2)
+
+M %*% N
+
+# The way this works:
+
+#####################################
+# Row 1, Column 1 # Row 1, Column 2 #
+#####################################
+# Row 2, Column 1 # Row 2, Column 2 #
+#####################################
+```
+
 Following our rules above, we would multiply and then sum the first row of $M$ by the first column of $N$, and make this element $a_{11}$ of the resulting matrix product.
 
 ``` {r}
@@ -77,6 +94,15 @@ First, we create a population projection matrix, and a vector of stage class abu
 A <- matrix(c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), nr = 3,
             byrow = TRUE)
 N0 <- matrix(c(100, 250, 50), ncol = 1)
+
+# Sean practice
+
+A <- matrix(c(0, 0.5, 20, 0.3, 0, 0, 0, 0.5, 0.9), nr = 3, byrow = T)
+N0 <- matrix(c(100, 250, 50), ncol = 1)
+
+N1 <- A %*% N0
+N1
+
 ```
 
 Now we perform matrix multiplication between the projection matrix and `N0`. 
@@ -88,7 +114,16 @@ N1 <- A %*% N0
 # [2,]   30
 # [3,]  170
 
+# Sean: What does the output (above) of one-step stage-structured growth actually mean? Confused by interpretation in text (pg. 39).
+
+# Sean: Other questions:
+
+# 1. Can someone remind me when we use arrows '<-' versus equal sign '=' to make arguments/vectors? Is that right, an argument?
+
+# 2. Is there a keyboard shortcut for the matrix multiplier '%*%' ?
+
 ```
+
 
 ```{r}
 
@@ -156,6 +191,24 @@ N.projections <- matrix(0, nrow = nrow(A), ncol = years + 1)
 N.projections[, 1] <- N0
 ```
 
+```{r}
+# Sean practice
+
+years <- 6
+
+# Creating a  matrix - cool
+
+N_projection <- matrix(0, nrow = nrow(A), ncol = years + 1)
+N_projection [, 1] <- N0
+
+# Run a loop to fill the matrix
+
+for (i in 1:years) {
+  N_projection[, i + 1] <- A %*% N_projection[, i]
+}
+
+```
+
 Now we perform the iteration with the for-loop.
 
 > Casey's note: this is a weird way of using for loops - on a single line.  Reformat it using Hadley's style guide
@@ -189,6 +242,8 @@ Rs <- N.totals[-1]/N.totals[-(years + 1)]
 ### in each year t, rather than each year t + 1 (Fig. 2.3b).
 
 plot(0:(years - 1), Rs, type = "b", xlab = "Year", ylab = "R")
+
+# Sean: Did group review this last week?
 ```
 
 ## 2.2 Analyzing the Projection Matrix
