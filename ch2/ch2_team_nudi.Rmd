@@ -118,7 +118,9 @@ N1 <- A %*% N0
 
 # Other questions:
 
-# 1. Can someone remind me when we use arrows <- versus = signs to make arguments/vectors? Is that right, an argument?
+# 1. Can someone remind me when we use arrows '<-' versus equal sign '=' to make arguments/vectors? Is that right, an argument?
+
+# 2. Is there a keyboard shortcut for the matrix multiplier '%*%' ?
 
 ```
 
@@ -197,9 +199,15 @@ years <- 6
 # Creating a  matrix - cool
 
 N_projection <- matrix(0, nrow = nrow(A), ncol = years + 1)
+N_projection [, 1] <- N0
+
+# Run a loop to fill the matrix
+
+for (i in 1:years) {
+  N_projection[, i + 1] <- A %*% N_projection[, i]
+}
 
 ```
-
 
 Now we perform the iteration with the for-loop.
 
