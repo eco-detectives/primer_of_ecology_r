@@ -613,12 +613,12 @@ stage_names <- c("seed","seedling","S 1-leaf","M 1-leaf","L 1-leaf","fertile pla
 
 proj_df <- as.data.frame(proj_mat) %>% setNames(stage_names) %>% `rownames<-` (stage_names) ### is there a cleaner way to set all row names in dplyr pipe?
 
-curves <- matrix(nrow = ncol(proj_df), ncol = ncol(proj_df), .5)
+curves <- matrix(nrow = ncol(proj_df), ncol = ncol(proj_df), .7)
 curves[2, 1] <- curves[3, 2] <- curves[4, 3] <- curves[5, 4] <- curves[6, 5] <- 0 ### setting all arrows from one stage to subsequent stage to be straight, while remainder will be curved
 plotmat(proj_df, pos = 6, curve = curves,
-        box.size = 0.05, shadow.size = 0,
-        self.cex = .5, self.shiftx = 0, self.shifty = -.07, ### can't get arrows to reappear on 'self' loops once I've changed the position...
-        main = "Goldenseal population model")
+        box.size = 0.05, shadow.size = 0, box.cex = .5, cex.txt = .5, my = -0.13,
+        self.cex = .5, self.shiftx = 0, self.shifty = -.07 ### can't get arrows to reappear on 'self' loops once I've changed the position...
+        )
 ```
 
 b) Start with $\mathbf N = (0 \ 10 \ 10 \ 10 \ 10 \ 10)$ and graph population dynamics for all stages for 10 years. 
