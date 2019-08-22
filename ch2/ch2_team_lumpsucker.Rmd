@@ -602,7 +602,7 @@ a) Draw a life cycle graph of this population of goldenseal. Include the matrix 
 
 ```{r}
 library(diagram)
-proj_mat <- c(    0,     0,     0,     0,     0, 1.642, 
+proj_mat <- c( 0,     0,     0,     0,     0, 1.642, 
            0.098,     0,     0,     0,     0, 0.437, 
                0, 0.342, 0.591, 0.050, 0.095,     0, 
                0, 0.026, 0.295, 0.774, 0.177, 0.194, 
@@ -611,7 +611,11 @@ proj_mat <- c(    0,     0,     0,     0,     0, 1.642,
   matrix(nrow = 6, byrow = TRUE)
 stage_names <- c("seed","seedling","S 1-leaf","M 1-leaf","L 1-leaf","fertile plant")
 
-proj_df <- as.data.frame(proj_mat) %>% setNames(stage_names) %>% `rownames<-` (stage_names) ### is there a cleaner way to set all row names in dplyr pipe?
+proj_df <- as.data.frame(proj_mat) %>% 
+  setNames(stage_names) %>%
+  `rownames<-` (stage_names) ### is there a cleaner way to set all row names in dplyr pipe?
+
+rownames(proj_df) <- stage_names
 
 curves <- matrix(nrow = ncol(proj_df), ncol = ncol(proj_df), .7)
 curves[2, 1] <- curves[3, 2] <- curves[4, 3] <- curves[5, 4] <- curves[6, 5] <- 0 ### setting all arrows from one stage to subsequent stage to be straight, while remainder will be curved
@@ -794,7 +798,9 @@ proj_pop2 <- function(p_mat, n_0, yrs) {
 
 ``` {r}
 # pop_projection <- proj_pop(p_mat, n_0, yrs = 10)
-pop_projection <- proj_pop2(p_mat, n_0, yrs = 20)
+
+pop_projection <- proj_pop2(p_mat, n_0t, yrs = 20)
+
 
 pop_proj_df <- pop_projection %>%
   as.data.frame() %>%

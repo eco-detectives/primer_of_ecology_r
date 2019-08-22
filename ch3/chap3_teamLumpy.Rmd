@@ -80,11 +80,16 @@ plot(Nts[1:t], per.capita.incr)
 
 ```{r}
 ### Casey's dplyr version
-growth_df <- data.frame(t = 0:(length(Nts) - 1),
-                        Nts) %>%
+tmax <- 20
+growth_df <- data.frame(t = 0:tmax,
+                        Nts = dlogistic(t = tmax)) %>%
   mutate(Nts_plus_1 = lead(Nts),
          tot_incr   = Nts_plus_1 - Nts,
          pc_incr    = tot_incr / Nts)
+
+ggplot(growth_df, aes(x = t, y = Nts)) +
+  theme_bw() +
+  geom_point()
 
 ggplot(growth_df, aes(x = Nts, y = tot_incr)) +
   theme_bw() +
@@ -299,13 +304,13 @@ arrows(122, -2, 109, -2, length = 0.1, lwd = 3)
 We can use $\textsf{R}$’s minimal symbolic capabilities to get derivatives. Here we get the partial derivative and evaluate for the two equilibria (Fig. 3.10).
 
 ``` {r}
-dF.dN <- deriv(pop.growth.rate, "N")
+dF_dN <- deriv(pop.growth.rate, c("N", 'r'))
 N <- c(0, 1/alpha)
-eval(dF.dN)
+eval(dF_dN)
 
 ### Casey's add:
 N <- seq(0, 1/alpha, .1/alpha) ### try multiple values of N
-eval(dF.dN)
+eval(dF_dN)
 
 ```
 
