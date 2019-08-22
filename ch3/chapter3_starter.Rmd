@@ -50,12 +50,12 @@ dlogistic <- function(alpha = 0.01, rd = 1, N0 = 2, t = 15) {
 
 #Sean:
 
-dlogistic_sd <- function(alpha = 0.005, rd = 1, N0 = 100, t = 20) {
+dlogistic_sd <- function(alpha = 0.1, rd = 1, N0 = 100, t = 20) {
   N <- c(N0, numeric(t)) #?
   for (i in 1:t) N[i+1] <- {
     N[i] + rd * N[i] * (1 - alpha * N[i])
   }
-  return (N)
+  return(N)
 }
 ```
 
@@ -75,6 +75,20 @@ a <- 0.01
 plot(0:t, Nts)
 abline(h = 1/a, lty = 3)
 ```
+
+Sean:
+
+```{r}
+# Graphing discrete logistic growth using ggplot
+
+#Options:
+#1. Create a new data frame with Nts values?
+
+
+
+
+```
+
 
 ### 3.1.2 (Per Capita) Population Growth Increment vs. N (Fig. 3.3)
 
