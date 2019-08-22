@@ -85,8 +85,11 @@ Sean:
 
 tmax = 20
 dlg_plot <- data.frame(t = 0:tmax, Nts = dlogistic(t = tmax)) %>% 
-  mutate()
+  ggplot(aes(x = Nts, y = t)) +
+  geom_point() +
+  theme_bw()
 
+dlg_plot
 
 ```
 
