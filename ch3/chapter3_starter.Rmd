@@ -81,10 +81,11 @@ Sean:
 ```{r}
 # Graphing discrete logistic growth using ggplot
 
-#Options:
-#1. Create a new data frame with Nts values?
+# Create a new data frame with Nts values?
 
-
+tmax = 20
+dlg_plot <- data.frame(t = 0:tmax, Nts = dlogistic(t = tmax)) %>% 
+  mutate()
 
 
 ```
