@@ -23,7 +23,6 @@ library(RColorBrewer)
 
 ### The book has an R package! 
 library(primer) # install.packages('primer')
-
 ```
 
 # Chapter 3: Density Dependent Growth{.tabset}
@@ -194,13 +193,13 @@ thetalog <- function(times, y, parms) {
 (b) Show that with $\theta = 1$, it is identical our function `clogistic` above.
 
 ```{r}
-init.N <- c(100)
-t.s <- seq(1, 100, by = 1)
-r <- c(1)
-th <- c(1)
-al <- c(0.01)
-
-out <- ode(y = init.N, times = t.s, thetalog, r = r, theta = th, alpha = al)
+# init.N <- c(100)
+# t.s <- seq(1, 100, by = 1)
+# r <- c(1)
+# th <- c(1)
+# al <- c(0.01)
+# 
+# out <- ode(y = init.N, times = t.s, thetalog, r = r, theta = th, alpha = al)
 ```
 
 (c) Graph $N$ for $t = 0,..., 100$ using a few different values of $\theta$ and explain how $\theta$ changes logistic growth.
