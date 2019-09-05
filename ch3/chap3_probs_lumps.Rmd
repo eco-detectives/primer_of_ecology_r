@@ -258,8 +258,6 @@ d) Assuming linear density dependence, when $\theta < 1$, means your growth rate
 e) Harvesting the entire population and investing would provide a long term return at the interest rate of the investment.
 f) Since cost is probably related to density (as density decreases, costs increase), you'd need to account for total profits, not gross revenue from harvest; and you'd harvest down to the point where the long term expected value of the fish left in the water (growing and harvesting to that level every year forever) is equal to the value of harvesting everything now and putting the profits into other interest-earning investments.
 
->>>>>>> c19572dafd222d6954764dd07d92ad8ccbd462ed
-
 ## 3.5. Environmental Variability
 
 Most environments change continually. Temperature, resource availability, changes in predator or pathogen abundance all influence the carrying capacity of the environment.
