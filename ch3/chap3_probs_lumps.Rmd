@@ -316,7 +316,7 @@ Kstart <- 100; time <- 1:20; K <- numeric(20);
 for(i in 1:20) K[i] <- Kstart + rnorm(1, m=0, sd=5);
 plot(time, K).
 ```
-
+(b) All distributions are characterized by their moments. For instance, the Nor- mal distribution is typically defined by its mean, $\mu$, and variance, $\sigma^2$. Focus on just one moment of your selected distribution in (a), and use your simulations to determine quantitatively the relation between $K$ and the resulting $N$ derived from the discrete growth model. For instance, you might vary the standard deviation of the random normal distribution that contributes to $K$, and examine how the standard deviation of $K$, $\sigma_K$, relates to mean $N$, $\mu_N$.
 (c) Create a reddened time series for K (see note below) (Hint: What are the values of `x` and `y` when you do `x <- sample(c(-1,0,1), 20, replace=TRUE); y <- cumsum(x)` ?). Use this time series to create a reddened population dynamic. (Hint: First create the vector of reddened $K$'s equal in length to your time series. Then create a growth function that can access the vector, e.g. 
 ```
 DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
