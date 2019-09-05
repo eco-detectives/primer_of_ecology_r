@@ -67,12 +67,46 @@ ggplot(nts_df, aes(x = t, y = Nts)) +
   geom_point()
 ```
 
+### Casey's solutions:
+
+a. Since the plant is doubling each interval, seems obvious that $r_d$ = 1.  More formally:
+$$N_{t+1} = \lambda N_t = N_t(1 + r_d)$$
+Since $N_{t+1} = 2N_t$ then $1 + r_d = 2$.
+b. Per capita density dependent effect is $\alpha = 1/K = 0.01$.
+c. $N_{t+1} = N_t + r_d(1 - \alpha N_t) N_t$ or $N_t + (1)(1 - .01N_t) N_t$ or $N_t - .01N_t^2 + 1$
+d. 
+```{r}
+calc_ntplus1 <- function(N, r_d, a) {
+  N_tplus1 <- N + r_d * (1 - a * N) * N
+}
+
+N_0 <- 1; r_d <- 1; a <- 0.01
+yrs <- 10
+
+N_vec <- vector('numeric', length = yrs)
+N_vec[1] <- calc_ntplus1(N_0, r_d, a)
+for (yr in 2:yrs) {
+  N_vec[yr] <- calc_ntplus1(N_vec[yr - 1], r_d, a)
+}
+prob1_df <- data.frame(yr = 0:yrs,
+                       N = c(0, N_vec))
+
+ggplot(prob1_df, aes(x = yr, y = N)) +
+  theme_classic() +
+  geom_point() +
+  geom_line(alpha = .5)
+
+```
+
+
+
 ## 3.2. Dynamics of _E. coli_
 
 (a) Calculate $r$ of _E. coli_ that has a doubling time of 30 min. Express this rate in hours.
 (b) Calculate the per capita density dependent effect of an _E. coli_ culture that grows logistically over a 24 h period, and which levels off at a density of 10^7^ CFU$\cdot$mL^−1^$ (CFU is colony forming units — for _E. coli_ its is equivalent to individuals).
 (c) Graph the 50h dynamics ($t = 0,..., 50$) of the _E. coli_ population in (a) and (b), starting with $N_0 = 1000$.
 
+<<<<<<< HEAD
 ### Molly's attempts
 
 (a) Calculate $r$ of _E. coli_ that has a doubling time of 30 min. Express this rate in hours.
@@ -103,6 +137,41 @@ ggplot(nts_df, aes(x = t, y = Nts)) +
   theme_bw() +
   geom_point()
 ```
+=======
+### Casey's solutions:
+
+a) For exponential growth:
+$$2N = Ne^{rt} \Rightarrow \ln 2 = rt \Rightarrow r = \ln 2 / t$$
+In this case, $t = .5 \text{ hr}$ so $r = \ln 2 / .5 = 1.38\text{ hr}^{-1}$.
+b) Per cap density dependent effect $\alpha = 1/K = 10^{-7} \text{ mL/CFU}$
+c) $N(t) = N_0e^{rt}$: here I'm using code from the book.
+```{r}
+
+clogistic <- function(times, y, parms) {
+  n <- y[1]
+  r <- parms[1]
+  alpha <- parms[2]
+  dN_dt <- r * n * (1 - alpha * n)
+  return(list(c(dN_dt)))
+}
+
+prms <- c(r = log(2) / .5, a = 1e-7)
+N_0 <- 1000
+t_vec <- seq(0, 50, .2)
+
+library(deSolve)
+N_out <- ode(y = N_0, times = t_vec, clogistic, parms = prms)
+
+prob2_df <- as.data.frame(N_out) %>%
+  setNames(c('t', 'N'))
+ggplot(prob2_df, aes(x = t, y = N)) +
+  theme_classic() +
+  geom_point() +
+  geom_line(alpha = .5)
+```
+
+
+>>>>>>> c19572dafd222d6954764dd07d92ad8ccbd462ed
 
 ## 3.3. Nonlinear Density Dependence
 
@@ -136,6 +205,54 @@ out <- ode(y = init.N, times = t.s, thetalog, r = r, theta = th, alpha = al)
 
 (c) Graph $N$ for $t = 0,..., 100$ using a few different values of $\theta$ and explain how $\theta$ changes logistic growth.
 
+### Casey's solutions
+
+a) the function:
+```{r}
+theta_logistic <- function(times, y, params) {
+  n <- y[1]
+  r <- params[1]
+  alpha <- params[2]
+  theta <- params[3]
+  dN_dt <- r * n * (1 - (alpha * n)^theta)
+  return(list(c(dN_dt)))
+}
+```
+
+b) For logistic growth, $\frac{dN}{dt} = rN(1 - \alpha N)$.  For theta logistic, $\frac{dN}{dt} = rN(1 - [\alpha N]^\theta)$, so if $\theta = 1$ then the two equations are identical (and thus the functions become identical).
+c) Using the same parameters as above, and varying $\theta$:
+
+```{r}
+
+N_0 <- 1000
+t_vec <- seq(0, 100, .2)
+theta_vec <- 10^seq(-2, 1, .25)
+
+tmp_list <- vector('list', length = length(theta_vec))
+
+for(i in seq_along(theta_vec)) {
+  
+  th <- theta_vec[i]
+  params <- c(r = log(2) / .5, alpha = 1e-7, theta = th)
+  
+  library(deSolve)
+  N_out <- ode(y = N_0, times = t_vec, theta_logistic, parms = params)
+  
+  tmp_df <- as.data.frame(N_out) %>%
+    setNames(c('t', 'N')) %>%
+    mutate(theta = th)
+  tmp_list[[i]] <- tmp_df
+}
+
+prob3_df <- bind_rows(tmp_list)
+
+ggplot(prob3_df, aes(x = t, y = N, color = theta)) +
+  theme_classic() +
+  geom_point() +
+  geom_line(alpha = .5, aes(group = theta))
+```
+
+
 ## 3.4. Harvested Populations
 
 The logistic growth equation and other similar equations have been used and abused in efforts to achieve a _maximum sustained yield_ of a harvested population. The immediate goal of maximum sustained yield management practices is to kill only the number of individuals that reduces the population to half of its carrying capacity, assuming that eq. 3.13 describes the population growth. Answer the questions below to help you explain why this would be a goal.
@@ -148,6 +265,7 @@ The logistic growth equation and other similar equations have been used and abus
 (f) How would you incorporate both harvesting and economic considerations into your logistic growth model?
 
 
+<<<<<<< HEAD
 ### Molly's attempts
 (a) Find expressions for population growth rates when $N = K/4, K/2, 3K/4$ (substitute these values for $N$ in eq. 3.13, and show your work). Which of these results in the highest population growth rate? How do these relate to the management of a harvested population?
 
@@ -170,6 +288,23 @@ $dN/dt=3/16*r$
 (d) What would the consequences be for the population if you assume linear density dependence $(1 − \alpha/N)$, but in fact the population is governed by non-linear density dependence where $\theta < 1$ and $\theta > 1$ (Figs. 3.13a - 3.13c)?
 (e) What economic benefit would you gain if you harvested the entire popula- tion all at once (and eliminated it from the face of the planet)? What could you do with all that money?
 (f) How would you incorporate both harvesting and economic considerations into your logistic growth model?
+=======
+### Casey's solutions:
+
+a) Eqn 3.13: $\frac{dN}{dt} = rN\left(\frac{K - N}{K}\right)$. The middle term becomes .75, .5, and .25 respectively for $N = K/4, K/2, 3K/4$; so the growth rate $\frac{dN}{dt} = .75rN, .50rN, .25rN$ respectively.
+b) $\partial \dot{N} / \partial N = \partial \frac{dN}{dt} / \partial N$:
+$$\frac{\partial}{\partial N} rN\left(\frac{K - N}{K}\right)$$
+differentiating by parts:
+$$r \times \frac{K - N}{K} + rN \times -\frac{1}{K}$$
+$$\frac{r}{K}(K - 2N)$$
+solve for $\partial \dot{N} / \partial N = 0$:
+$$K = 2N \quad \Longrightarrow \quad N = K/2$$
+c) Setting a target to maintain $N > K/2$ ecologically allows for uncertainty in population estimates and carrying capacity estimates, i.e. a precautionary principle.  From an economics perspective, targeting fish at less dense populations is more costly, so this will shift the optimal population slightly higher to maximize (profit - cost); additionally, the benefit of leaving extra fish compounds over time, so the max economic yield is typically where the growth rate is equal to the discount rate.
+d) Assuming linear density dependence, when $\theta < 1$, means your growth rate assumption will be too high, and thus the harvest targets (equal to predicted growth rate) will be too high.  When $\theta > 1$, harvest targets will be too low, resulting in an underexploited stock.
+e) Harvesting the entire population and investing would provide a long term return at the interest rate of the investment.
+f) Since cost is probably related to density (as density decreases, costs increase), you'd need to account for total profits, not gross revenue from harvest; and you'd harvest down to the point where the long term expected value of the fish left in the water (growing and harvesting to that level every year forever) is equal to the value of harvesting everything now and putting the profits into other interest-earning investments.
+
+>>>>>>> c19572dafd222d6954764dd07d92ad8ccbd462ed
 
 ## 3.5. Environmental Variability
 
@@ -181,7 +316,7 @@ Kstart <- 100; time <- 1:20; K <- numeric(20);
 for(i in 1:20) K[i] <- Kstart + rnorm(1, m=0, sd=5);
 plot(time, K).
 ```
-(b) All distributions are characterized by their moments. For instance, the Nor- mal distribution is typically defined by its mean, $\mu$, and variance, $\sigma^2$. Focus on just one moment of your selected distribution in (a), and use your simulations to determine quantitatively the relation between $K$ and the resulting $N$ derived from the discrete growth model. For instance, you might vary the standard deviation of the random normal distribution that contributes to $K$, and examine how the standard deviation of $K$, $\sigma_K$, relates to mean $N$, $\mu_N$.
+
 (c) Create a reddened time series for K (see note below) (Hint: What are the values of `x` and `y` when you do `x <- sample(c(-1,0,1), 20, replace=TRUE); y <- cumsum(x)` ?). Use this time series to create a reddened population dynamic. (Hint: First create the vector of reddened $K$'s equal in length to your time series. Then create a growth function that can access the vector, e.g. 
 ```
 DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
@@ -189,3 +324,75 @@ DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
 Then, inside the for loop, use an indexed `K`, such as `1 - N[t]/K[t]`.
 
 > Note: _Environmental factors such as temperature frequently vary in a gradual fashion, such that if the weather is hot today, it is likely to be hot tomorrow. Such variation is described in terms of auto-correlation or a spectral distribution or color [67,155]. Spectral decomposition of a times series involves a description of the series in terms of waves of different wavelengths or frequencies. White noise is variation that is described by equal contributions of all wavelengths (hence the term “white”), and it is a series that is completely random from one time step to the next. Reddened environmental variation is variation that is described by a predominance of longer wavelengths (hence the term “red”), and it is a series in which values tend to change gradually, where values that are close together in time tend to be more similar, or auto-correlated. Spectral variation is also referred to as 1/f noise (“one over f noise”)._
+
+### Casey's solutions:
+
+a) Define a function similar to 3.1a with a stochastic carrying capacity modeled as normal distribution around a mean:
+``` {r}
+calc_dlog_stoch <- function(N, r_d, K, K_sd = 0) {
+  ### K is mean, K_sd is std dev around the mean
+  K_real <- rnorm(1, mean = K, sd = K_sd)
+  N_tplus1 <- N * (1 + r_d * (K_real - N) / K_real)
+  if(N_tplus1 < 0) {
+    ### no pops less than zero!
+    N_tplus1 <- 0
+  }
+  return(N_tplus1)
+}
+```
+
+Run a few iterations at different standard deviations around the same mean
+```{r }
+N_0 <- 1; r_d <- 1; K <- 100
+yrs <- 10
+sims <- 10
+
+K_sd_vec <- c(2, 10, 20, 50)
+
+### Initialize a list to store simulations at various K_sd values
+K_stoch_list <- vector('list', length = length(K_sd_vec))
+
+for(i in seq_along(K_sd_vec)) {
+  ### Loop over each K_sd value, with a number of sim iterations
+  K_sd <- K_sd_vec[i]
+  
+  ### Initialize the sims list
+  sims_list <- vector('list', length = sims)
+  
+  for(sim in 1:sims) {
+    ### loop over a number of simulations
+    N_vec <- vector('numeric', length = yrs)
+    N_vec[1] <- calc_dlog_stoch(N_0, r_d, K, K_sd)
+    
+    for (yr in 2:yrs) {
+      ### loop along the vector of years
+      N_vec[yr] <- calc_dlog_stoch(N_vec[yr - 1], r_d, K, K_sd)
+    } ### end of year-to-year loop
+    
+    ### assemble the year vector for this simulation into a dataframe
+    ### then put it into the sims list
+    N_df <- data.frame(yr = 0:yrs,
+                       N = c(0, N_vec)) %>%
+      mutate(sim = sim, K_sd = K_sd)
+   sims_list[[sim]] <- N_df
+   
+  } ### end of sim loop
+  
+  K_stoch_list[[i]] <- bind_rows(sims_list)
+  
+}
+
+K_stoch_df <- bind_rows(K_stoch_list) %>%
+  mutate(sim1 = paste(sim, K_sd))
+
+K_stoch_plot <- ggplot(K_stoch_df, aes(x = yr, y = N, color = K_sd)) +
+  theme_classic() +
+  geom_point() +
+  geom_line(alpha = .5, aes(group = sim1)) +
+  scale_color_viridis_c()
+
+print(K_stoch_plot)
+print(K_stoch_plot + scale_y_log10() + labs(title = 'logged Y axis'))
+```
+```
+
