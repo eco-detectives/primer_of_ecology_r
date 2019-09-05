@@ -60,7 +60,7 @@ dlogistic <- function(alpha = 0.01, rd = 1, N0 = 1, t = 10) {
   return(N)
 }
 
-nts_df <- dlogistic() %>% as.data.frame() %>% rename(Nts=names(.)[1]) %>% mutate(t=c(0:10))
+nts_df <- dlogistic() %>% as.data.frame() %>% setNames(c('Nts') %>% mutate(t=c(0:10))
 ggplot(nts_df, aes(x = t, y = Nts)) +
   theme_bw() +
   geom_point()
@@ -105,7 +105,6 @@ ggplot(prob1_df, aes(x = yr, y = N)) +
 (b) Calculate the per capita density dependent effect of an _E. coli_ culture that grows logistically over a 24 h period, and which levels off at a density of 10^7^ CFU$\cdot$mL^−1^$ (CFU is colony forming units — for _E. coli_ its is equivalent to individuals).
 (c) Graph the 50h dynamics ($t = 0,..., 50$) of the _E. coli_ population in (a) and (b), starting with $N_0 = 1000$.
 
-<<<<<<< HEAD
 ### Molly's attempts
 
 (a) Calculate $r$ of _E. coli_ that has a doubling time of 30 min. Express this rate in hours.
@@ -121,21 +120,6 @@ $\alpha=1/k=1/10^7$
 
 (c) Graph the 50h dynamics ($t = 0,..., 50$) of the _E. coli_ population in (a) and (b), starting with $N_0 = 1000$.
 
-*doesn't look right...*
-```{r}
-dlogistic <- function(alpha = 0.0000007, rd = 3, N0 = 1000, t = 50) {
-  N <- c(N0, numeric(t))
-  for (i in 1:t) N[i + 1] <- {
-      N[i] + rd * N[i] * (1 - alpha * N[i])
-    }
-  return(N)
-}
-
-nts_df <- dlogistic() %>% as.data.frame() %>% rename(Nts=names(.)[1]) %>% mutate(t=c(0:50))
-ggplot(nts_df, aes(x = t, y = Nts)) +
-  theme_bw() +
-  geom_point()
-```
 =======
 ### Casey's solutions:
 
@@ -169,39 +153,12 @@ ggplot(prob2_df, aes(x = t, y = N)) +
   geom_line(alpha = .5)
 ```
 
-
->>>>>>> c19572dafd222d6954764dd07d92ad8ccbd462ed
-
 ## 3.3. Nonlinear Density Dependence
 
 Sibly et al. [188] found that most species have nonlinear and concave-up density dependence. They use the $\theta$-logistic growth model. 
 
 (a) Create a theta-logistic continuous growth model for use with the `ode()` function in the `deSolve` package.
-
-``` {r}
-library(deSolve)
-
-thetalog <- function(times, y, parms) {
-  n <- y[1]
-  with(as.list(parms), {
-    dN.dt <- r * n * (1 - (alpha * n)^theta)
-    return(list(c(dN.dt)))
-  })
-}
-```
-
 (b) Show that with $\theta = 1$, it is identical our function `clogistic` above.
-
-```{r}
-# init.N <- c(100)
-# t.s <- seq(1, 100, by = 1)
-# r <- c(1)
-# th <- c(1)
-# al <- c(0.01)
-# 
-# out <- ode(y = init.N, times = t.s, thetalog, r = r, theta = th, alpha = al)
-```
-
 (c) Graph $N$ for $t = 0,..., 100$ using a few different values of $\theta$ and explain how $\theta$ changes logistic growth.
 
 ### Casey's solutions
@@ -263,8 +220,6 @@ The logistic growth equation and other similar equations have been used and abus
 (e) What economic benefit would you gain if you harvested the entire popula- tion all at once (and eliminated it from the face of the planet)? What could you do with all that money?
 (f) How would you incorporate both harvesting and economic considerations into your logistic growth model?
 
-
-<<<<<<< HEAD
 ### Molly's attempts
 (a) Find expressions for population growth rates when $N = K/4, K/2, 3K/4$ (substitute these values for $N$ in eq. 3.13, and show your work). Which of these results in the highest population growth rate? How do these relate to the management of a harvested population?
 
