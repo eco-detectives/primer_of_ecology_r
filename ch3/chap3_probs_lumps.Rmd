@@ -60,7 +60,11 @@ dlogistic <- function(alpha = 0.01, rd = 1, N0 = 1, t = 10) {
   return(N)
 }
 
-nts_df <- dlogistic() %>% as.data.frame() %>% setNames(c('Nts') %>% mutate(t=c(0:10))
+nts_df <- dlogistic() %>% 
+  as.data.frame() %>% 
+  setNames(c('Nts')) %>% 
+  mutate(t=c(0:10))
+
 ggplot(nts_df, aes(x = t, y = Nts)) +
   theme_bw() +
   geom_point()
@@ -120,7 +124,6 @@ $\alpha=1/k=1/10^7$
 
 (c) Graph the 50h dynamics ($t = 0,..., 50$) of the _E. coli_ population in (a) and (b), starting with $N_0 = 1000$.
 
-=======
 ### Casey's solutions:
 
 a) For exponential growth:
