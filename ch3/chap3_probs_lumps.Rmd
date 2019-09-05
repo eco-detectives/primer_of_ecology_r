@@ -1,0 +1,95 @@
+
+---
+title: 'Primer of Ecology with $\textsf{R}$: Team Lumpsucker Ch. 3 Problems'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 3: Density Dependent Growth{.tabset}
+
+## 3.1. Dynamics of an annual plant
+
+(a) Calculate $r_d$ of an annual plant that has a maximum growth rate of $N_{t+1}/N_t = 2$ at very, very small population sizes.
+(b) Calculate the appropriate per capita density dependent effect of an annual plant with a carrying capacity K of 100 inds $\cdot$ m^-2^.
+(c) Write the appropriate logistic growth equation that incorporates the intrinsic growth of (a) and the density dependence of (b).
+(d) Graph the 10 y dynamics ($t$ = 0,..., 10$) of the annual plant in (a) and (b), starting with $N_0 = 1$.
+
+### Molly's attempts
+
+a) Calculate $r_d$ of an annual plant that has a maximum growth rate of $N_{t+1}/N_t = 2$ at very, very small population sizes.
+
+$N_{t+1} = N_t + r_d * N_t$
+$N_{t+1}/N_t = 1 + r_d = 2$
+$r_d = 1$
+
+b) Calculate the appropriate per capita density dependent effect of an annual plant with a carrying capacity K of 100 inds $\cdot$ m^-2^.
+$1/\alpha = k$
+$\alpha = 1/100 = 0.01$
+
+(c) Write the appropriate logistic growth equation that incorporates the intrinsic growth of (a) and the density dependence of (b).
+$N_{t+1} = N_t + r_d * (1 - N_t/K) * N_t$
+
+## 3.2. Dynamics of _E. coli_
+
+(a) Calculate $r$ of _E. coli_ that has a doubling time of 30 min. Express this rate in hours.
+(b) Calculate the per capita density dependent effect of an _E. coli_ culture that grows logistically over a 24 h period, and which levels off at a density of 10^7^ CFU$\cdot$mL^−1^$ (CFU is colony forming units — for _E. coli_ its is equivalent to individuals).
+(c) Graph the 50h dynamics ($t = 0,..., 50$) of the _E. coli_ population in (a) and (b), starting with $N_0 = 1000$.
+
+## 3.3. Nonlinear Density Dependence
+
+Sibly et al. [188] found that most species have nonlinear and concave-up density dependence. They use the $\theta$-logistic growth model. 
+
+(a) Create a theta-logistic continuous growth model for use with the `ode()` function in the `deSolve` package.
+(b) Show that with $\theta = 1$, it is identical our function `clogistic` above.
+(c) Graph $N$ for $t = 0,..., 100$ using a few different values of $\theta$ and explain how $\theta$ changes logistic growth.
+
+## 3.4. Harvested Populations
+
+The logistic growth equation and other similar equations have been used and abused in efforts to achieve a _maximum sustained yield_ of a harvested population. The immediate goal of maximum sustained yield management practices is to kill only the number of individuals that reduces the population to half of its carrying capacity, assuming that eq. 3.13 describes the population growth. Answer the questions below to help you explain why this would be a goal.
+
+(a) Find expressions for population growth rates when $N = K/4, K/2, 3K/4$ (substitute these values for $N$ in eq. 3.13, and show your work). Which of these results in the highest population growth rate? How do these relate to the management of a harvested population?
+(b) Show the derivation of the partial derivative of the continuous logistic growth model, with respect to N (i.e., $\partial \dot{N} / \partial N$). Solve for zero to determine when total population growth rate reaches a maximum. Show your work.
+(c) What would be the ecological and economic rationale for not killing more individuals, and keeping $N > K/2$?
+(d) What would the consequences be for the population if you assume linear density dependence $(1 − \alpha/N)$, but in fact the population is governed by non-linear density dependence where $\theta < 1$ and $\theta > 1$ (Figs. 3.13a - 3.13c)?
+(e) What economic benefit would you gain if you harvested the entire popula- tion all at once (and eliminated it from the face of the planet)? What could you do with all that money?
+(f) How would you incorporate both harvesting and economic considerations into your logistic growth model?
+
+## 3.5. Environmental Variability
+
+Most environments change continually. Temperature, resource availability, changes in predator or pathogen abundance all influence the carrying capacity of the environment.
+
+(a) Use the discrete version of the logistic growth equation to model a population in a variable environment. Do this by creating a discrete logistic growth function that adds (or subtracts) a random amount to $K$ in each time step. Use one of the many functions that can draw random numbers from particular distributions (e.g., `rpois()`, `rlnorm()`, `runif()`). You might start by playing with one of the random number generators:
+```
+Kstart <- 100; time <- 1:20; K <- numeric(20);
+for(i in 1:20) K[i] <- Kstart + rnorm(1, m=0, sd=5);
+plot(time, K).
+```
+(b) All distributions are characterized by their moments. For instance, the Nor- mal distribution is typically defined by its mean, $\mu$, and variance, $\sigma^2$. Focus on just one moment of your selected distribution in (a), and use your simulations to determine quantitatively the relation between $K$ and the resulting $N$ derived from the discrete growth model. For instance, you might vary the standard deviation of the random normal distribution that contributes to $K$, and examine how the standard deviation of $K$, $\sigma_K$, relates to mean $N$, $\mu_N$.
+(c) Create a reddened time series for K (see note below) (Hint: What are the values of `x` and `y` when you do `x <- sample(c(-1,0,1), 20, replace=TRUE); y <- cumsum(x)` ?). Use this time series to create a reddened population dynamic. (Hint: First create the vector of reddened $K$'s equal in length to your time series. Then create a growth function that can access the vector, e.g. 
+```
+DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
+```
+Then, inside the for loop, use an indexed `K`, such as `1 - N[t]/K[t]`.
+
+> Note: _Environmental factors such as temperature frequently vary in a gradual fashion, such that if the weather is hot today, it is likely to be hot tomorrow. Such variation is described in terms of auto-correlation or a spectral distribution or color [67,155]. Spectral decomposition of a times series involves a description of the series in terms of waves of different wavelengths or frequencies. White noise is variation that is described by equal contributions of all wavelengths (hence the term “white”), and it is a series that is completely random from one time step to the next. Reddened environmental variation is variation that is described by a predominance of longer wavelengths (hence the term “red”), and it is a series in which values tend to change gradually, where values that are close together in time tend to be more similar, or auto-correlated. Spectral variation is also referred to as 1/f noise (“one over f noise”)._
