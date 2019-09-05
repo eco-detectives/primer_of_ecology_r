@@ -5,7 +5,7 @@ author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
   html_document:
     toc: false
-    code_folding: show
+    code_folding: hide
     number_sections: false
     theme: cerulean
     highlight: haddock
@@ -204,6 +204,7 @@ $$K = 2N \quad \Longrightarrow \quad N = K/2$$
 c) Setting a target to maintain $N > K/2$ ecologically allows for uncertainty in population estimates and carrying capacity estimates, i.e. a precautionary principle.  From an economics perspective, targeting fish at less dense populations is more costly, so this will shift the optimal population slightly higher to maximize (profit - cost); additionally, the benefit of leaving extra fish compounds over time, so the max economic yield is typically where the growth rate is equal to the discount rate.
 d) Assuming linear density dependence, when $\theta < 1$, means your growth rate assumption will be too high, and thus the harvest targets (equal to predicted growth rate) will be too high.  When $\theta > 1$, harvest targets will be too low, resulting in an underexploited stock.
 e) Harvesting the entire population and investing would provide a long term return at the interest rate of the investment.
+f) Since cost is probably related to density (as density decreases, costs increase), you'd need to account for total profits, not gross revenue from harvest; and you'd harvest down to the point where the long term expected value of the fish left in the water (growing and harvesting to that level every year forever) is equal to the value of harvesting everything now and putting the profits into other interest-earning investments.
 
 
 ## 3.5. Environmental Variability
@@ -216,7 +217,7 @@ Kstart <- 100; time <- 1:20; K <- numeric(20);
 for(i in 1:20) K[i] <- Kstart + rnorm(1, m=0, sd=5);
 plot(time, K).
 ```
-(b) All distributions are characterized by their moments. For instance, the Nor- mal distribution is typically defined by its mean, $\mu$, and variance, $\sigma^2$. Focus on just one moment of your selected distribution in (a), and use your simulations to determine quantitatively the relation between $K$ and the resulting $N$ derived from the discrete growth model. For instance, you might vary the standard deviation of the random normal distribution that contributes to $K$, and examine how the standard deviation of $K$, $\sigma_K$, relates to mean $N$, $\mu_N$.
+(b) All distributions are characterized by their moments. For instance, the Normal distribution is typically defined by its mean, $\mu$, and variance, $\sigma^2$. Focus on just one moment of your selected distribution in (a), and use your simulations to determine quantitatively the relation between $K$ and the resulting $N$ derived from the discrete growth model. For instance, you might vary the standard deviation of the random normal distribution that contributes to $K$, and examine how the standard deviation of $K$, $\sigma_K$, relates to mean $N$, $\mu_N$.
 (c) Create a reddened time series for K (see note below) (Hint: What are the values of `x` and `y` when you do `x <- sample(c(-1,0,1), 20, replace=TRUE); y <- cumsum(x)` ?). Use this time series to create a reddened population dynamic. (Hint: First create the vector of reddened $K$'s equal in length to your time series. Then create a growth function that can access the vector, e.g. 
 ```
 DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
@@ -224,3 +225,75 @@ DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
 Then, inside the for loop, use an indexed `K`, such as `1 - N[t]/K[t]`.
 
 > Note: _Environmental factors such as temperature frequently vary in a gradual fashion, such that if the weather is hot today, it is likely to be hot tomorrow. Such variation is described in terms of auto-correlation or a spectral distribution or color [67,155]. Spectral decomposition of a times series involves a description of the series in terms of waves of different wavelengths or frequencies. White noise is variation that is described by equal contributions of all wavelengths (hence the term “white”), and it is a series that is completely random from one time step to the next. Reddened environmental variation is variation that is described by a predominance of longer wavelengths (hence the term “red”), and it is a series in which values tend to change gradually, where values that are close together in time tend to be more similar, or auto-correlated. Spectral variation is also referred to as 1/f noise (“one over f noise”)._
+
+### Casey's solutions:
+
+a) Define a function similar to 3.1a with a stochastic carrying capacity modeled as normal distribution around a mean:
+``` {r}
+calc_dlog_stoch <- function(N, r_d, K, K_sd = 0) {
+  ### K is mean, K_sd is std dev around the mean
+  K_real <- rnorm(1, mean = K, sd = K_sd)
+  N_tplus1 <- N * (1 + r_d * (K_real - N) / K_real)
+  if(N_tplus1 < 0) {
+    ### no pops less than zero!
+    N_tplus1 <- 0
+  }
+  return(N_tplus1)
+}
+```
+
+Run a few iterations at different standard deviations around the same mean
+```{r }
+N_0 <- 1; r_d <- 1; K <- 100
+yrs <- 10
+sims <- 10
+
+K_sd_vec <- c(2, 10, 20, 50)
+
+### Initialize a list to store simulations at various K_sd values
+K_stoch_list <- vector('list', length = length(K_sd_vec))
+
+for(i in seq_along(K_sd_vec)) {
+  ### Loop over each K_sd value, with a number of sim iterations
+  K_sd <- K_sd_vec[i]
+  
+  ### Initialize the sims list
+  sims_list <- vector('list', length = sims)
+  
+  for(sim in 1:sims) {
+    ### loop over a number of simulations
+    N_vec <- vector('numeric', length = yrs)
+    N_vec[1] <- calc_dlog_stoch(N_0, r_d, K, K_sd)
+    
+    for (yr in 2:yrs) {
+      ### loop along the vector of years
+      N_vec[yr] <- calc_dlog_stoch(N_vec[yr - 1], r_d, K, K_sd)
+    } ### end of year-to-year loop
+    
+    ### assemble the year vector for this simulation into a dataframe
+    ### then put it into the sims list
+    N_df <- data.frame(yr = 0:yrs,
+                       N = c(0, N_vec)) %>%
+      mutate(sim = sim, K_sd = K_sd)
+   sims_list[[sim]] <- N_df
+   
+  } ### end of sim loop
+  
+  K_stoch_list[[i]] <- bind_rows(sims_list)
+  
+}
+
+K_stoch_df <- bind_rows(K_stoch_list) %>%
+  mutate(sim1 = paste(sim, K_sd))
+
+K_stoch_plot <- ggplot(K_stoch_df, aes(x = yr, y = N, color = K_sd)) +
+  theme_classic() +
+  geom_point() +
+  geom_line(alpha = .5, aes(group = sim1)) +
+  scale_color_viridis_c()
+
+print(K_stoch_plot)
+print(K_stoch_plot + scale_y_log10() + labs(title = 'logged Y axis'))
+```
+```
+
