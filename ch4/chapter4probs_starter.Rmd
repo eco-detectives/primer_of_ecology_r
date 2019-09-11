@@ -1,0 +1,46 @@
+---
+title: 'Primer of Ecology with $\textsf{R}$: chapter 4'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: hide
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 4: Populations in Space{.tabset}
+
+## 4.1. Equilibria
+
+Derive expressions and calculate equilibria for the following metapopulation models, with $c_i = 0.05$, $e = 0.01$. Show your work — start with the differential equations, set to zero, and solve $p^{∗}$; then substitute in values for $c_i, e$.
+
+(a) Levins model.
+(b) Propagule rain model (`gotelli`).
+(c) Propagule rain model that also includes both external and internal propagule production and dispersal.
+(d) Hanski model.
+(e) Lande (habitat destruction) model (with `D = 0.1`).
+
+## 4.2. Habitat destruction
+
+Compare different levels of habitat destruction.
+
+(a) Use the habitat destruction model (`lande`) to compare 9 levels of destruction (`ds <- seq(0,.8, by=.1)`), using $c_i = 0.1, e = 0.01$. Plot of graph of the dynamics through time, and calculate the equilibria directly.
+(b) Write an ODE function for a habitat destruction model with rescue effect. Let the “rescue” have an additional parameter, $a$, such that extinction rate is $ep(1 − ap)$.
+(c) Let $D = 0.5, c_i = 0.1, e = 0.02$, and vary $a$ over five levels (including $a = 0, 1$) to investigate the effects of “relative rescue effect” on the equilibria and dynamics of a metapopulation.
