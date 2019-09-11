@@ -5,7 +5,7 @@ author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
   html_document:
     toc: false
-    code_folding: show
+    code_folding: hide
     number_sections: false
     theme: cerulean
     highlight: haddock
@@ -50,7 +50,7 @@ $\alpha = 1/100 = 0.01$
 $N_{t+1} = N_t + r_d * (1 - N_t/K) * N_t$
 $N_{t+1}/N_t = 1 + 1 * (1-N_t/100)$
 
-(d) Graph the 10 y dynamics ($t$ = 0,..., 10$) of the annual plant in (a) and (b), starting with $N_0 = 1$.
+(d) Graph the 10 y dynamics ($t = 0,..., 10$) of the annual plant in (a) and (b), starting with $N_0 = 1$.
 ``` {r}
 dlogistic <- function(alpha = 0.01, rd = 1, N0 = 1, t = 10) {
   N <- c(N0, numeric(t))
@@ -245,7 +245,7 @@ $dN/dt=3/16*r$
 (d) What would the consequences be for the population if you assume linear density dependence $(1 − \alpha/N)$, but in fact the population is governed by non-linear density dependence where $\theta < 1$ and $\theta > 1$ (Figs. 3.13a - 3.13c)?
 (e) What economic benefit would you gain if you harvested the entire popula- tion all at once (and eliminated it from the face of the planet)? What could you do with all that money?
 (f) How would you incorporate both harvesting and economic considerations into your logistic growth model?
-=======
+
 ### Casey's solutions:
 
 a) Eqn 3.13: $\frac{dN}{dt} = rN\left(\frac{K - N}{K}\right)$. The middle term becomes .75, .5, and .25 respectively for $N = K/4, K/2, 3K/4$; so the growth rate $\frac{dN}{dt} = .75rN, .50rN, .25rN$ respectively.
@@ -271,7 +271,7 @@ Kstart <- 100; time <- 1:20; K <- numeric(20);
 for(i in 1:20) K[i] <- Kstart + rnorm(1, m=0, sd=5);
 plot(time, K).
 ```
-(b) All distributions are characterized by their moments. For instance, the Nor- mal distribution is typically defined by its mean, $\mu$, and variance, $\sigma^2$. Focus on just one moment of your selected distribution in (a), and use your simulations to determine quantitatively the relation between $K$ and the resulting $N$ derived from the discrete growth model. For instance, you might vary the standard deviation of the random normal distribution that contributes to $K$, and examine how the standard deviation of $K$, $\sigma_K$, relates to mean $N$, $\mu_N$.
+(b) All distributions are characterized by their moments. For instance, the Normal distribution is typically defined by its mean, $\mu$, and variance, $\sigma^2$. Focus on just one moment of your selected distribution in (a), and use your simulations to determine quantitatively the relation between $K$ and the resulting $N$ derived from the discrete growth model. For instance, you might vary the standard deviation of the random normal distribution that contributes to $K$, and examine how the standard deviation of $K$, $\sigma_K$, relates to mean $N$, $\mu_N$.
 (c) Create a reddened time series for K (see note below) (Hint: What are the values of `x` and `y` when you do `x <- sample(c(-1,0,1), 20, replace=TRUE); y <- cumsum(x)` ?). Use this time series to create a reddened population dynamic. (Hint: First create the vector of reddened $K$'s equal in length to your time series. Then create a growth function that can access the vector, e.g. 
 ```
 DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
@@ -284,9 +284,13 @@ Then, inside the for loop, use an indexed `K`, such as `1 - N[t]/K[t]`.
 
 a) Define a function similar to 3.1a with a stochastic carrying capacity modeled as normal distribution around a mean:
 ``` {r}
-calc_dlog_stoch <- function(N, r_d, K, K_sd = 0) {
-  ### K is mean, K_sd is std dev around the mean
-  K_real <- rnorm(1, mean = K, sd = K_sd)
+calc_dlog_stoch <- function(N, r_d, K, K_sd = 0, K_lim = 20) {
+  ### K is mean, K_sd is std dev around the mean...   
+  ### limit K_real to range of (K/K_lim, K*K_lim)
+  while(TRUE) {
+    K_real <- rnorm(1, mean = K, sd = K_sd)
+    if(K_real < K_lim * K & K_real > K / K_lim) break()
+  }
   N_tplus1 <- N * (1 + r_d * (K_real - N) / K_real)
   if(N_tplus1 < 0) {
     ### no pops less than zero!
@@ -296,13 +300,14 @@ calc_dlog_stoch <- function(N, r_d, K, K_sd = 0) {
 }
 ```
 
-Run a few iterations at different standard deviations around the same mean
+b) Run a few iterations at different standard deviations around the same mean
 ```{r }
 N_0 <- 1; r_d <- 1; K <- 100
 yrs <- 10
-sims <- 10
+sims <- 100
 
-K_sd_vec <- c(2, 10, 20, 50)
+set.seed(12345)
+K_sd_vec <- seq(0, 50, 5)
 
 ### Initialize a list to store simulations at various K_sd values
 K_stoch_list <- vector('list', length = length(K_sd_vec))
@@ -327,7 +332,7 @@ for(i in seq_along(K_sd_vec)) {
     ### assemble the year vector for this simulation into a dataframe
     ### then put it into the sims list
     N_df <- data.frame(yr = 0:yrs,
-                       N = c(0, N_vec)) %>%
+                       N = c(N_0, N_vec)) %>%
       mutate(sim = sim, K_sd = K_sd)
    sims_list[[sim]] <- N_df
    
@@ -347,7 +352,75 @@ K_stoch_plot <- ggplot(K_stoch_df, aes(x = yr, y = N, color = K_sd)) +
   scale_color_viridis_c()
 
 print(K_stoch_plot)
-print(K_stoch_plot + scale_y_log10() + labs(title = 'logged Y axis'))
-```
 ```
 
+As part b) suggests, we can also look at the distribution of $N$ as the standard deviation $\sigma_K$ changes.
+
+```{r}
+K_endpoints <- K_stoch_df %>%
+  filter(yr == max(yr)) %>%
+  group_by(K_sd) %>%
+  summarize(mean = mean(N), sd = sd(N)) %>%
+  gather(param, val, mean, sd)
+
+ggplot(K_endpoints, aes(x = K_sd, y = val, color = param, group = param)) +
+  geom_point() +
+  geom_line() +
+  theme_classic()
+```
+
+c) define a function that generates a vector of $N$ using a "reddened" $K$.
+
+``` {r}
+calc_dlog_red <- function(N_0, r_d, K_0, t, red = 0) {
+  ### K_0 is starting val, red is the +/- increment to K each year
+  ### default is constant K
+  dK_vec <- sample(-1:1, t, replace = TRUE) * red
+  K_vec <- cumsum(c(K_0, dK_vec))
+  
+  N_vec <- vector('numeric', length = t + 1)
+  N_vec[1] <- N_0
+  for (i in 1:t) { # i <- 2
+    N_vec[i + 1] <- N_vec[i] * (1 + r_d * (K_vec[i] - N_vec[i]) / K_vec[i])
+    
+    if(N_vec[i + 1] < 0) {
+      ### no pops less than zero!
+      N_vec[i + 1] <- 0
+    }    
+  }
+
+  results_df <- data.frame(year = 0:t, N = N_vec, K = K_vec)
+  return(results_df)
+}
+```
+
+```{r }
+N_0 <- 1; r_d <- 1; K <- 100
+yrs <- 10
+sims <- 100
+red_vec <- c(1, 2, 5, 10)
+
+K_red_list <- vector('list', length = length(red_vec))
+
+for(i in seq_along(red_vec)) {
+  # i <- 1
+  red <- red_vec[i]
+  K_red_list[[i]] <- lapply(1:sims, FUN = function(sim) {
+    N_df <- calc_dlog_red(N_0 = N_0, r_d = r_d, K_0 = K, t = yrs, red = red) %>%
+      mutate(sim = sim)}) %>%
+    bind_rows() %>%
+    mutate(red = red)
+}
+
+K_red_df <- K_red_list %>%
+  bind_rows() %>%
+  mutate(gp = paste(red, sim))
+
+
+K_red_plot <- ggplot(K_red_df, aes(x = year, y = N, color = red)) +
+  theme_classic() +
+  geom_line(alpha = .2, aes(group = gp)) +
+  scale_color_viridis_c()
+
+print(K_red_plot)
+```
