@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Compiled on Thu Sep 12 09:30:37 2019 by seanmdenny" />
+<meta name="author" content="Compiled on Thu Sep 12 09:49:53 2019 by seanmdenny" />
 
 
 <title>Primer of Ecology with \textsf{R}: Team Lumpsucker Ch. 3 Problems</title>
@@ -163,7 +163,7 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Primer of Ecology with <span class="math inline">\(\textsf{R}\)</span>: Team Lumpsucker Ch. 3 Problems</h1>
-<h4 class="author"><em><em>Compiled on Thu Sep 12 09:30:37 2019 by seanmdenny</em></em></h4>
+<h4 class="author"><em><em>Compiled on Thu Sep 12 09:49:53 2019 by seanmdenny</em></em></h4>
 
 </div>
 
@@ -248,10 +248,19 @@ prob1_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span 
 </div>
 <div id="seans-solution" class="section level3">
 <h3>3.1 Sean’s solution:</h3>
-<p><span class="math inline">\(N_{t+1} = \lambda N_t = N_t (1 + r_d)\)</span> ,</p>
-<p><span class="math inline">\(N_{t+1}/N_t = 1 + r_d\)</span> ,</p>
-<p><span class="math inline">\(2 = 1 + r_d\)</span>, thus,</p>
+<ol style="list-style-type: lower-alpha">
+<li>Calculating <span class="math inline">\(r_d\)</span></li>
+</ol>
+<p><span class="math inline">\(N_{t+1} = \lambda N_t = N_t (1 + r_d)\)</span> , <span class="math inline">\(N_{t+1}/N_t = 1 + r_d\)</span> , <span class="math inline">\(2 = 1 + r_d\)</span>, thus,</p>
 <p><span class="math inline">\(r_d = 1\)</span></p>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>Calculating <span class="math inline">\(\alpha\)</span></li>
+</ol>
+<p><span class="math inline">\(0 = r_d - r_d(1 - \alpha N_t)\)</span> <span class="math inline">\(N_t = 1/\alpha\)</span> <span class="math inline">\(100 = 1/\alpha\)</span> , thus</p>
+<p><span class="math inline">\(\alpha = 1/100 = 0.01\)</span></p>
+<ol start="3" style="list-style-type: lower-alpha">
+<li></li>
+</ol>
 </div>
 </div>
 <div id="dynamics-of-e.-coli" class="section level2">
