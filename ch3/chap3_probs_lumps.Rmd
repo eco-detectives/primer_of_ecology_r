@@ -227,15 +227,15 @@ The logistic growth equation and other similar equations have been used and abus
 (a) Find expressions for population growth rates when $N = K/4, K/2, 3K/4$ (substitute these values for $N$ in eq. 3.13, and show your work). Which of these results in the highest population growth rate? How do these relate to the management of a harvested population?
 
 *N=K/4:*
-$dN/dt=r*K/4*((K-K/4)/K)$
-$dN/dt=r*1/4*K*3/4$
-$dN/dt=3/16*r$
+$\frac{dN}{dt}=r*\frac{K}{4}*\frac{K-\frac{K}{4}}{K})$
+$\frac{dN}{dt}=r*\frac{1}{4}*K*\frac{3}{4}$
+$\frac{dN}{dt}=\frac{3}{16}*r$
 
 *N=K/2:*
-$dN/dt=1/4*r$
+$\frac{dN}{dt}=1/4*r$
 
 *N=3K/4:*
-$dN/dt=3/16*r$
+$\frac{dN}{dt}=3/16*r$
 
 (b) Show the derivation of the partial derivative of the continuous logistic growth model, with respect to N (i.e., $\partial \dot{N} / \partial N$). Solve for zero to determine when total population growth rate reaches a maximum. Show your work.
 
