@@ -102,6 +102,23 @@ ggplot(prob1_df, aes(x = yr, y = N)) +
 ```
 
 
+###3.1 Sean's solution:
+
+$N_{t+1} = \lambda N_t = N_t (1 + r_d)$ ,
+
+$N_{t+1}/N_t = 1 + r_d$ ,
+
+$2 = 1 + r_d$, thus,
+
+$r_d = 1$
+
+```{r}
+
+
+
+```
+
+
 
 ## 3.2. Dynamics of _E. coli_
 
