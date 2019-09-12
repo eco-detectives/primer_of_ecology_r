@@ -38,19 +38,19 @@ library(primer) # install.packages('primer')
 
 a) Calculate $r_d$ of an annual plant that has a maximum growth rate of $N_{t+1}/N_t = 2$ at very, very small population sizes.
 
-$N_{t+1} = N_t + r_d * N_t$
-$N_{t+1}/N_t = 1 + r_d = 2$
-$r_d = 1$
+$$N_{t+1} = N_t + r_d * N_t$$
+$$N_{t+1}/N_t = 1 + r_d = 2$$
+$$r_d = 1$$
 
 b) Calculate the appropriate per capita density dependent effect of an annual plant with a carrying capacity K of 100 inds $\cdot$ m^-2^.
-$1/\alpha = k$
-$\alpha = 1/100 = 0.01$
+$$1/\alpha = k$$
+$$\alpha = 1/100 = 0.01$$
 
 (c) Write the appropriate logistic growth equation that incorporates the intrinsic growth of (a) and the density dependence of (b).
-$N_{t+1} = N_t + r_d * (1 - N_t/K) * N_t$
-$N_{t+1}/N_t = 1 + 1 * (1-N_t/100)$
+$$N_{t+1} = N_t + r_d * (1 - N_t/K) * N_t$$
+$$N_{t+1}/N_t = 1 + 1 * (1-N_t/100)$$
 
-(d) Graph the 10 y dynamics ($t = 0,..., 10$) of the annual plant in (a) and (b), starting with $N_0 = 1$.
+(d) Graph the 10 y dynamics ($t = 0,..., 10$) of the annual plant in (a) and (b), starting with $$N_0 = 1$$.
 ``` {r}
 dlogistic <- function(alpha = 0.01, rd = 1, N0 = 1, t = 10) {
   N <- c(N0, numeric(t))
@@ -148,14 +148,14 @@ $N_{t+1} = \lambda N_t = (1 + r_d(1 - \alpha/K) N_t$
 
 (a) Calculate $r$ of _E. coli_ that has a doubling time of 30 min. Express this rate in hours.
 
-$2N = Ne^{rt}$
-$r = ln(2)/t$
+$$2N = Ne^{rt}$$
+$$r = ln(2)/t$$
 Here t = .5hr
-$r = ln(2)/.5 = 1.38\text{ hr}^{-1}$
+$$r = ln(2)/.5 = 1.38\text{ hr}^{-1}$$
 
 (b) Calculate the per capita density dependent effect of an _E. coli_ culture that grows logistically over a 24 h period, and which levels off at a density of 10^7^ CFU$\cdot$mL^−1^$ (CFU is colony forming units — for _E. coli_ its is equivalent to individuals).
 
-$\alpha=1/k=10^{-7}\text{ mL/CFU}$
+$$\alpha=1/k=10^{-7}\text{ mL/CFU}$$
 
 (c) Graph the 50h dynamics ($t = 0,..., 50$) of the _E. coli_ population in (a) and (b), starting with $N_0 = 1000$.
 ```{r}
@@ -287,15 +287,15 @@ The logistic growth equation and other similar equations have been used and abus
 (a) Find expressions for population growth rates when $N = K/4, K/2, 3K/4$ (substitute these values for $N$ in eq. 3.13, and show your work). Which of these results in the highest population growth rate? How do these relate to the management of a harvested population?
 
 *N=K/4:*
-$\frac{dN}{dt}=r*\frac{K}{4}*\frac{K-\frac{K}{4}}{K})$
-$\frac{dN}{dt}=r*\frac{1}{4}*K*\frac{3}{4}$
-$\frac{dN}{dt}=\frac{3}{16}*r$
+$$\frac{dN}{dt}=r*\frac{K}{4}*\frac{K-\frac{K}{4}}{K})$$
+$$\frac{dN}{dt}=r*\frac{1}{4}*K*\frac{3}{4}$$
+$$\frac{dN}{dt}=\frac{3}{16}*r$$
 
 *N=K/2:*
-$\frac{dN}{dt}=\frac{1}{4}*r$
+$$\frac{dN}{dt}=\frac{1}{4}*r$$
 
 *N=3K/4:*
-$\frac{dN}{dt}=\frac{3}{16}*r$
+$$\frac{dN}{dt}=\frac{3}{16}*r$$
 
 (b) Show the derivation of the partial derivative of the continuous logistic growth model, with respect to N (i.e., $\partial \dot{N} / \partial N$). Solve for zero to determine when total population growth rate reaches a maximum. Show your work.
 
