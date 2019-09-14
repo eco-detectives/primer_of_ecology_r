@@ -134,7 +134,6 @@ d. Graph the 10 year dynamics (t = 0, . . . , 10) of the annual plant in (a) and
 ```{r}
 
 
-
 ```
 
 
