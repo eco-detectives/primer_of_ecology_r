@@ -38,19 +38,19 @@ library(primer) # install.packages('primer')
 
 a) Calculate $r_d$ of an annual plant that has a maximum growth rate of $N_{t+1}/N_t = 2$ at very, very small population sizes.
 
-$N_{t+1} = N_t + r_d * N_t$
-$N_{t+1}/N_t = 1 + r_d = 2$
-$r_d = 1$
+$$N_{t+1} = N_t + r_d * N_t$$
+$$N_{t+1}/N_t = 1 + r_d = 2$$
+$$r_d = 1$$
 
 b) Calculate the appropriate per capita density dependent effect of an annual plant with a carrying capacity K of 100 inds $\cdot$ m^-2^.
-$1/\alpha = k$
-$\alpha = 1/100 = 0.01$
+$$1/\alpha = k$$
+$$\alpha = 1/100 = 0.01$$
 
 (c) Write the appropriate logistic growth equation that incorporates the intrinsic growth of (a) and the density dependence of (b).
-$N_{t+1} = N_t + r_d * (1 - N_t/K) * N_t$
-$N_{t+1}/N_t = 1 + 1 * (1-N_t/100)$
+$$N_{t+1} = N_t + r_d * (1 - N_t/K) * N_t$$
+$$N_{t+1}/N_t = 1 + 1 * (1-N_t/100)$$
 
-(d) Graph the 10 y dynamics ($t = 0,..., 10$) of the annual plant in (a) and (b), starting with $N_0 = 1$.
+(d) Graph the 10 y dynamics ($t = 0,..., 10$) of the annual plant in (a) and (b), starting with $$N_0 = 1$$.
 ``` {r}
 dlogistic <- function(alpha = 0.01, rd = 1, N0 = 1, t = 10) {
   N <- c(N0, numeric(t))
@@ -101,6 +101,41 @@ ggplot(prob1_df, aes(x = yr, y = N)) +
 
 ```
 
+###3.1 Sean's solution:
+
+a. Calculating $r_d$
+
+$N_{t+1} = \lambda N_t = N_t (1 + r_d)$
+
+$N_{t+1}/N_t = 1 + r_d$
+
+$2 = 1 + r_d$
+
+$r_d = 1$
+
+b. Calculating $\alpha$
+
+$0 = r_d - r_d(1 - \alpha N_t)$
+
+$N_t = 1/\alpha$
+
+$100 = 1/\alpha$
+
+$\alpha = 1/100 = 0.01$
+
+c. Write logistic growth equation
+
+$N_{t+1} = \lambda N_t = (1 + r_d(1 - \alpha N_t) N_t$
+
+$N_{t+1} = N_t + N_t(1 - 0.01 N_t)$
+
+d. Graph the 10 year dynamics (t = 0, . . . , 10) of the annual plant in (a) and (b), starting with N0 = 1.
+
+```{r}
+
+
+```
+
 
 
 ## 3.2. Dynamics of _E. coli_
@@ -113,16 +148,41 @@ ggplot(prob1_df, aes(x = yr, y = N)) +
 
 (a) Calculate $r$ of _E. coli_ that has a doubling time of 30 min. Express this rate in hours.
 
-*Assuming that if population doubles in 30 min, it would quadrouple in 1 hr?*
-$4*N_t=N_t+r_d*N_t$
-$4=1+r_d$
-$r_d=3$
+$$2N = Ne^{rt}$$
+$$r = ln(2)/t$$
+Here t = .5hr
+$$r = ln(2)/.5 = 1.38\text{ hr}^{-1}$$
 
 (b) Calculate the per capita density dependent effect of an _E. coli_ culture that grows logistically over a 24 h period, and which levels off at a density of 10^7^ CFU$\cdot$mL^−1^$ (CFU is colony forming units — for _E. coli_ its is equivalent to individuals).
 
-$\alpha=1/k=1/10^7$
+$$\alpha=1/k=10^{-7}\text{ mL/CFU}$$
 
 (c) Graph the 50h dynamics ($t = 0,..., 50$) of the _E. coli_ population in (a) and (b), starting with $N_0 = 1000$.
+```{r}
+# from the text:
+clogistic <- function(times, y, parms) {
+  n <- y[1]
+  r <- parms[1]
+  alpha <- parms[2]
+  dN_dt <- r * n * (1 - alpha * n)
+  return(list(c(dN_dt)))
+}
+
+prms <- c(r = log(2) / .5, a = 1e-7)
+N_0 <- 1000
+t_vec <- seq(0, 50, .2)
+
+library(deSolve)
+N_out <- ode(y = N_0, times = t_vec, clogistic, parms = prms)
+
+nts_df2 <- as.data.frame(N_out) %>%
+  setNames(c('t', 'N'))
+ggplot(nts_df2, aes(x = t, y = N)) +
+  theme_classic() +
+  geom_point() +
+  geom_line(alpha = .5)
+```
+
 
 ### Casey's solutions:
 
@@ -227,23 +287,25 @@ The logistic growth equation and other similar equations have been used and abus
 (a) Find expressions for population growth rates when $N = K/4, K/2, 3K/4$ (substitute these values for $N$ in eq. 3.13, and show your work). Which of these results in the highest population growth rate? How do these relate to the management of a harvested population?
 
 *N=K/4:*
-$dN/dt=r*K/4*((K-K/4)/K)$
-$dN/dt=r*1/4*K*3/4$
-$dN/dt=3/16*r$
+$$\frac{dN}{dt}=r*\frac{K}{4}*\frac{K-\frac{K}{4}}{K})$$
+$$\frac{dN}{dt}=r*\frac{1}{4}*K*\frac{3}{4}$$
+$$\frac{dN}{dt}=\frac{3}{16}*r$$
 
 *N=K/2:*
-$dN/dt=1/4*r$
+$$\frac{dN}{dt}=\frac{1}{4}*r$$
 
 *N=3K/4:*
-$dN/dt=3/16*r$
+$$\frac{dN}{dt}=\frac{3}{16}*r$$
 
 (b) Show the derivation of the partial derivative of the continuous logistic growth model, with respect to N (i.e., $\partial \dot{N} / \partial N$). Solve for zero to determine when total population growth rate reaches a maximum. Show your work.
 
-*see paper*
+*see notes...*
 
-(c) What would be the ecological and economic rationale for not killing more individuals, and keeping $N > K/2$?
-(d) What would the consequences be for the population if you assume linear density dependence $(1 − \alpha/N)$, but in fact the population is governed by non-linear density dependence where $\theta < 1$ and $\theta > 1$ (Figs. 3.13a - 3.13c)?
-(e) What economic benefit would you gain if you harvested the entire popula- tion all at once (and eliminated it from the face of the planet)? What could you do with all that money?
+(c) Keeping $N > K/2$ is a precautionary guideline that allows for environmental variability, risk of harvesting above mangement regulations, etc. At $N = K/2$, the growth rate is maximized, so harvesting beyond this point would have the growth rate declining (population could still be growing, but not as quickly, which would mean economic losses in the long run)
+
+(d) Assuming linear density dependence $(1 − \alpha/N)$ when in fact $\theta < 1$ and $\theta > 1$ would lead to over- or underestimates of MSY harvest levels, because $N = K/2$ shifts with $\theta$.
+
+(e) What economic benefit would you gain if you harvested the entire population all at once (and eliminated it from the face of the planet)? What could you do with all that money?
 (f) How would you incorporate both harvesting and economic considerations into your logistic growth model?
 
 ### Casey's solutions:
@@ -424,3 +486,48 @@ K_red_plot <- ggplot(K_red_df, aes(x = year, y = N, color = red)) +
 
 print(K_red_plot)
 ```
+
+### Molly's solutions
+
+(a) Create a version of dlogistic() that adds (or subtracts) a random amount to $K$ in each time step. Use one of the many functions that can draw random numbers from particular distributions.
+
+``` {r}
+dlogistic_k <- function(N0, rd, K_mean, t) {
+  N <- c(N0, numeric(t))
+  K <- c(K_mean, numeric(t))
+  for (i in 1:t) K[i] <- K_mean + rnorm(1, m = 0, sd = 5)
+  for (i in 1:t) N[i + 1] <- {
+      N[i] + rd * N[i] * (1 - N[i] / K[i])
+    }
+  return(N) ### how do I print K as well?
+}
+
+nts_df <- dlogistic_k(N0 = 100, rd = 1, K_mean = 150, t = 10) %>% 
+  as.data.frame() %>% 
+  setNames(c('N_t')) %>% 
+  mutate(t=c(0:10))
+```
+
+(b) Run iterations with different standard deviations around the same mean
+
+```{r}
+# first creating dataframe of K/K_sd values
+K_mean <- 100
+k_sims <- expand.grid(t = c(0:10), K_sd = c(1, 5, 10)) %>%
+  mutate(K = K_mean + rnorm(1, m = 0, sd = K_sd)) # but these will all be the same...
+
+# dlogistic_ksim <- function(N0, rd, K_mean, t, sd) {
+#   N <- c(N0, numeric(t))
+#   K <- c(K_mean, numeric(t))
+#   for (i in 1:t) N[i + 1] <- {
+#       N[i] + rd * N[i] * (1 - N[i] / K[i])
+#     }
+#   return(N)
+# }
+```
+
+(c) Create a reddened time series for K (see note below) (Hint: What are the values of `x` and `y` when you do `x <- sample(c(-1,0,1), 20, replace=TRUE); y <- cumsum(x)` ?). Use this time series to create a reddened population dynamic. (Hint: First create the vector of reddened $K$'s equal in length to your time series. Then create a growth function that can access the vector, e.g. 
+```
+DLG.RK <- function(alpha = 0.001, rd = 1, N0 = 10, gens = 20, K = K.red)
+```
+Then, inside the for loop, use an indexed `K`, such as `1 - N[t]/K[t]`.

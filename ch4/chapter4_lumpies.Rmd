@@ -1,0 +1,326 @@
+---
+title: 'Primer of Ecology with $\textsf{R}$: Chapter 4 Lumpsuckas'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+```{r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 4: Populations in Space{.tabset}
+
+## 4.1 Source-sink Dynamics
+
+We then assume, for simplicity, that migration, $M$, is exclusively from the source to the sink $(M_{21} > 0, M_{12} = 0)$. We further assume that $\lambda_1 > 1$ but all excess individuals migrate to patch 2, so $M_{21} = \lambda_1 - 1 > 0$. Then $\mathbf A$ simplifies to
+$$\mathbf A = \begin{pmatrix} 1 & 0 \\ \lambda_1 - 1 & \lambda_2\end{pmatrix}$$
+
+### The spatial demographic Pulliam-like model
+
+We first assign λ for the source and sink populations, and create a matrix.
+
+```{r}
+L1 <- 2
+L2 <- 0.4
+A <- matrix(c(1, 0, L1 - 1, L2), nrow = 2, byrow = TRUE)
+```
+
+We can then use eigenanalysis, as we did in Chapter 2 for stage structured populations. The dominant eigenvalue will provide the long term asymptotic total population growth. We can calculate the stable “stage” distribution, which in this case is the distribution of individuals between the two habitats.
+```{r}
+eigen(A)
+# $values
+# [1] 1.0 0.4
+# $vectors
+#        [,1] [,2]
+# [1,] 0.5145    0
+# [2,] 0.8575    1
+```
+From the dominant eigenvalue, we see Pulliam’s working assumption that the total population growth is set at $\lambda = 1$. We also see from the dominant eigenvector that the sink population actually contains more individuals than the source population $(0.51/(0.51+0.86) < 0.5)$.
+
+We could graph these results as well, for a range of $\lambda_1$ (Fig. 4.3). Here we let `p1` be the proportion of the population in the source.
+
+```{r}
+L1s <- seq(1, 3, by = 0.01)
+p1 <- sapply(L1s, function(l1) {
+    A[2, 1] <- l1 - 1
+    eigen(A)$vectors[1, 1]/sum(eigen(A)$vectors[, 1])
+})
+plot(L1s, p1, type = "l", ylab = "Source Population",
+     xlab = expression(lambda[1]))
+
+### Molly's potential alternative - but wouldnt take matrix components from other columns (even though it runs outside of the pipeline)... :/
+test <- data.frame("L1" = seq(1, 3, by = 0.01), "L2" = 0.4) %>%
+  mutate("eigen1" = eigen(matrix(c(1, 0, L1-1, L2), nrow = 2, byrow = TRUE))$vectors[1,1],
+         "eigen2" = eigen(matrix(c(1, 0, L1-1, L2), nrow = 2, byrow = TRUE))$vectors[2,1],
+         "eigen_tot" = eigen1 + eigen2,
+         "prop_source" = eigen1 / eigen_tot
+         )
+
+```
+
+## 4.3 Related models
+
+### 4.3.1 The classic Levins model
+
+Classic metapopulation model:
+
+$$\frac{d p}{d t} = c_i p (1 - p) - ep$$
+
+This equation describes the dynamics of the proportion, $p$, of a set of fields invaded by a pest (Fig. 4.5a). The pest colonizes different fields at a total rate governed by the rate of propagule production, $c_i$, and also on the proportion of patches that contain the pest, $p$. Thus, propagules are being scattered around the landscape at rate $c_i p$. The rate at which $p$ changes, however, is also related to the proportion of fields that are unoccupied, $(1 - p)$, and therefore available to become occupied and increase $p$. Therefore the total rate of colonization is $c_i p(1 - p)$. The pest has a constant local extinction rate $e$, so the total extinction rate in the landscape is $ep$.
+
+### The Levins metapopulation model (Fig. 4.5a)
+
+A function for a differential equation requires arguments for time, a vector of the state variables (here we have one state variable, p), and a vector of parameters.
+``` {r}
+levins <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp <- ci * p * (1 - p) - e * p
+    return(list(dp))
+  })
+}
+```
+By using `with`, we can specify the parameters by their names, as long as `parms` includes names. The function returns a list that contains a value for the derivative, evaluated at each time point, for each state variable (here merely $dp/dt$). We then use `levins` in the numerical integration function `ode` in the `deSolve` package.
+``` {r}
+library(deSolve)
+prms <- c(ci = 0.15, e = 0.05)
+Initial.p <- 0.01
+out.L <- data.frame(ode(y = Initial.p, times = 1:100, func = levins,
+                        parms = prms))
+```
+We then plot the result (Fig. 4.5a).
+``` {r}
+plot(out.L[, 2] ~ out.L[, 1], type = "l", ylim = c(0, 1),
+     ylab = "p", xlab = "time")
+```
+
+### 4.3.2 Propagule rain
+
+For now, let us assume that our collection of sites is continually showered by propagules from an external source. If only those propagules are important, then we could represent the dynamics as,
+
+$$\frac{d p}{d t} = c_e (1 - p) - ep$$
+where $c_e$ specifies rate of colonization coming from the external source. Gotelli [63] refers to this model as a metapopulation model with “propagule rain” or the “island–mainland” model. He calls it this because it describes a constant influx of propagules which does not depend on the proportion, $p$, of sites occupied for propagule production. Extinction here is mediated only by the proportion of sites occupied, and has a constant per site rate.
+
+### The propagule rain metapopulation model (Fig. 4.5b)
+
+A function for a differential equation requires arguments for time, a vector of the state variables (here we have one state variable, $p$), and a vector of parameters.
+
+```{r}
+gotelli <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp <- ce * (1 - p) - e * p
+    return(list(dp))
+  })
+}
+```
+
+The function returns a list that contains a value for the derivative, evaluated at each time point, for each state variable (here merely $dp/dt$).
+
+...
+
+Of course, we might also think that both internal and external sources are important, in which case we might want to include both sources in our model,
+
+$$\frac{d p}{d t} = (c_i p + c_e) (1 - p) - ep$$
+
+As we have seen before, however, adding more parameters is not something we take lightly. Increasing the number of parameters by, in this case, 50% could require a lot more effort to estimate.
+
+### 4.3.3 The rescue effect and the core-satellite model
+
+We can, however, model total extinction rate E with this rescue effect,
+$$E = -ep (1 - p)$$
+Note that as $p → 1$, the total extinction rate approaches zero. Total extinction rate declines because as the proportion of sites occupied increases, it becomes increasingly likely that dispersing propagules will land on all sites. When propagules happen to land on sites that are on the verge of extinction, they can “rescue” that site from extinction.
+
+...
+
+Assuming only internal propagule supply and the simple rescue effect results in what is referred to as the the core-satellite model,
+$$dp/dt =c_i p (1 - p) - ep(1 - p)$$
+This model was made famous by Illka Hanski [70]. It is referred to as the core-satellite model, for reasons we explore later.
+
+### The core-satellite metapopulation model
+
+A function for a differential equation requires arguments for time, a vector of the state variables (here we have one state variable, p), and a vector of parameters.
+
+```{r}
+hanski <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp <- ci * p * (1 - p) - e * p * (1 - p)
+    return(list(dp))
+  })
+}
+```
+         
+The function returns a list that contains a value for the derivative, evaluated at each time point, for each state variable (here merely $dp/dt$).
+Graphing propagule rain and core-satellite models (Fig. 4.5b)
+First, we integrate the models using the same parameters as for the Levins model, and collect the results.
+
+```{r}
+prms <- c(ci <- 0.15, ce <- 0.15, e = 0.05)
+out.IMH <- data.frame(ode(y = Initial.p, times = 1:100,
+                          func = gotelli, parms = prms))
+out.IMH[["pH"]] <- ode(y = Initial.p, times = 1:100, func = hanski,
+                       parms = prms)[, 2] ## adding Hanski values as additional column in df for plots/comparison
+```
+
+We then plot the result (Fig. 4.5a).
+
+```{r}
+matplot(out.IMH[, 1], out.IMH[, 2:3], type = "l", col = 1,
+        ylab = "p", xlab = "time")
+legend("topleft", c("Hanski", "Propagule Rain"), lty = 2:1,
+       bty = "n")
+```
+
+### An equilibrium for the core-satellite metapopulation model (Fig. 4.6)
+
+We first create an expression for the growth itself, $dp/dt$. We then plot it, while we evaluate it, on the fly.
+``` {r}
+dpdtCS <- expression((ci - e) * p * (1 - p))
+ci <- 0.15
+e <- 0.05
+p <- seq(0, 1, length = 50)
+plot(p, eval(dpdtCS), type = "l", ylab = "dp/dt")
+```
+
+## 4.5 Habitat Destruction
+
+Other researchers have investigated effects of habitat loss on metapopulation dynamics [88, 146, 202]. Taking inspiration from the work of Lande [95, 96], Karieva and Wennergren [88] modeled the effect of habitat destruction, $D$, on overall immigration probability. They incorporated this into Levins’ model as
+$$dp/dt =c_i p(1 - D - p) - ep$$
+where $D$ is the amount of habitat destroyed, expressed as a fraction of the original total available habitat.
+
+### Habitat destruction model
+
+To turn eq. 4.27 into a function we can use with ode, we have
+
+```{r}
+lande <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp <- ci * p * (1 - D - p) - e * p
+    return(list(dp))
+  })
+}
+```
+
+### Illustrating the effects of habitat destruction (Fig. 4.7)
+We can plot the dynamics for three levels of destruction, including none. We first set all the parameters, and time.
+``` {r}
+library(deSolve)
+prmsD <- c(ci = 0.15, e = 0.05, D = 0)
+Ds <- c(0, 0.2, 0.5)
+Initial.p <- 0.01
+t <- 1:200
+```
+We then create an empty matrix of the right size to hold our results, and then integate the ODE.
+``` {r}
+ps <- sapply(Ds, function(d) {
+  prmsD["D"] <- d
+  ode(y = Initial.p, times = t, func = lande, parms = prmsD)[, 2]
+})
+```
+Last, we plot it and add some useful labels.
+``` {r}
+matplot(t, ps, type = "l", ylab = "p", xlab = "time")
+text(c(200, 200, 200), ps[200, ], paste("D = ", Ds, sep = ""),
+     adj = c(1, 0))
+```
+
+### The unexpected collapse of core populations
+
+Here we plot the dynamics of metapopulations starting at or near equilbrium. The first two use the Hanski model, while the third uses Levins. The second and third use $c_i < e$.
+
+``` {r}
+C1 <- ode(y = 0.999, times = t, func = hanski, 
+          parms = c(ci = 0.2, e = 0.01))
+C2 <- ode(y = 0.999, times = t, func = hanski, 
+          parms = c(ci = 0.2, e = 0.25))
+L2 <- ode(y = 0.95, times = t, func = levins, 
+          parms = c(ci = 0.2, e = 0.25))
+```
+
+Next, we plot these and add a legend.
+``` {r}
+matplot(t, cbind(C1[, 2], C2[, 2], L2[, 2]), type = "l",
+        ylab = "p", xlab = "Time", col = 1)
+legend("right", c("c > e", "c < e", "c < e (Levins)"), lty = 1:3,
+       bty = "n")
+```
+
+## 4.6 Core-Satellite Simulations
+
+Here we explore a simple question that Hanski posed long ago: what would communities look like if all of the populations in the community could be described by their independent own core-satellite model? To answer this question, he created communities as collections of independent (non-interacting) populations that behave according to his metapopulation model with internal colonization and the rescue effect [70]. He found that such simulated communities predict that many species will be in almost all sites (“core species”), and even more species will exist at very few sites (“satellite species”). This seems to be a relatively common phenomenon [35], and an observation we described at the beginning of the chapter (Fig. 4.1).
+
+...
+
+We start by using the `args()` function to find out what arguments (i.e. options) are available in the simulation function, `MetaSim`.
+``` {r}
+args(MetaSim)
+# function (Time = 50, NSims = 1, method = "hanski", ci = 0.25,
+#     e = 0.25, phi = 0.75, p0 = 0.5, D = 0.5)
+# NULL
+```
+
+...
+
+Let’s start with an initial run of 10 simulations (produces dynamics for 10 populations) to reproduce Hanski’s core-satellite pattern by using the rescue effect with equal $i$ and $e$.
+``` {r}
+out.CS.10 <- MetaSim(method = "hanski", NSims = 10)  
+  ### Casey note: ci and e are parameters that we are leaving at the default,
+  ### c_i = e = .25
+matplot(out.CS.10$t, out.CS.10$Ns, type = "l", xlab = "Time",
+        ylab = "Occupancy", sub = out.CS.10$method)
+```
+
+Now we will do more simulations (50 species), and run them for longer (500 time intervals vs. 50). Doing many more simulations will take a little longer, so be patient.
+
+``` {r}
+system.time(out.CS.Lots <- MetaSim(method = "hanski", NSims = 50,
+                                   Time = 1000))
+```
+
+time series, although this may not tell you much. Alternatively, we can plot a histogram of the 50 species’ final abundances, at $t = 500$.
+
+``` {r}
+hist(out.CS.Lots$Ns[501, ], breaks = 10, main = NULL,
+     xlab = expression("Occupancy (" * italic("p") * ")"),
+     ylab = "Number of Species",
+     sub = paste(out.CS.Lots$method, " Model", sep = ""))
+```
+
+What does the Levins model predict? Let’s run the simulations and find out.
+``` {r}
+system.time(out.L.Lots <- MetaSim(NSims = 50, Time = 500,
+                                  method = "levins"))
+```
+Now we plot a histogram of the 50 species’ final abundances, at $t = 500$.
+``` {r}
+hist(out.L.Lots$Ns[501, ], breaks = 10,
+     xlab = expression("Occupancy (" * italic("p") * ")"),
+     ylab = "Number of Species", main = NULL,
+     sub = paste(out.L.Lots$method, " Model", sep = ""))
+```
+
+In contrast to the core-satellite model, the Levins model predicts that many fewer species are common (Fig. 4.10b). Thus these two population models make contrasting predictions regarding the structure of communities (i.e. relative species abundances), and provide testable alternatives [35].
+
+## 4.7 Summary
+
+In this chapter, we have introduced space as an important component of population dynamics. We provided a source-sink framework for linked populations, where population size depends on both intrinsic capacities of a habitat patch, and on immigration and emigration rates. We used a metapopulation framework to model (i) a population of individuals within a site, and (ii) a population of populations within a region. We showed similarities and differences between related metapopulation models, and between related metapopulation and logistic models. We investigated the response of metapopulations to habitat destruction. Last, we have shown how different population dynamics lead to different community structure.
+
