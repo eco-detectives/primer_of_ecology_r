@@ -752,6 +752,15 @@ calc_intric_rate <- function(final_pop = 6.3, initial_pop = 0.630, final_period 
   return(rate)
 }
 
+# Sean's copy of Vincent's answer
+
+calc_intrinsc_rate <- function(final_pop = 6.3, initial_pop = 0.630, final_period = 2003, initial_period = 1700){
+  
+  rate <- (log(final_pop) - log(initial_pop))/(final_period - initial_period)
+
+return(rate)
+}
+
 ```
 
 So the intrinsic rate of growth is `r format(round(calc_intric_rate(), 2), nsmall = 2)` new individual per human per year.
