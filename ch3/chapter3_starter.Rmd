@@ -57,6 +57,18 @@ dlogistic_sd <- function(alpha = 0.1, rd = 1, N0 = 100, t = 20) {
   }
   return(N)
 }
+
+#Ask Vincent to review this with you
+
+# When do you use brackets in functions. We've used them twice.
+
+dlogistic_sd_2 <- function(alpha = 0.1, r_d = 1, N0 = 100, t = 20) {
+  N <- c(N0, numeric(t))
+  for (i in 1:t) N[i+1] <- {
+      N[i] + r_d * N[i] * (1 - alpha * N[i])
+}
+  return(N)
+}
 ```
 
 ### 3.1.1. Graphing Population Size
