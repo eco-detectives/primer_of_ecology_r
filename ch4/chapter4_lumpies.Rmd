@@ -116,6 +116,15 @@ levins <- function(t, y, parms) {
     return(list(dp))
   })
 }
+
+### is the with() function necessary?  seems not, but might make it easier if
+### you had a ton of parameters instead of pulling them out one by one.
+levins2 <- function(t, y, parms) {
+  p <- y[1]
+  ci <- parms[1]; e <- parms[2]
+  dp <- ci * p * (1 - p) - e * p
+  return(list(dp))
+}
 ```
 By using `with`, we can specify the parameters by their names, as long as `parms` includes names. The function returns a list that contains a value for the derivative, evaluated at each time point, for each state variable (here merely $dp/dt$). We then use `levins` in the numerical integration function `ode` in the `deSolve` package.
 ``` {r}
@@ -136,6 +145,7 @@ plot(out.L[, 2] ~ out.L[, 1], type = "l", ylim = c(0, 1),
 For now, let us assume that our collection of sites is continually showered by propagules from an external source. If only those propagules are important, then we could represent the dynamics as,
 
 $$\frac{d p}{d t} = c_e (1 - p) - ep$$
+
 where $c_e$ specifies rate of colonization coming from the external source. Gotelli [63] refers to this model as a metapopulation model with “propagule rain” or the “island–mainland” model. He calls it this because it describes a constant influx of propagules which does not depend on the proportion, $p$, of sites occupied for propagule production. Extinction here is mediated only by the proportion of sites occupied, and has a constant per site rate.
 
 ### The propagule rain metapopulation model (Fig. 4.5b)
