@@ -1,0 +1,106 @@
+---
+title: 'Primer of Ecology with $\textsf{R}$: chapter 4 Problems (Lumpies)'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: hide
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 4: Populations in Space{.tabset}
+
+## 4.1. Equilibria
+
+Derive expressions and calculate equilibria for the following metapopulation models, with $c_i = 0.05$, $e = 0.01$. Show your work — start with the differential equations, set to zero, and solve $p^{∗}$; then substitute in values for $c_i, e$.
+
+(a) Levins model.
+(b) Propagule rain model (`gotelli`).
+(c) Propagule rain model that also includes both external and internal propagule production and dispersal.
+(d) Hanski model.
+(e) Lande (habitat destruction) model (with `D = 0.1`).
+
+### Molly's attempts:
+*currently on paper... will see if I have time to practice my LaTeX :)*
+
+## 4.2. Habitat destruction
+
+Compare different levels of habitat destruction.
+
+(a) Use the habitat destruction model (`lande`) to compare 9 levels of destruction (`ds <- seq(0,.8, by=.1)`), using $c_i = 0.1, e = 0.01$. Plot of graph of the dynamics through time, and calculate the equilibria directly.
+(b) Write an ODE function for a habitat destruction model with rescue effect. Let the “rescue” have an additional parameter, $a$, such that extinction rate is $ep(1 − ap)$.
+(c) Let $D = 0.5, c_i = 0.1, e = 0.02$, and vary $a$ over five levels (including $a = 0, 1$) to investigate the effects of “relative rescue effect” on the equilibria and dynamics of a metapopulation.
+
+### Molly's attempts:
+(a) Use the Lande model to compare 9 levels of destruction (`ds <- seq(0,.8, by=.1)`), using $c_i = 0.1, e = 0.01$. Graph the dynamics through time.
+```{r}
+### copied pretty much exactly from the text...
+library(deSolve)
+prmsD <- c(ci = 0.1, e = 0.01, D = 0)
+Ds <- seq(0,.8, by=.1)
+Initial.p <- 0.01
+t <- 1:200
+
+lande <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp <- ci * p * (1 - D - p) - e * p
+    return(list(dp))
+  })
+}
+
+ps <- sapply(Ds, function(d) {
+  prmsD["D"] <- d
+  ode(y = Initial.p, times = t, func = lande, parms = prmsD)[, 2]
+})
+
+matplot(t, ps, type = "l", ylab = "p", xlab = "time")
+text(c(200, 200, 200), ps[200, ], paste("D = ", Ds, sep = ""),
+     adj = c(1, 0))
+```
+
+(b) Write an ODE function for a habitat destruction model with rescue effect. Let the “rescue” have an additional parameter, $a$, such that extinction rate is $ep(1 − ap)$.
+```{r}
+lande_rescue <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp <- ci * p * (1 - D - p) - e * p * (1 - a * p)
+    return(list(dp))
+  })
+}
+```
+
+(c) Let $D = 0.5, c_i = 0.1, e = 0.02$, and vary $a$ over five levels (including $a = 0, 1$) to investigate the effects of “relative rescue effect” on the equilibria and dynamics of a metapopulation.
+```{r}
+prmsA <- c(ci = 0.1, e = 0.02, D = 0.5, a = 0)
+as <- seq(0, 1, by = .25)
+Initial.p <- 0.01
+t <- 1:200
+
+ps2 <- sapply(As, function(a) {
+  prmsA["a"] <- a
+  ode(y = Initial.p, times = t, func = lande_rescue, parms = prmsA)[, 2]
+})
+
+matplot(t, ps2, type = "l", ylab = "p", xlab = "time")
+text(c(200, 200, 200), ps[200, ], paste("D = ", Ds, sep = ""),
+     adj = c(1, 0))
+```
+

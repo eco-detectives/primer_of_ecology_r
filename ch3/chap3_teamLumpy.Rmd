@@ -12,7 +12,7 @@ output:
     toc: false
 ---
 
-``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+```{r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
 knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
                       echo = TRUE, message = FALSE, warning = FALSE)
@@ -35,7 +35,7 @@ library(primer) # install.packages('primer')
 
 An $\textsf{R}$ function will simplify our explorations. It will return a vector of $N$, given $\alpha$, $r_d$, $N_0$, and $t$. The function arguments can have defaults (e.g., `t = 10`).
 
-``` {r}
+```{r}
 dlogistic <- function(alpha = 0.01, rd = 1, N0 = 2, t = 15) {
   N <- c(N0, numeric(t))
   for (i in 1:t) N[i + 1] <- {
@@ -47,6 +47,22 @@ dlogistic <- function(alpha = 0.01, rd = 1, N0 = 2, t = 15) {
 ### The function first makes a new vector containing N0, 
 ### uses a for-loop to implement eq. 3.7 for each time step, and 
 ### then returns the vector N.
+
+######## Sean ###################
+
+# When do you use brackets in functions. We've used them twice.
+# Did we need to specify t as numeric? Is it not numeric by default?
+
+dlogistic_sd_2 <- function(alpha = 0.1, r_d = 1, N0 = 100, t = 20) {
+  N <- c(N0, numeric(t))
+  for (i in 1:t) N[i+1] <- {
+      N[i] + r_d * N[i] * (1 - alpha * N[i])
+}
+  return(N)
+}
+
+# Why can't I call 'N' and get a vector?
+
 ```
 
 
@@ -98,6 +114,26 @@ ggplot(growth_df, aes(x = Nts, y = tot_incr)) +
 ggplot(growth_df, aes(x = Nts, y = pc_incr)) +
   theme_bw() +
   geom_point()
+
+# Sean reproducing Casey's version to get up to speed:
+
+# Graphing population growth increment, so this should approach zero, right?
+
+t_max_sd <- 15
+growth_df_sd <- data.frame(t = 0:t_max_sd,
+                           Nts = dlogistic(t = t_max_sd)) %>% 
+  mutate(Nts_plus_1_sd = lead(Nts),
+         total_inc_sd = Nts_plus_1_sd - Nts,
+         perc_inc_sd = total_inc_sd / Nts)
+
+# Graphing per capita growth increment versus population size:
+
+ggplot(growth_df_sd, aes(x = Nts, y = perc_inc_sd)) +
+  geom_point(size = 2, color = "blue") + 
+  ggtitle("Per capita growth increment in a density-dependent population") +
+  theme_bw() +
+  labs(x = "Population size (Nts)", y = "Per capita growth increment")
+
 ```
 
 ### 3.1.3 Numerical Evaluation of Initial Conditions (Fig. 3.4a)
