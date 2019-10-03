@@ -40,6 +40,54 @@ Derive expressions and calculate equilibria for the following metapopulation mod
 ### Molly's attempts:
 *currently on paper... will see if I have time to practice my LaTeX :)*
 
+### Casey's attempts:
+
+a) Levins:
+\begin{align*}
+  \frac{d p}{d t} &= c_i p (1 - p) - ep  &\text{(start w/classic Levins)}\\
+  0 &= c_i p (1 - p) - ep              &\text{(set FOC to zero)}\\
+  0 &= p(c_i(1 - p) - e)               &\text{(rearrange)}\\
+  0 &= p(c_i - c_i p - e)              &\text{(distribute)}\\
+  \Longrightarrow p^* &= \frac{c_i - e}{c_i}  \text{ (or $p^* = 0$)}
+\end{align*}
+
+b) Gotelli (propagule rain):
+\begin{align*}
+  \frac{d p}{d t} &= c_e (1 - p) - ep     &\text{(start w/propagule rain)}\\
+  0 &= c_e (1 - p) - ep                &\text{(set FOC to zero)}\\
+  0 &= c_e - p(c_e - e)                &\text{(distribute and arrange)}\\
+  \Longrightarrow p^* &= \frac{c_e}{c_e - e}
+\end{align*}
+Note this doesn't have a trivial solution at $p = 0$ since external supply of propagules!
+
+c) Fancy propagule rain:
+\begin{align*}
+  \frac{d p}{d t} &= (c_i p + c_e) (1 - p) - ep   &\text{(start w/fancy propagule rain)}\\
+  0 &= (c_i p + c_e) (1 - p) - ep              &\text{(set FOC to zero)}\\
+  0 &= c_i p + c_e - c_i p^2 - c_e p - ep      &\text{(distribute)}\\
+  0 &= -c_i p^2 + p(c_i - c_e - e) + c_e       &\text{(arrange as quadratic)}
+\end{align*}
+This can be solved with the quadratic formula, setting $a = -c_i, \; b = (c_i - c_e - e), \; c = c_e$.  But I'm gonna not do that here...
+
+d) Hanski model (core-satellite, simple rescue effect):
+\begin{align*}
+  \frac{d p}{d t} &= c_i p (1 - p) - ep(1 - p)   &\text{(start w/Hanski)}\\
+  0 &= c_i p (1 - p) - ep(1 - p)              &\text{(set FOC to zero)}\\
+  0 &= c_i p - c_i p^2 - ep + ep^2            &\text{(distribute)}\\
+  0 &= p[(e - c_i) p + (c_i - e)]             &\text{(arrange)}\\
+  \Longrightarrow p^* &= \frac{c_i - e}{c_i - e} = 1 \text{ (or $p^* = 0$)}
+\end{align*}
+Note: these solutions were shown in the text; $p^* = 1$ is stable if $c_i > e$, and $p^* = 0$ is stable for $c_i < e$.
+
+e) Lande (habitat destruction model):
+
+\begin{align*}
+  \frac{dp}{dt} &= c_i p(1 - D - p) - ep   &\text{(start w/Lande)}\\
+  0 &= c_i p(1 - D - p) - ep              &\text{(set FOC to zero)}\\
+  0 &= p(c_i - c_i D - c_i p - e)         &\text{(arrange)}\\
+  \Longrightarrow p^* &= 1 - D - \frac{e}{c_i} \text{ (or $p^* = 0$)}
+\end{align*}
+
 ## 4.2. Habitat destruction
 
 Compare different levels of habitat destruction.
@@ -88,7 +136,7 @@ lande_rescue <- function(t, y, parms) {
 ```
 
 (c) Let $D = 0.5, c_i = 0.1, e = 0.02$, and vary $a$ over five levels (including $a = 0, 1$) to investigate the effects of “relative rescue effect” on the equilibria and dynamics of a metapopulation.
-```{r}
+```{r, eval = FALSE}
 prmsA <- c(ci = 0.1, e = 0.02, D = 0.5, a = 0)
 as <- seq(0, 1, by = .25)
 Initial.p <- 0.01
@@ -104,3 +152,118 @@ text(c(200, 200, 200), ps[200, ], paste("D = ", Ds, sep = ""),
      adj = c(1, 0))
 ```
 
+### Casey: 
+
+a) 
+
+```{r}
+### Write Lande function to accept various values of D for ODE solver
+lande_cco <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp_dt <- c_i * p * (1 - D - p) - e * p
+    return(list(dp_dt))
+  })
+}
+
+### set up vector of Ds and initial vals
+D_vec <- seq(0, .8, .1)
+t_vec <- 1:150
+p_0   <- .15
+
+params <- c(c_i = 0.1, e = 0.01, D = 0)
+
+### Run ODE on the whole shebang
+p_list <- lapply(D_vec, function(D) {
+  # D <- D_vec[2]
+  params$D <- D
+  p_vec <- ode(y = p_0, times = t_vec, func = lande_cco, parms = params) %>%
+    as.data.frame() %>%
+    setNames(c('t', 'p')) %>%
+    mutate(D = D)
+})
+
+p_df <- bind_rows(p_list)
+
+ggplot(p_df, aes(x = t, y = p, color = D)) +
+  geom_line(data = p_df %>% filter(D == .5), 
+            color = 'red4', alpha = .5, size = 3) +
+  geom_line(aes(group = D)) +
+  theme_minimal() +
+  labs(x = 'Time',
+       y = 'Proportion of populated sites')
+
+```
+
+b)
+```{r}
+### Write Lande function to accept various values of D for ODE solver
+lande_a_cco <- function(t, y, parms) {
+  p <- y[1]
+  with(as.list(parms), {
+    dp_dt <- c_i * p * (1 - D - p) - e * p * (1 - a * p)
+    return(list(dp_dt))
+  })
+}
+```
+
+c)
+``` {r}
+### set up vector of a values and initial param vals
+a_vec <- seq(0, 1, .25)
+t_vec <- 1:150
+p_0   <- .15
+
+params <- c(c_i = 0.1, e = 0.02, D = 0.5, a = 0)
+
+### Run ODE on the whole shebang
+p_list2 <- lapply(a_vec, function(a) {
+  # a <- a_vec[2]
+  params$a <- a
+  p_vec <- ode(y = p_0, times = t_vec, func = lande_a_cco, parms = params) %>%
+    as.data.frame() %>%
+    setNames(c('t', 'p')) %>%
+    mutate(a = a)
+})
+
+p_df2 <- bind_rows(p_list2)
+
+ggplot(p_df2, aes(x = t, y = p, color = a)) +
+  geom_line(aes(group = a)) +
+  theme_minimal() +
+  labs(x = 'Time',
+       y = 'Proportion of populated sites')
+
+```
+
+At $a = 0$, rescue effect is non-existent, so should look like standard Lande with $D = 0.5$ (from part a) when all parameters are the same, and higher when $a > 0$.  Rerun with $c_i = 0.1, e = 0.01$ as in the first sim.
+
+``` {r}
+### set up vector of a values and initial param vals
+a_vec <- seq(0, 1, .25)
+t_vec <- 1:150
+p_0   <- .15
+
+params <- c(c_i = 0.1, e = 0.01, D = 0.5, a = 0)
+
+### Run ODE on the whole shebang
+p_list3 <- lapply(a_vec, function(a) {
+  # a <- a_vec[2]
+  params$a <- a
+  p_vec <- ode(y = p_0, times = t_vec, func = lande_a_cco, parms = params) %>%
+    as.data.frame() %>%
+    setNames(c('t', 'p')) %>%
+    mutate(a = a)
+})
+
+p_df3 <- bind_rows(p_list3)
+
+ggplot(p_df3, aes(x = t, y = p, color = a)) +
+  geom_line(data = p_df %>% filter(D == .5), 
+            color = 'red4', alpha = .5, size = 3) +
+  geom_line(aes(group = a)) +
+  theme_minimal() +
+  labs(x = 'Time',
+       y = 'Proportion of populated sites')
+
+```
