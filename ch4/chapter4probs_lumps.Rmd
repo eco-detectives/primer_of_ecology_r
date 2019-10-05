@@ -136,13 +136,13 @@ lande_rescue <- function(t, y, parms) {
 ```
 
 (c) Let $D = 0.5, c_i = 0.1, e = 0.02$, and vary $a$ over five levels (including $a = 0, 1$) to investigate the effects of “relative rescue effect” on the equilibria and dynamics of a metapopulation.
-```{r, eval = FALSE}
+```{r}
 prmsA <- c(ci = 0.1, e = 0.02, D = 0.5, a = 0)
 as <- seq(0, 1, by = .25)
 Initial.p <- 0.01
 t <- 1:200
 
-ps2 <- sapply(As, function(a) {
+ps2 <- sapply(as, function(a) {
   prmsA["a"] <- a
   ode(y = Initial.p, times = t, func = lande_rescue, parms = prmsA)[, 2]
 })

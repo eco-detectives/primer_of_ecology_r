@@ -351,7 +351,8 @@ args(MetaSim)
 
 Let’s start with an initial run of 10 simulations (produces dynamics for 10 populations) to reproduce Hanski’s core-satellite pattern by using the rescue effect with equal $i$ and $e$.
 ``` {r}
-out.CS.10 <- MetaSim(method = "hanski", NSims = 10)  
+set.seed(1)
+out.CS.10 <- MetaSim(method = "hanski", NSims = 10, phi = 10)  
 matplot(out.CS.10$t, out.CS.10$Ns, type = "l", xlab = "Time",
         ylab = "Occupancy", sub = out.CS.10$method)
 ```
