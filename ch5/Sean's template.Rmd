@@ -1,0 +1,8 @@
+---
+title: "Sean’s Chapter 5 template"
+author: "Sean Denny"
+date: "10/10/2019"
+output: html_document
+---
+
+Just set this up so I can write it all out myself.
