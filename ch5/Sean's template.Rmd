@@ -20,5 +20,9 @@ Just set this up so I can write it all out myself!
 $$N_{t+1} = N_t + r_d N_t (1 - \alpha N_t)$$
 \alpha is the per capita effect of each individual on each other, so the $$(1 - \alpha N_t)$$ portion is the density-dependence term.
 
+Adding in interspecific competition:
 
+$$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{t,1} - \alpha_{1,2} N_{2,t})$$
 
+$$N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+$$\alpha_{21}$$ is the effect of species 1 on species 2, and $$\alpha_{22} is the effect that species 2 has on itself.
