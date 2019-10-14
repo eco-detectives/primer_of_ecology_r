@@ -2,27 +2,48 @@
 title: "Sean’s Chapter 5 template"
 author: "Sean Denny"
 date: "10/10/2019"
-output: html_document
+output:
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+
 ---
 
-Just set this up so I can write it all out myself!
+```{r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-```{r}
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
 
 ```
 
-#Chapter 5: Lotka-Volterra Interspecific Competition
+# Chapter 5: Lotka-Volterra Interspecific Competition
 
-##5.1 Discrete and Continuous Time Models
+## 5.1 Discrete and Continuous Time Models
 
-###5.1.1 Discrete time model
+### 5.1.1 Discrete time model
 
 $$N_{t+1} = N_t + r_d N_t (1 - \alpha N_t)$$
 \alpha is the per capita effect of each individual on each other, so the $$(1 - \alpha N_t)$$ portion is the density-dependence term.
 
 Adding in interspecific competition:
 
-$$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{t,1} - \alpha_{1,2} N_{2,t})$$
+$$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{t,1} - \alpha_{12} N_{2,t})$$
+
+in which $\alpha_{11}$ is the effect of species 1 on itself, and $\alpha_{12}$ is the effect of species 2 on the growth rate of species 1.
 
 $$N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
-$$\alpha_{21}$$ is the effect of species 1 on species 2, and $$\alpha_{22} is the effect that species 2 has on itself.
+in which $\alpha_{21}$ is the effect of species 1 on the growth rate of species 2, and $\alpha_{22}$ is the effect of species 2 on itself.
+
+#### Code for a model of discrete logistic competition:
+
