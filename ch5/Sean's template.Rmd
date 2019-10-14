@@ -5,4 +5,20 @@ date: "10/10/2019"
 output: html_document
 ---
 
-Just set this up so I can write it all out myself.
+Just set this up so I can write it all out myself!
+
+```{r}
+
+```
+
+#Chapter 5: Lotka-Volterra Interspecific Competition
+
+##5.1 Discrete and Continuous Time Models
+
+###5.1.1 Discrete time model
+
+$$N_{t+1} = N_t + r_d N_t (1 - \alpha N_t)$$
+\alpha is the per capita effect of each individual on each other, so the $$(1 - \alpha N_t)$$ portion is the density-dependence term.
+
+
+
