@@ -42,8 +42,58 @@ $$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{t,1} - \alpha_{12} N
 
 in which $\alpha_{11}$ is the effect of species 1 on itself, and $\alpha_{12}$ is the effect of species 2 on the growth rate of species 1.
 
-$$N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+$N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$
 in which $\alpha_{21}$ is the effect of species 1 on the growth rate of species 2, and $\alpha_{22}$ is the effect of species 2 on itself.
 
 #### Code for a model of discrete logistic competition:
 
+```{r Model of discrete logistic growth with competition}
+
+dlv_comp <- function(N, alpha, rd = c(1,1)) #why make c (1,1) instead of just 1?
+                                            {
+  N1_t1 <- N[1] + rd * N[1](1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
+  N2_t1 <- N[2] + rd * N[2](1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
+  c(N1_t1, N2_t1)
+ }  
+
+```
+
+
+
+  
+
+``` {r} 
+dlvcomp2 <- function(N, alpha, rd = c(1, 1)) {
+  N1.t1 <- N[1] + rd[1] * N[1] * (1 - alpha[1, 1] * N[1] - 
+                                    alpha[1, 2] * N[2])
+  N2.t1 <- N[2] + rd[2] * N[2] * (1 - alpha[2, 1] * N[1] - 
+                                    alpha[2, 2] * N[2])
+  c(N1.t1, N2.t1)
+}
+
+```
+Note the indices for `alpha` match the subscripts in eqs. 5.2, 5.3.
+
+
+
+
+
+
+
+``` {r} 
+dlvcomp2 <- function(N, alpha, rd = c(1, 1)) {
+  N1.t1 <- N[1] + rd[1] * N[1] * (1 - alpha[1, 1] * N[1] - 
+                                    alpha[1, 2] * N[2])
+  N2.t1 <- N[2] + rd[2] * N[2] * (1 - alpha[2, 1] * N[1] - 
+                                    alpha[2, 2] * N[2])
+  c(N1.t1, N2.t1)
+}
+
+```
+Note the indices for `alpha` match the subscripts in eqs. 5.2, 5.3.
+
+
+
+
+
+}
