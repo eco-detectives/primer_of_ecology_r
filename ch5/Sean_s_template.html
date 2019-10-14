@@ -178,7 +178,7 @@ $(document).ready(function () {
 
 ### The book has an R package! 
 <span class="kw">library</span>(primer) <span class="co"># install.packages('primer')</span></code></pre></div>
-<div id="chapter-5-lotka-volterra-interspecific-competition" class="section level1">
+<div id="chapter-5-lotka-volterra-interspecific-competition" class="section level1 tabset">
 <h1>Chapter 5: Lotka-Volterra Interspecific Competition</h1>
 <div id="discrete-and-continuous-time-models" class="section level2">
 <h2>5.1 Discrete and Continuous Time Models</h2>
@@ -188,11 +188,49 @@ $(document).ready(function () {
 <p>Adding in interspecific competition:</p>
 <p><span class="math display">\[N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{t,1} - \alpha_{12} N_{2,t})\]</span></p>
 <p>in which <span class="math inline">\(\alpha_{11}\)</span> is the effect of species 1 on itself, and <span class="math inline">\(\alpha_{12}\)</span> is the effect of species 2 on the growth rate of species 1.</p>
-<p><span class="math display">\[N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})\]</span> in which <span class="math inline">\(\alpha_{21}\)</span> is the effect of species 1 on the growth rate of species 2, and <span class="math inline">\(\alpha_{22}\)</span> is the effect of species 2 on itself.</p>
+<p><span class="math inline">\(N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})\)</span> in which <span class="math inline">\(\alpha_{21}\)</span> is the effect of species 1 on the growth rate of species 2, and <span class="math inline">\(\alpha_{22}\)</span> is the effect of species 2 on itself.</p>
 <div id="code-for-a-model-of-discrete-logistic-competition" class="section level4">
 <h4>Code for a model of discrete logistic competition:</h4>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dlv_comp &lt;-<span class="st"> </span><span class="cf">function</span>(N, alpha, <span class="dt">rd =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>)) <span class="co">#why make c (1,1) instead of just 1?</span>
+                                            {
+  N1_t1 &lt;-<span class="st"> </span>N[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>rd <span class="op">*</span><span class="st"> </span>N[<span class="dv">1</span>](<span class="dv">1</span> <span class="op">-</span><span class="st"> </span>alpha[<span class="dv">1</span>,<span class="dv">1</span>] <span class="op">*</span><span class="st"> </span>N[<span class="dv">1</span>] <span class="op">-</span><span class="st"> </span>alpha[<span class="dv">1</span>,<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>N[<span class="dv">2</span>])
+  N2_t1 &lt;-<span class="st"> </span>N[<span class="dv">2</span>] <span class="op">+</span><span class="st"> </span>rd <span class="op">*</span><span class="st"> </span>N[<span class="dv">2</span>](<span class="dv">1</span> <span class="op">-</span><span class="st"> </span>alpha[<span class="dv">2</span>,<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>N[<span class="dv">2</span>] <span class="op">-</span><span class="st"> </span>alpha[<span class="dv">2</span>,<span class="dv">1</span>] <span class="op">*</span><span class="st"> </span>N[<span class="dv">1</span>])
+  <span class="kw">c</span>(N1_t1, N2_t1)
+ }  </code></pre></div>
 </div>
 </div>
+<div id="effects-of-alpha" class="section level3">
+<h3>5.1.2 Effects of <span class="math inline">\(\alpha\)</span></h3>
+<p>We define all of the <span class="math inline">\(\alpha\)</span>’s together as a matrix,</p>
+<p><em>This all La Tex?</em></p>
+<span class="math display">\[\begin{align*}
+  \alpha = \begin{pmatrix} 
+      \alpha_{11} &amp; \alpha_{12} \\ \alpha_{21} &amp; \alpha_{22} 
+    \end{pmatrix}
+  = \begin{pmatrix} 
+      0.010 &amp; 0.005 \\ 0.008 &amp; 0.010 
+    \end{pmatrix}
+\end{align*}\]</span>
+<p>The subscripts on the <span class="math inline">\(\alpha\)</span>s represent the row and column of the coefficient; <span class="math inline">\(\alpha_{12}\)</span> is in the first row, second column. This merely reflects how mathematicians describe matrix elements and dimensions — row <span class="math inline">\(\times\)</span> column. When we use matrix multiplication (Chapter 2), <span class="math inline">\(\alpha_{12}\)</span> becomes the effect of species 2 (column) on species 1 (row). In this case, <span class="math inline">\(\alpha_{11} = \alpha_{22} = 0.01\)</span>, <span class="math inline">\(\alpha_{21} = 0.008\)</span>, and <span class="math inline">\(\alpha_{12} = 0.005\)</span>. Thus, both species have greater effects on themselves than on each other. Remember, the larger the <span class="math inline">\(\alpha\)</span>, the larger the effect.</p>
+<div id="discrete-logistic-competition-dynamics-figure-5.2" class="section level4">
+<h4>Discrete logistic competition dynamics (Figure 5.2)</h4>
+</div>
+</div>
+<div id="continuous-time-model" class="section level3">
+<h3>5.1.3 Continuous time model</h3>
+<div id="continuous-logistic-competition" class="section level4">
+<h4>Continuous logistic competition</h4>
+</div>
+</div>
+</div>
+<div id="equilibria" class="section level2">
+<h2>Equilibria</h2>
+</div>
+<div id="dynamics-at-the-equilibria" class="section level2">
+<h2>Dynamics at the Equilibria</h2>
+</div>
+<div id="return-time-and-the-effects-of-r" class="section level2">
+<h2>Return Time and the Effects of r</h2>
 </div>
 </div>
 
