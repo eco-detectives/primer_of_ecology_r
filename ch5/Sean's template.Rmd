@@ -48,21 +48,25 @@ in which $\alpha_{21}$ is the effect of species 1 on the growth rate of species 
 
 ```{r Model of discrete logistic growth with competition}
 
-dlv_comp <- function(N, alpha, rd = c(1,1)) #why make c (1,1) instead of just 1?
-                                            {
-  N1_t1 <- N[1] + rd * N[1](1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
-  N2_t1 <- N[2] + rd * N[2](1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
-  c(N1_t1, N2_t1)
+dlv_comp_2 <- function(N, alpha, rd = c(1,1))
+  
+# When you specify with "=" you're giving it a default. Don't have to, beause later you can specify a value, so it's just a preference. If you have a rule that you want the function to follow, you can specify it above. Casey's specified 'round = FALSE' bceause he wanted integer values.
+  
+# You can add notes here to help yourself, or be smart (like Casey) and make the argument names indicate the kinds of data you're inputting. For example: N needs to be a vector of 2, alpha is a matrix, and rd is also a vector of 2. Casey made his argument names 'N_vec', 'alpha_matrix', and 'rd_vec'.
+                                             {
+  N1_t1 <- N[1] + rd[1] * N[1](1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
+  N2_t1 <- N[2] + rd[2] * N[2](1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
+  return(c(N1_t1, N2_t1))
 }  
 
-# We created a function that we can use later
+# We created a function that we will use later
 ```
 
 ### 5.1.2 Effects of $\alpha$
 
 We define all of the $\alpha$’s together as a matrix,
 
-*This all just La Tex?*
+*This all just La Tex?* Yep.
 
 \begin{align*}
   \alpha = \begin{pmatrix} 
@@ -84,20 +88,26 @@ This could also be described as discrete logistic growth of two competing specie
 
 alphas <- matrix(c(0.01, 0.005, 0.008, 0.01), ncol = 2, nrow = 2, byrow = TRUE)
 t <- 20
+```
 
-# Create a matrix for the results. We want to put in the initial population sizes and then project the sizes through time.
+Create a matrix for the results. We want to put in the initial population sizes and then project the sizes through time.
 
-# What is the within matrix() for?
+```{r}
+# What is the within matrix() 'NA' for?
+
+# How else would we make this matrix? Is their a tidyverse equivalent?
+
+# And, can someone walk through the loop with me?
 
 N <- matrix(NA, nrow = t + 1, ncol = 2)
 N[1, ] <- c(10,10)
-for (i in 1:t) N[i + 1, ] <- dlv_comp(N[i, ], alphas)
+for (i in 1:t) N[i + 1, ] <- dlv_comp_2 (N[i, ], alphas)
 
-# Is dlvcomp2 in the library 'primer'? Or did we make it above? Why won't it work with my function (dlv_comp)? Is it just because there's a problem with my function?
+# Why doesn't this work? dlvcomp2 is an actual function (in the 'primer' library, I believe? So are we not supposed to use the function that we created?)
 
-# How else would we make this matrix? Is their a tidyverse equivalent?
-# And, can someone walk through the loop with me?
-
+N <- matrix(NA, nrow = t + 1, ncol = 2)
+N[1, ] <- c(10,10) # Is this just saying, for the first row in the matrix N, for all of the columns (which is why we left it blank, make the values match this vector (of the same length)?
+for (i in 1:t) N[i + 1, ] <- dlvcomp2 (N[i, ], alphas) # What exactly are we saying here?
 ```
 
 Next, we plot the populations through time, using the results from our loop. We can add a reference line for the size of the populations if there were only one species, at $K_i = 1/\alpha_{ii}$.
@@ -133,7 +143,10 @@ Our growth rates $r_i$ are instantaneous growth rates (but also still an intrins
 #### Continuous logistic competition function:
 
 ```{r}
-lvcomp2 <- function(t, n, parms) {     # What is 'parms' again?
+# I don't know what's going on here. I understand we're making a function, and the output is a list of population growth rates for each species, so perhaps I'm mostly just confused about 'parms' and 'as.list.'
+
+clv_comp_2 <- function(t, n, parms) {     # What is 'parms' again? I think it's just a placeholder for a bunch of different parameters (see below). The idea is that you can stipulate these separately while keeping your function the same. But why do this?
+  
   with(as.list(parms), {
     dn1dt <- r1 * n[1] * (1 - a11 * n[1] = a12 * n[2])
     dn2dt <- r2 * n[2] * (1 - a21 * n[1] - a22 * n[2])
@@ -145,20 +158,44 @@ lvcomp2 <- function(t, n, parms) {     # What is 'parms' again?
 We could then use this to numerically integrate the dynamics, using `ode` in the `deSolve` package, and plot it (graph not shown).
 
 ```{r}
+# What is 'ode'? I know we used it in an  earlier chapter but I've since forgotten about it.
+
 library(deSolve)
 parms <- c(r1 = 1, r2 = 0.1, 
            a11 = 0.2,  a21 = 0.1, 
            a22 = 0.02, a12 = 0.01)
 initialN <- c(2, 1)
-out <- ode(y = initialN, times = 1:100, func = lvcomp2, parms = parms)
+out <- ode(y = initialN, times = 1:100, func = lvcomp2, parms = parms) ## ??
 matplot(out[, 1], out[, -1], type = "l")
 ```
 
 ```{r}
 # Graph this, if time.
+
+
+
 ```
 
 ## 5.2 Equilibria
+
+### 5.2.1 Isoclines
+
+An isocline is a line connecting points on a graph or map that have equal value. Our isoclines will connect points in state space at which the growth rate for species i equals zero - every point on that line represents population growth rate equaling zero. We call these zero net growth isoclines.
+
+A zero net growth isocline, typically referred to simply as an isocline,  is the set of all points for which the growth of a population is zero, when all else (such as the population size of a competing species) is held constant.
+
+An equilibrium is one (or sometimes more than one) of those points, and in particular, it is a point at which the growth rates of all populations are zero.
+
+We find the isocline of a species by setting its growth rate equal to zero
+and solving the equation for that species in terms of the other species.
+
+### Graphing an isocline (Figure 5.3)
+
+```{r}
+
+```
+
+
 
 ## Dynamics at the Equilibria
 

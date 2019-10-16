@@ -120,6 +120,8 @@ lvcomp2 <- function(t, n, parms) {
   })
 }
 
+
+
 ```
 We could then use this to numerically integrate the dynamics, using `ode` in the `deSolve` package, and plot it (graph not shown).
 ``` {r}
