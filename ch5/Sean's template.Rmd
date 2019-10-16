@@ -130,7 +130,7 @@ Our growth rates $r_i$ are instantaneous growth rates (but also still an intrins
 
 **See Table 5.1 for parameter descriptons**
 
-Continuous logistic competition function:
+#### Continuous logistic competition function:
 
 ```{r}
 lvcomp2 <- function(t, n, parms) {     # What is 'parms' again?
@@ -154,9 +154,9 @@ out <- ode(y = initialN, times = 1:100, func = lvcomp2, parms = parms)
 matplot(out[, 1], out[, -1], type = "l")
 ```
 
-
-#### Continuous logistic competition
-
+```{r}
+# Graph this, if time.
+```
 
 ## 5.2 Equilibria
 
