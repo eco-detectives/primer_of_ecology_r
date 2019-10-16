@@ -40,7 +40,8 @@ $$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{t,1} - \alpha_{12} N
 
 in which $\alpha_{11}$ is the effect of species 1 on itself, and $\alpha_{12}$ is the effect of species 2 on the growth rate of species 1.
 
-$N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$
+$$N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+
 in which $\alpha_{21}$ is the effect of species 1 on the growth rate of species 2, and $\alpha_{22}$ is the effect of species 2 on itself.
 
 #### Code for a model of discrete logistic competition:
@@ -52,14 +53,16 @@ dlv_comp <- function(N, alpha, rd = c(1,1)) #why make c (1,1) instead of just 1?
   N1_t1 <- N[1] + rd * N[1](1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
   N2_t1 <- N[2] + rd * N[2](1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
   c(N1_t1, N2_t1)
- }  
+}  
+
+# We created a function that we can use later
 ```
 
 ### 5.1.2 Effects of $\alpha$
 
 We define all of the $\alpha$’s together as a matrix,
 
-*This all La Tex?*
+*This all just La Tex?*
 
 \begin{align*}
   \alpha = \begin{pmatrix} 
@@ -74,13 +77,82 @@ The subscripts on the $\alpha$s represent the row and column of the coefficient;
 
 #### Discrete logistic competition dynamics (Figure 5.2)
 
+This could also be described as discrete logistic growth of two competing species. **I logistic growth just density-dependent growth?**
+
 ```{r}
+# Create a matrix of our alphas and specify the time period (twenty years)
+
+alphas <- matrix(c(0.01, 0.005, 0.008, 0.01), ncol = 2, nrow = 2, byrow = TRUE)
+t <- 20
+
+# Create a matrix for the results. We want to put in the initial population sizes and then project the sizes through time.
+
+# What is the within matrix() for?
+
+N <- matrix(NA, nrow = t + 1, ncol = 2)
+N[1, ] <- c(10,10)
+for (i in 1:t) N[i + 1, ] <- dlv_comp(N[i, ], alphas)
+
+# Is dlvcomp2 in the library 'primer'? Or did we make it above? Why won't it work with my function (dlv_comp)? Is it just because there's a problem with my function?
+
+# How else would we make this matrix? Is their a tidyverse equivalent?
+# And, can someone walk through the loop with me?
+
+```
+
+Next, we plot the populations through time, using the results from our loop. We can add a reference line for the size of the populations if there were only one species, at $K_i = 1/\alpha_{ii}$.
+
+```{r}
+# Let's do this in the tidyverse:
+
+
+
+
+
+#Book's verson:
+
+# matplot(0:t, N, type = "l", col = 1, ylim = c(0, 110))
+# abline(h = 1/alphs[1, 1], lty = 3)
+# text(0, 1/alphs[1, 1], "K", adj = c(0, 0))
+# legend("right", c(expression("Sp.1 " * (alpha[21] == 0.008)),   
+#                  expression("Sp.2 " * (alpha[12] == 0.005))), 
+#       lty = 1:2, bty = "n")
+```
+
+### 5.1.3 Continuous time model
+
+Continuous Lotka-Volterra model of interspecific competition:
+
+$$dN_1/dt = r_1 N_1 (1- \alpha_{11} N_1 - \alpha_{12} N_2) $$
+
+$$dN_2/dt = r_2 N_2 (1- \alpha_{21} N_1 - \alpha_{22} N_2)$$
+Our growth rates $r_i$ are instantaneous growth rates (but also still an intrinsic growth rate); individuals produced per unit time.
+
+**See Table 5.1 for parameter descriptons**
+
+Continuous logistic competition function:
+
+```{r}
+lvcomp2 <- function(t, n, parms) {
+  with(as.list(parms), {
+    dn1dt <- 
+  })
+}
+
+
+
+lvcomp2 <- function(t, n, parms) {
+  with(as.list(parms), {
+      dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2])
+      dn2dt <- r2 * n[2] * (1 - a22 * n[2] - a21 * n[1])
+      list(c(dn1dt, dn2dt))
+  })
+}
+
 
 ```
 
 
-
-### 5.1.3 Continuous time model
 
 #### Continuous logistic competition
 
