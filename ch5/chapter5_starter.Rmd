@@ -60,23 +60,6 @@ dlvcomp2 <- function(N, alpha, rd = c(1, 1)) {
 ```
 Note the indices for `alpha` match the subscripts in eqs. 5.2, 5.3.
 
-Sean's version:
-```{r Model of discrete logistic growth with competition}
-
-dlv_comp_2 <- function(N, alpha, rd = c(1,1)) # N is a vector of length two; alpha is a matrix.
-  
-# When you specify an argument with "=" (as I do for rd above), you're giving it a default value. You don't have to do this because later you can specify a value, so whether you define the value initially can be a matter of preference. But in general, if you have a rule that you want the function to follow, you can specify it above. Casey's function specified 'round = FALSE' bceause he wanted integer values.
-  
-# You can add notes within here to help yourself, or be smart (like Casey) and make the argument names indicate the kinds of data you're inputting. For example: N needs to be a vector of 2, alpha is a matrix, and rd is also a vector of 2. Casey has his arguments named 'N_vec', 'alpha_matrix', and 'rd_vec'.
-                                             {
-  N1_t1 <- N[1] + rd[1] * N[1] * (1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
-  N2_t1 <- N[2] + rd[2] * N[2] * (1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
-  return(c(N1_t1, N2_t1))
-}  
-
-# We created a function that we will use later. The reason we use brackets to define the alphas is because we're referring to a matrix of alphas that correspond to what is needed in the expressions.
-```
-
 ### 5.1.2 Effects of $\alpha$
 
 ... We define all of the $\alpha$’s together as a matrix,
@@ -119,25 +102,6 @@ legend("right", c(expression("Sp.1 " * (alpha[21] == 0.008)),
        lty = 1:2, bty = "n")
 ```
   
-Sean's version:
-
-```{r}
-# What is the within matrix() 'NA' for? It specifies that the matrix is empty. (We're creating an empty matrix to fill in with values based on calculations.) But you could also just remove the 'NA,' and you'd get the same thing. It's not necessary.
-
-# How else would we make this matrix? Is their a tidyverse equivalent? Yeah, you could make a dataframe. How would you do this?
-
-N <- matrix(NA, nrow = t + 1, ncol = 2)
-N[1, ] <- c(10,10) # This is just saying that for the first row in the matrix N, for all of the columns (which is why we left it blank), make the values match this vector. Note: the number of columns and vector length need to be the same.
-for (i in 1:t) {
-  N[i + 1, ] <- dlv_comp_2(N[i, ], alphas)
-}
-```
-  
-  
-```{r}
-# tidyverse?
-```
-  
 ### 5.1.3 Continuous time model
 
 Perhaps the classic model of competitive interactions is the continuous Lotka- Volterra model of interspecific competition [93]. Following directly the structure of the discrete version, we represent the two species as
@@ -168,23 +132,6 @@ out <- ode(y = initialN, times = 1:100, func = lvcomp2, parms = parms)
 matplot(out[, 1], out[, -1], type = "l")
 
 # Question for group!: wwhy out[, -1] instead of out[, 2]? And where does the second line come from? We're guessing it's the second column, but why doesn't it show up if we use out[, 2]?
-```
-
-Sean's version:
-
-```{r}
-# Why (as.list..)?
-
-clv_comp_2 <- function(t, n, parms) {    # parms is an argument for the ode function.
-  
-  with(as.list(parms), {
-    dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2]) # Why not make a matrix again? # Why do this differently? Is it just because parms includes more than just alpha values?
-    dn2dt <- r2 * n[2] * (1 - a21 * n[1] - a22 * n[2])
-    list(c(dn1dt, dn2dt))
-  })
-}
-
-# A list is different than a vector because the data within it doesn't have to be the same class of data. (And it doesn't even have to be data. It can be plots, for example).
 ```
 
 ## 5.2 Equilbria
