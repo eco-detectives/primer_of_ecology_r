@@ -54,8 +54,8 @@ dlv_comp_2 <- function(N, alpha, rd = c(1,1))
   
 # You can add notes here to help yourself, or be smart (like Casey) and make the argument names indicate the kinds of data you're inputting. For example: N needs to be a vector of 2, alpha is a matrix, and rd is also a vector of 2. Casey made his argument names 'N_vec', 'alpha_matrix', and 'rd_vec'.
                                              {
-  N1_t1 <- N[1] + rd[1] * N[1](1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
-  N2_t1 <- N[2] + rd[2] * N[2](1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
+  N1_t1 <- N[1] + rd[1] * N[1] * (1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
+  N2_t1 <- N[2] + rd[2] * N[2] * (1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
   return(c(N1_t1, N2_t1))
 }  
 
@@ -93,21 +93,17 @@ t <- 20
 Create a matrix for the results. We want to put in the initial population sizes and then project the sizes through time.
 
 ```{r}
-# What is the within matrix() 'NA' for?
+# What is the within matrix() 'NA' for? It specifies that the matrix is empty. But you could also just remove the 'NA,' and you'd get the same thing.
 
-# How else would we make this matrix? Is their a tidyverse equivalent?
+# How else would we make this matrix? Is their a tidyverse equivalent? Yeah, you could make a dataframe.
 
 # And, can someone walk through the loop with me?
 
 N <- matrix(NA, nrow = t + 1, ncol = 2)
-N[1, ] <- c(10,10)
-for (i in 1:t) N[i + 1, ] <- dlv_comp_2 (N[i, ], alphas)
-
-# Why doesn't this work? dlvcomp2 is an actual function (in the 'primer' library, I believe? So are we not supposed to use the function that we created?)
-
-N <- matrix(NA, nrow = t + 1, ncol = 2)
 N[1, ] <- c(10,10) # Is this just saying, for the first row in the matrix N, for all of the columns (which is why we left it blank, make the values match this vector (of the same length)?
-for (i in 1:t) N[i + 1, ] <- dlvcomp2 (N[i, ], alphas) # What exactly are we saying here?
+for (i in 1:t) {
+  N[i + 1, ] <- dlv_comp_2(N[i, ], alphas)
+}
 ```
 
 Next, we plot the populations through time, using the results from our loop. We can add a reference line for the size of the populations if there were only one species, at $K_i = 1/\alpha_{ii}$.
@@ -143,34 +139,36 @@ Our growth rates $r_i$ are instantaneous growth rates (but also still an intrins
 #### Continuous logistic competition function:
 
 ```{r}
-# I don't know what's going on here. I understand we're making a function, and the output is a list of population growth rates for each species, so perhaps I'm mostly just confused about 'parms' and 'as.list.'
+# Why (as.list..)?
 
-clv_comp_2 <- function(t, n, parms) {     # What is 'parms' again? I think it's just a placeholder for a bunch of different parameters (see below). The idea is that you can stipulate these separately while keeping your function the same. But why do this?
+clv_comp_2 <- function(t, n, parms) {    # parms is an argument for the ode function.
   
   with(as.list(parms), {
-    dn1dt <- r1 * n[1] * (1 - a11 * n[1] = a12 * n[2])
+    dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2])
     dn2dt <- r2 * n[2] * (1 - a21 * n[1] - a22 * n[2])
     list(c(dn1dt, dn2dt))
   })
 }
+
+# A list is different than a vector because the data within it doesn't have to be the same class of data. (And it doesn't even have to be data. It can be plots, for example).
 ```
 
 We could then use this to numerically integrate the dynamics, using `ode` in the `deSolve` package, and plot it (graph not shown).
 
 ```{r}
-# What is 'ode'? I know we used it in an  earlier chapter but I've since forgotten about it.
-
 library(deSolve)
 parms <- c(r1 = 1, r2 = 0.1, 
            a11 = 0.2,  a21 = 0.1, 
            a22 = 0.02, a12 = 0.01)
 initialN <- c(2, 1)
-out <- ode(y = initialN, times = 1:100, func = lvcomp2, parms = parms) ## ??
+out <- ode(y = initialN, times = 1:100, func = clv_comp_2, parms = parms)
 matplot(out[, 1], out[, -1], type = "l")
+
+# Question for group!: wwhy out[, -1] instead of out[, 2]? And where does the second line come from? We're guessing it's the second column, but why doesn't it show up if we use out[, 2]?
 ```
 
 ```{r}
-# Graph this, if time.
+# Graph this in tidyverse, if time.
 
 
 
@@ -191,12 +189,55 @@ and solving the equation for that species in terms of the other species.
 
 ### Graphing an isocline (Figure 5.3)
 
-```{r}
+Here we graph something similar, but not identical, to Fig. 5.3a. First, we define a new matrix of competition coefficients, where $\alpha_{11} = \alpha_{22} > \alpha_{12} = \alpha_{21}.$
 
+```{r}
+a <- matrix(c(0.01, 0.005, 0.005, 0.01), ncol = 2, byrow = TRUE)
+
+# We create an expression to plot the N2 isocline, as a function of possible values of N1.
+
+N2_iso <- expression(1/a[2, 2] - (a[2, 1]/a[2, 2]) * N1)
+
+# We then specify N1, and then evaluate and plot N2.
+
+N1 <- 0:200
+plot(N1, eval(N2_iso), type = "l", ylim = c(0, 200), xlim = c(0, + 200), ylab = expression("N"[2]))
+
+# We add arrows to remind us of what happens if N2 is above or below the value on the isocline.
+
+arrows(x0 = 90, y0 = 150, x1 = 90, y1 = 80, length = 0.1) > arrows(x0 = 75, y0 = 0, x1 = 75, y1 = 50, length = 0.1)
 ```
 
+### 5.2.2 Finding equilibria
 
+Species coexist at points of equilibria, which is where the lines intersect. We can find these equilibria points by solving the isoclines simultaneously; that is, by substituting the $N_1$ equation into the $N_2$ equation, or vice versa.
+
+The outcome for $N_1$ is:
+
+$$N_1 = (\alpha_{22} - \alpha_{21})/(\alpha_{11}\alpha_{22} - \alpha_{12}\alpha_{21})$$
+
+**Note**: $r_i$ is not in the expressions for the equilibria — they do not depend on $r_i$. *It is important to remember that this intrinsic rate of increase is not germaine to the long term equilibria for the two species model.* Below, we will see that $r_i$ is germane to models with more than two species.
+
+Invsion criterion: The authors demonstrate that species 1 will always persist if $\alpha_{12} < \alpha_{22}$. In other words, *for species to coexist stably, their effects on themselves must be greater than their effects on each other.*
 
 ## Dynamics at the Equilibria
 
-## Return Time and the Effects of r
+Using eigenanalysis to analyze properties of equilibria, whether they are attractors, repellers, or both, and whether the system oscialltees around these equilibria.
+
+### 5.3.1 Determine the equilibria
+
+```{r}
+N1Star <- expression((a22 - a12)/(a22 * a11 - a12 * a21))
+N2Star <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
+### Next we create the $\alpha$ and evaluate our expressions.
+a11 <- a22 <- 0.01; a12 <- 0.001; a21 <- 0.001
+N1 <- eval(N1Star); N2 <- eval(N2Star); N1
+# [1] 90.9
+
+
+# Why are we doing this eval thing? Just another way to do things when we have complicated equations?
+```
+
+### 5.3.2 Create the Jacobian matrix
+
+
