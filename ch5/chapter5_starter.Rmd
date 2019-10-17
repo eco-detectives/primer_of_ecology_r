@@ -191,7 +191,7 @@ clv_comp_2 <- function(t, n, parms) {    # parms is an argument for the ode func
 
 ### 5.2.1 Isoclines
 
-An isocline is a line connecting points on a graph or map that have equal value. Our isoclines will connect points in state space at which the growth rate for species i equals zero - every point on that line represents population growth rate equaling zero. We call these zero net growth isoclines.
+An **isocline** is a line connecting points on a graph or map that have equal value. Our isoclines will connect points in state space at which the growth rate for species i equals zero - every point on that line represents population growth rate equaling zero. We call these zero net growth isoclines.
 
 A zero net growth isocline, typically referred to simply as an isocline,  is the set of all points for which the growth of a population is zero, when all else (such as the population size of a competing species) is held constant.
 
@@ -223,15 +223,25 @@ arrows(x0 = 90, y0 = 150, x1 = 90, y1 = 80, length = 0.1)
 arrows(x0 = 75, y0 = 0, x1 = 75, y1 = 50, length = 0.1)
 ```
 
-**Something worth noting is that four patterns represent the possible outcomes in the two-species Lotka-Volterra competition model: Species 1 wins in competition, Species 2 wins in competition, coexistence in a stable equilibrium, and competitive exclusion in an unstable equilibrium.**
+**Something worth noting: four patterns represent four possible outcomes in the two-species Lotka-Volterra competition model: Species 1 wins in competition, Species 2 wins in competition, coexistence in a stable equilibrium, and competitive exclusion in an unstable equilibrium.**
 
 ### 5.2.2 Finding equilibria
 
 > Casey note: this section derives equilibria for coexistence and everal other equilibria, based on relative values of $\alpha_{ii}$ and $\alpha_{ij}$ - math but no code.
 
+Species coexist at points of equilibria, which is where the lines intersect. We can find these equilibria points by solving the isoclines simultaneously; that is, by substituting the $N_1$ equation into the $N_2$ equation, or vice versa.
+
+The outcome for $N_1$ is:
+
+$$N_1 = \frac{(\alpha_{22} - \alpha_{21})}{(\alpha_{11}\alpha_{22} - \alpha_{12}\alpha_{21})}$$
+
+**Note**: $r_i$ is not in the expressions for the equilibria — they do not depend on $r_i$. *It is important to remember that this intrinsic rate of increase is not germaine to the long term equilibria for the two species model.* Below, we will see that $r_i$ is germane to models with more than two species.
+
+Invsion criterion: The authors demonstrate that species 1 will always persist if $\alpha_{12} < \alpha_{22}$. In other words, *for species to coexist stably, their effects on themselves must be greater than their effects on each other.*
+
 ## 5.3 Dynamics at the Equilibria
 
-...
+Using eigenanalysis to analyze properties of equilibria, whether they are attractors, repellers, or both, and whether the system oscialltees around these equilibria.
 
 ### 5.3.1 Determine the equilibria
 
@@ -248,6 +258,8 @@ N2Star <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
 a11 <- a22 <- 0.01; a12 <- 0.001; a21 <- 0.001
 N1 <- eval(N1Star); N2 <- eval(N2Star); N1
 # [1] 90.9
+
+# Why are we doing this eval thing? Just another way to do things when we have complicated equations?
 ```
 
 ### 5.3.2 Create the Jacobian matrix
@@ -262,7 +274,7 @@ $$\frac{\partial \dot N_1}{\partial N_1} = r1 - 2r_1 \alpha_{11} N_1 - r_1 \alph
 We should think of this as the per capita effect of species 1 on its growth rate. To derive the PDE with respect to N2, we treat N1 as a constant, and find
 $$\frac{\partial \dot N_1}{\partial N_2} = -r_1 \alpha_{12} N_1$$
 
-**Can someone spell out for me (SMD) why/how we can modify the partial differential equation of $\frac{\partial \dot N_1}{\partial N_1}$ to get $\frac{\partial \dot N_1}{\partial N_2}$?**
+**Can someone spell out for me (SD) why/how we can modify the partial differential equation of $\frac{\partial \dot N_1}{\partial N_1}$ to get $\frac{\partial \dot N_1}{\partial N_2}$?**
 
 This is the per capita effect of species 2 on species 1’s growth rate.
 We then do the same for N ̇2, and so derive the full matrix of PDE’s,
