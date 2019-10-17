@@ -200,6 +200,9 @@ treating N2 as a constant5
 $$\frac{\partial \dot N_1}{\partial N_1} = r1 - 2r_1 \alpha_{11} N_1 - r_1 \alpha_{12} N_2$$
 We should think of this as the per capita effect of species 1 on its growth rate. To derive the PDE with respect to N2, we treat N1 as a constant, and find
 $$\frac{\partial \dot N_1}{\partial N_2} = -r_1 \alpha_{12} N_1$$
+
+**Can someone spell out for me (SMD) why/how we can modify the partial differential equation of $\frac{\partial \dot N_1}{\partial N_1}$ to get $\frac{\partial \dot N_1}{\partial N_2}$**
+
 This is the per capita effect of species 2 on species 1’s growth rate.
 We then do the same for N ̇2, and so derive the full matrix of PDE’s,
 \begin{align*}
