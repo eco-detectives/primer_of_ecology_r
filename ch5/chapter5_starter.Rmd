@@ -61,7 +61,6 @@ dlvcomp2 <- function(N, alpha, rd = c(1, 1)) {
 Note the indices for `alpha` match the subscripts in eqs. 5.2, 5.3.
 
 Sean's version:
-
 ```{r Model of discrete logistic growth with competition}
 
 dlv_comp_2 <- function(N, alpha, rd = c(1,1)) # N is a vector of length two; alpha is a matrix.
@@ -90,10 +89,10 @@ dlv_comp_2 <- function(N, alpha, rd = c(1,1)) # N is a vector of length two; alp
       0.010 & 0.005 \\ 0.008 & 0.010 
     \end{pmatrix}
 \end{align*}
+
 The subscripts on the $\alpha$s represent the row and column of the coefficient; $\alpha_{12}$ is in the first row, second column. This merely reflects how mathematicians describe matrix elements and dimensions — row $\times$ column. When we use matrix multiplication (Chapter 2), $\alpha_{12}$ becomes the effect of species 2 (column) on species 1 (row). In this case, $\alpha_{11} = \alpha_{22} = 0.01$, $\alpha_{21} = 0.008$, and $\alpha_{12} = 0.005$. Thus, both species have greater effects on themselves than on each other. Remember, the larger the $\alpha$, the larger the effect.
 
 ...
-
 
 #### Discrete logistic competition dynamics (Fig. 5.2)
 
@@ -109,6 +108,7 @@ N <- matrix(NA, nrow = t + 1, ncol = 2)
 N[1, ] <- c(10, 10)
 for (i in 1:t) N[i + 1, ] <- dlvcomp2(N[i, ], alphs)
 ```
+
 At last, we can plot the populations, adding a reference line for the size of the populations, if there were only one species, at $K_i = 1/\alpha_{ii}$.
 ``` {r}
 matplot(0:t, N, type = "l", col = 1, ylim = c(0, 110))
@@ -117,6 +117,25 @@ text(0, 1/alphs[1, 1], "K", adj = c(0, 0))
 legend("right", c(expression("Sp.1 " * (alpha[21] == 0.008)),   
                   expression("Sp.2 " * (alpha[12] == 0.005))), 
        lty = 1:2, bty = "n")
+```
+  
+Sean's version:
+
+```{r}
+# What is the within matrix() 'NA' for? It specifies that the matrix is empty. (We're creating an empty matrix to fill in with values based on calculations.) But you could also just remove the 'NA,' and you'd get the same thing. It's not necessary.
+
+# How else would we make this matrix? Is their a tidyverse equivalent? Yeah, you could make a dataframe. How would you do this?
+
+N <- matrix(NA, nrow = t + 1, ncol = 2)
+N[1, ] <- c(10,10) # This is just saying that for the first row in the matrix N, for all of the columns (which is why we left it blank), make the values match this vector. Note: the number of columns and vector length need to be the same.
+for (i in 1:t) {
+  N[i + 1, ] <- dlv_comp_2(N[i, ], alphas)
+}
+```
+  
+  
+```{r}
+# tidyverse?
 ```
   
 ### 5.1.3 Continuous time model
@@ -131,15 +150,13 @@ Here we simply write the code for 2-species Lotka-Volterra competition.
 ``` {r}
 lvcomp2 <- function(t, n, parms) {
   with(as.list(parms), {
-      dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2])
+      dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2])  
       dn2dt <- r2 * n[2] * (1 - a22 * n[2] - a21 * n[1])
       list(c(dn1dt, dn2dt))
   })
 }
-
-
-
 ```
+
 We could then use this to numerically integrate the dynamics, using `ode` in the `deSolve` package, and plot it (graph not shown).
 ``` {r}
 library(deSolve)
@@ -149,14 +166,39 @@ parms <- c(r1 = 1, r2 = 0.1,
 initialN <- c(2, 1)
 out <- ode(y = initialN, times = 1:100, func = lvcomp2, parms = parms)
 matplot(out[, 1], out[, -1], type = "l")
+
+# Question for group!: wwhy out[, -1] instead of out[, 2]? And where does the second line come from? We're guessing it's the second column, but why doesn't it show up if we use out[, 2]?
 ```
 
+Sean's version:
+
+```{r}
+# Why (as.list..)?
+
+clv_comp_2 <- function(t, n, parms) {    # parms is an argument for the ode function.
+  
+  with(as.list(parms), {
+    dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2]) # Why not make a matrix again? # Why do this differently? Is it just because parms includes more than just alpha values?
+    dn2dt <- r2 * n[2] * (1 - a21 * n[1] - a22 * n[2])
+    list(c(dn1dt, dn2dt))
+  })
+}
+
+# A list is different than a vector because the data within it doesn't have to be the same class of data. (And it doesn't even have to be data. It can be plots, for example).
+```
 
 ## 5.2 Equilbria
 
 ### 5.2.1 Isoclines
 
-... 
+An isocline is a line connecting points on a graph or map that have equal value. Our isoclines will connect points in state space at which the growth rate for species i equals zero - every point on that line represents population growth rate equaling zero. We call these zero net growth isoclines.
+
+A zero net growth isocline, typically referred to simply as an isocline,  is the set of all points for which the growth of a population is zero, when all else (such as the population size of a competing species) is held constant.
+
+An equilibrium is one (or sometimes more than one) of those points, and in particular, it is a point at which the growth rates of all populations are zero.
+
+We find the isocline of a species by setting its growth rate equal to zero
+and solving the equation for that species in terms of the other species.
 
 #### Graphing an Isocline
 
@@ -180,6 +222,8 @@ plot(N1, eval(N2iso), type = "l", ylim = c(0, 200), xlim = c(0, 200),
 arrows(x0 = 90, y0 = 150, x1 = 90, y1 = 80, length = 0.1)
 arrows(x0 = 75, y0 = 0, x1 = 75, y1 = 50, length = 0.1)
 ```
+
+**Something worth noting is that four patterns represent the possible outcomes in the two-species Lotka-Volterra competition model: Species 1 wins in competition, Species 2 wins in competition, coexistence in a stable equilibrium, and competitive exclusion in an unstable equilibrium.**
 
 ### 5.2.2 Finding equilibria
 
