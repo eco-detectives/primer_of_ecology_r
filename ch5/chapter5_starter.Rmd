@@ -57,9 +57,26 @@ dlvcomp2 <- function(N, alpha, rd = c(1, 1)) {
                                     alpha[2, 2] * N[2])
   c(N1.t1, N2.t1)
 }
-
 ```
 Note the indices for `alpha` match the subscripts in eqs. 5.2, 5.3.
+
+Sean's version:
+
+```{r Model of discrete logistic growth with competition}
+
+dlv_comp_2 <- function(N, alpha, rd = c(1,1)) # N is a vector of length two; alpha is a matrix.
+  
+# When you specify an argument with "=" (as I do for rd above), you're giving it a default value. You don't have to do this because later you can specify a value, so whether you define the value initially can be a matter of preference. But in general, if you have a rule that you want the function to follow, you can specify it above. Casey's function specified 'round = FALSE' bceause he wanted integer values.
+  
+# You can add notes within here to help yourself, or be smart (like Casey) and make the argument names indicate the kinds of data you're inputting. For example: N needs to be a vector of 2, alpha is a matrix, and rd is also a vector of 2. Casey has his arguments named 'N_vec', 'alpha_matrix', and 'rd_vec'.
+                                             {
+  N1_t1 <- N[1] + rd[1] * N[1] * (1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
+  N2_t1 <- N[2] + rd[2] * N[2] * (1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
+  return(c(N1_t1, N2_t1))
+}  
+
+# We created a function that we will use later. The reason we use brackets to define the alphas is because we're referring to a matrix of alphas that correspond to what is needed in the expressions.
+```
 
 ### 5.1.2 Effects of $\alpha$
 
