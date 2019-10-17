@@ -1,0 +1,412 @@
+---
+title: 'Primer of Ecology with $\textsf{R}$: chapter 5'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+```{r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 5: Lotka–Volterra Interspecific Competition {.tabset}
+
+![](../img/lumpsucker4.jpg)
+
+## 5.1 Discrete and Continuous Time Models
+
+### 5.1.1 Discrete time model
+
+We pick up from Chapter 3 with the discrete logistic growth model
+$$N_{t+1} = N_t + r_d N_t (1 - \alpha N_t)$$
+where the population size in one year, $N_{t+1}$, is equal to the previous year’s population size, $N_t$, plus a growth increment. That growth increment includes a proportional change, the discrete growth factor, $r_d$. Last, we have the density dependence term, $(1-\alpha N_t)$, in which $\alpha$ is the per capita effect of each individual upon all other individuals.
+
+...
+
+Because we have two species, we now have to keep track of their particular populations and per capita effects using subscripts. We now have
+$$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{1,t} - \alpha_{12} N_{2,t})$$
+where $\alpha_{11}$ is the effect that an individual of species 1 has on its own growth rate, and $\alpha_{12}$ is the effect that an individual of species 2 has on the growth rate of species 1 (Fig. 5.2).
+
+Now that we are including a second population, we need an equation describing the dynamics of that population
+$$N_{2,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+where $\alpha_{21}$ is the per capita effect of species 1 on species 2, and $\alpha_{22}$ is the per capita effect that species 2 has on itself (Fig. 5.2).
+
+#### Code for a model of discrete logistic competition
+
+This will calculate $N_{t+1}$, given $N_t$, $r_d$ and a matrix of competition coefficients $\alpha$.
+
+``` {r} 
+dlvcomp2 <- function(N, alpha, rd = c(1, 1)) {
+  N1.t1 <- N[1] + rd[1] * N[1] * (1 - alpha[1, 1] * N[1] - 
+                                    alpha[1, 2] * N[2])
+  N2.t1 <- N[2] + rd[2] * N[2] * (1 - alpha[2, 1] * N[1] - 
+                                    alpha[2, 2] * N[2])
+  c(N1.t1, N2.t1)
+}
+
+```
+Note the indices for `alpha` match the subscripts in eqs. 5.2, 5.3.
+
+### 5.1.2 Effects of $\alpha$
+
+... We define all of the $\alpha$’s together as a matrix,
+
+\begin{align*}
+  \alpha = \begin{pmatrix} 
+      \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} 
+    \end{pmatrix}
+  = \begin{pmatrix} 
+      0.010 & 0.005 \\ 0.008 & 0.010 
+    \end{pmatrix}
+\end{align*}
+The subscripts on the $\alpha$s represent the row and column of the coefficient; $\alpha_{12}$ is in the first row, second column. This merely reflects how mathematicians describe matrix elements and dimensions — row $\times$ column. When we use matrix multiplication (Chapter 2), $\alpha_{12}$ becomes the effect of species 2 (column) on species 1 (row). In this case, $\alpha_{11} = \alpha_{22} = 0.01$, $\alpha_{21} = 0.008$, and $\alpha_{12} = 0.005$. Thus, both species have greater effects on themselves than on each other. Remember, the larger the $\alpha$, the larger the effect.
+
+...
+
+
+#### Discrete logistic competition dynamics (Fig. 5.2)
+
+First we specify the matrix of $\alpha$’s, the effects each species has on itself and each other, the initial population sizes, and the number of time steps.
+
+``` {r}
+alphs <- matrix(c(0.01, 0.005, 0.008, 0.01), ncol = 2, byrow = TRUE)
+t <- 20
+```
+We then create a matrix to hold the results, put in the initial population sizes, and project the populations.
+``` {r}
+N <- matrix(NA, nrow = t + 1, ncol = 2)
+N[1, ] <- c(10, 10)
+for (i in 1:t) N[i + 1, ] <- dlvcomp2(N[i, ], alphs)
+```
+At last, we can plot the populations, adding a reference line for the size of the populations, if there were only one species, at $K_i = 1/\alpha_{ii}$.
+``` {r}
+matplot(0:t, N, type = "l", col = 1, ylim = c(0, 110))
+abline(h = 1/alphs[1, 1], lty = 3)
+text(0, 1/alphs[1, 1], "K", adj = c(0, 0))
+legend("right", c(expression("Sp.1 " * (alpha[21] == 0.008)),   
+                  expression("Sp.2 " * (alpha[12] == 0.005))), 
+       lty = 1:2, bty = "n")
+```
+
+#### Casey's exploration
+
+```{r}
+
+calc_discrete_lv <- function(N_vec, a_mat, r_d = c(1, 1), round = FALSE) {
+  N1_tplus1 <- N_vec[1] * (1 + r_d[1] * (1 - a_mat[1, 1] * N_vec[1] - a_mat[1, 2] * N_vec[2]))
+  N2_tplus1 <- N_vec[2] * (1 + r_d[2] * (1 - a_mat[2, 1] * N_vec[1] - a_mat[2, 2] * N_vec[2]))
+  
+  N_out <- c('N1' = N1_tplus1, 'N2' = N2_tplus1)
+  if(round) N_out <- round(N_out)
+  ### adding a round() option to constrain to integer populations...
+  
+  return(N_out)
+}
+
+a_mat <- matrix(c(0.012, 0.005, 0.015, 0.010), ncol = 2, byrow = TRUE)
+a_mat2 <- matrix(c(0.01, 0.003, 0.0031, 0.01), ncol = 2, byrow = TRUE)
+years <- 80
+
+N_mat <- N_mat2 <- matrix(NA, nrow = years + 1, ncol = 2)
+N_mat[1, ] <- N_mat2[1, ] <- c(10, 5)
+  
+for (yr in 1:years) {
+  N_mat[yr + 1, ]  <- calc_discrete_lv(N_mat[yr, ],  a_mat,  r_d = c(.25, .25))
+  N_mat2[yr + 1, ] <- calc_discrete_lv(N_mat2[yr, ], a_mat2, r_d = c(.25, .25))
+}
+
+N_df <- as.data.frame(N_mat) %>%
+  setNames(c('species 1', 'species 2')) %>%
+  mutate(year = 0:years) %>%
+  gather(spp, pop, -year)
+N_df2 <- as.data.frame(N_mat2) %>%
+  setNames(c('species 3', 'species 4')) %>%
+  mutate(year = 0:years) %>%
+  gather(spp, pop, -year)
+
+N_df <- N_df %>%
+  bind_rows(N_df2)
+
+ggplot(N_df, aes(x = year, y = pop, color = spp)) +
+  geom_line() +
+  geom_hline(yintercept = 0, color = 'grey20') +
+  theme_minimal()
+
+```
+
+> Casey notes: if $\alpha_{12} \approx \alpha_{21}$, then the two pops will end up nearly identical.  When $\alpha_{12} \gg | \ll \alpha_{21}$ then the spp with the greater impact on the other will end up on top.  If $\alpha_{21} > \alpha_{11}$, i.e. pop 1 has a stronger effect on pop 2 than on itself, then population 2 can be driven extinct, otherwise coexistence.  Starting pops don't matter in the long term.
+
+### 5.1.3 Continuous time model
+
+Perhaps the classic model of competitive interactions is the continuous Lotka-Volterra model of interspecific competition [93]. Following directly the structure of the discrete version, we represent the two species as
+$$\frac{dN_1}{dt} = r_1 N_1 (1 - \alpha_{11} N_1 - \alpha_{12} N_2)$$
+$$\frac{dN_2}{dt} = r_2 N_2 (1 - \alpha_{21} N_1 - \alpha_{22} N_2)$$
+where we interpret all the parameters as the instantaneous rates analogous to the parameters in the discrete version above, but with different units, because the effects are instantaneous, rather than effects over a given time interval (Table 5.1).
+
+#### Continuous logistic competition
+
+Here we simply write the code for 2-species Lotka-Volterra competition.
+``` {r}
+lvcomp2 <- function(t, n, parms) {
+  with(as.list(parms), {
+      dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2])
+      dn2dt <- r2 * n[2] * (1 - a22 * n[2] - a21 * n[1])
+      list(c(dn1dt, dn2dt))
+  })
+}
+
+```
+We could then use this to numerically integrate the dynamics, using `ode` in the `deSolve` package, and plot it.
+``` {r}
+parms <- c(r1 = 1, r2 = 0.1, 
+           a11 = 0.2,  a21 = 0.1, 
+           a22 = 0.02, a12 = 0.01)
+initialN <- c(2, 1)
+out <- deSolve::ode(y = initialN, times = 1:100, func = lvcomp2, parms = parms)
+matplot(out[, 1], out[, -1], type = "l")
+```
+
+#### Casey explorations
+
+``` {r}
+parms <- c(r1 = 0.5, r2 = 0.5, 
+           a11 = 0.3,  a12 = 0.05,
+           a21 = 0.25, a22 = 0.1)
+
+initialN <- c(2, 2)
+out <- deSolve::ode(y = initialN, times = 1:200, func = lvcomp2, parms = parms)
+out_df <- as.data.frame(out) %>%
+  setNames(c('t', 'species 1', 'species 2')) %>%
+  gather(spp, pop, -t)
+
+ggplot(out_df, aes(x = t, y = pop, color = spp)) +
+  geom_line(alpha = .5) +
+  geom_hline(yintercept = 0, color = 'grey30') +
+  theme_minimal()
+```
+
+>  Casey note: if both $\alpha_{21} > \alpha_{11}$ and $\alpha_{12} > \alpha_{22}$ then one population will still be driven extinct, faster than the other, allowing the other to thrive. Looks like the differences are what matter?  if $\alpha_{21} - \alpha_{11} = $\alpha_{12} > \alpha_{22}$$ then both seem to stabilize out (true even if $\alpha_{21} < \alpha_{11}$); if there is a slight difference, one will win out over the other.
+
+## 5.2 Equilbria
+
+### 5.2.1 Isoclines
+
+... 
+
+#### Graphing an Isocline
+
+Here we graph something similar, but not identical, to Fig. 5.3a. First, we define a new matrix of competition coefficients, where $\alpha_{11} = \alpha_{22} > \alpha_{12} = \alpha_{21}$.
+``` {r}
+a <- matrix(c(0.01, 0.005, 0.005, 0.01), ncol = 2, byrow = TRUE)
+```
+We create an expression to plot the $N_2$ isocline, as a function of possible values of $N_1$.
+``` {r}
+N2iso <- expression(1/a[2, 2] - (a[2, 1]/a[2, 2]) * N1)
+```
+We then specify $N_1$, and then evaluate and plot $N_2$.
+``` {r}
+N1 <- 0:200
+plot(N1, eval(N2iso), type = "l", ylim = c(0, 200), xlim = c(0, 200), 
+     ylab = expression("N"[2]))
+
+### We add arrows to remind us of what happens if $N_2$ is above or 
+### below the value on the isocline.
+
+arrows(x0 = 90, y0 = 150, x1 = 90, y1 = 80, length = 0.1)
+arrows(x0 = 75, y0 = 0, x1 = 75, y1 = 50, length = 0.1)
+```
+
+### 5.2.2 Finding equilibria
+
+> Casey note: this section derives equilibria for coexistence and everal other equilibria, based on relative values of $\alpha_{ii}$ and $\alpha_{ij}$ - math but no code.
+
+## 5.3 Dynamics at the Equilibria
+
+...
+
+### 5.3.1 Determine the equilibria
+
+....
+
+#### Finding equilibria
+
+We can create equations or expressions for the equilibria, $N_1^∗$ and $N_2^∗$. These will be symbolic representations that we later evaluate.
+
+``` {r}
+N1Star <- expression((a22 - a12)/(a22 * a11 - a12 * a21))
+N2Star <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
+### Next we create the $\alpha$ and evaluate our expressions.
+a11 <- a22 <- 0.01; a12 <- 0.001; a21 <- 0.001
+N1 <- eval(N1Star); N2 <- eval(N2Star); N1
+# [1] 90.9
+```
+
+### 5.3.2 Create the Jacobian matrix
+
+The next step is to find each partial derivative. The partial derivatives describe how the growth rate of each species changes with respect to the abundance of each other species and with respect to its own abundance. Thus a positive value indicates that a growth rate increases as another population increases. A negative value indicates a growth rate decreases as another population increases. Here, we work through an example, explicitly deriving the partial derivative of species 1’s growth rate with respect to itself.
+First let’s expand the growth rate of species 1 (eq. 5.5)
+
+$$\frac{dN_1}{dt} = \dot N_1 = r_1 N_1 - r_1 \alpha_{11} N_{1}^2 - r_1 \alpha_{12} N_2 N_1$$
+Now we derive the partial differential equation (PDE) with respect to N1,
+treating $N_2$ as a constant
+$$\frac{\partial \dot N_1}{\partial N_1} = r1 - 2r_1 \alpha_{11} N_1 - r_1 \alpha_{12} N_2$$
+We should think of this as the per capita effect of species 1 on its growth rate. To derive the PDE with respect to $N_2$, we treat $N_1$ as a constant, and find
+$$\frac{\partial \dot N_1}{\partial N_2} = -r_1 \alpha_{12} N_1$$
+This is the per capita effect of species 2 on species 1’s growth rate.
+We then do the same for N ̇2, and so derive the full matrix of PDE’s,
+\begin{align*}
+  \begin{pmatrix}
+    \frac{\partial \dot N_1}{\partial N_1} &
+    \frac{\partial \dot N_1}{\partial N_2} \\
+    \frac{\partial \dot N_2}{\partial N_1} &
+    \frac{\partial \dot N_2}{\partial N_2}
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    r1 - 2r_1 \alpha_{11} N_1 - r_1 \alpha_{12} N_2 &
+    -r_1 \alpha_{12} N_1 \\
+    -r_2 \alpha_{21} N_2 &
+    r2 - 2r_2 \alpha_{22} N_2 - r_2 \alpha_{21} N_1
+  \end{pmatrix}
+\end{align*}
+
+This matrix of PDE’s is the Jacobian matrix, or simply the “Jacobian.” As differential equations, they describe the slopes of curves (i.e. the slopes of tangents of curves) at a particular point. That is, they describe the straight line interpretations as that point. As _partial_ differential equations, they describe how the growth rates change as population sizes change.
+
+#### Finding partial differential equations and the Jacobian matrix
+
+Here we create equations or expressions for the for the growth rates, $\dot N_1$ and $\dot N_2$, and use these to find the partial derivatives. First, expressions for the growth rates:
+
+``` {r}
+dN1dt <- expression(r1 * N1 - r1 * a11 * N1^2 - r1 * a12 * N1 * N2)
+dN2dt <- expression(r2 * N2 - r2 * a22 * N2^2 - r2 * a21 * N1 * N2)
+```
+
+Next, we use each expression for $\dot N$ to get each the partial derivatives with respect to each population size. Here we use the R function `D()` (see also `?deriv`). We reveal here the result for the first one only, the partial derivative of $\dot N$ with respect to itself, and then get the others.
+``` {r}
+ddN1dN1 <- D(dN1dt, "N1")
+ddN1dN1
+# r1 - r1 * a11 * (2 * N1) - r1 * a12 * N2
+# Here we find the remaining PDE’s.
+ddN1dN2 <- D(dN1dt, "N2")
+ddN2dN1 <- D(dN2dt, "N1")
+ddN2dN2 <- D(dN2dt, "N2")
+```
+
+Last we put these together to create the Jacobian matrix, which is itself an expression that we can evaluate again and again.
+
+``` {r}
+J <- expression(matrix(c(eval(ddN1dN1), eval(ddN1dN2), 
+                         eval(ddN2dN1), eval(ddN2dN2)), 
+                       nrow = 2, byrow = TRUE))
+```
+
+### 5.3.3 Solve the Jacobian at an equilibrium
+
+...
+
+#### Evaluating the Jacobian matrix
+
+Assuming that above we selected particular $\alpha$, used these to determine $N_1^∗$ and $N_2^∗$, found the PDEs and created an expression for the Jacobian matrix, and labeled everything appropriately, we can then evaluate the Jacobian at an equilibrium. For $\alpha_{ii} = 0.01$ and $\alpha_{ij} = 0.001$ (see above) we find
+
+``` {r}
+r1 <- r2 <- 1
+J1 <- eval(J)
+J1
+#          [,1]     [,2]
+# [1,] -0.90909 -0.09091
+# [2,] -0.09091 -0.90909
+```
+Note that all of these PDEs are negative for this equilibrium. This indicates a stable equilibrium, because it means that each population’s growth rate slows in response to an increase in any other.
+
+### 5.3.4 Use the Jacobian matrix
+
+...
+
+#### Eigenanalysis of the Jacobian matrix
+Now that we have evaluated the Jacobian matrix (previous box), we simply perform eigenanalysis on the matrix (from previous boxes: $\alpha_{11} = \alpha_{22} = 0.01, \alpha_{12} = \alpha_{21} = 0.001, r = 1$).
+``` {r}
+eigStable <- eigen(J1)
+eigStable[["values"]]
+# [1] -0.8182 -1.0000
+```
+The dominant eigenvalue is negative (the larger of the two: $\lambda_1$ = -0.818) indicating a globally stable equilibrium (Table 5.2). Both eigenvalues are real, not complex, indicating that there would be no oscillations (Table 5.2).
+
+### 5.3.5 Three interesting equilbria
+
+...
+
+Given our stability criteria above, let us next examine the dominant eigen- value of the Jacobian for each equilibrium... but which values of $\alpha_{ij}, \alpha_{ji}$ should we choose? We can describe our invasion criterion for species $i$ as
+$$\beta_{ij} = \alpha_{ij} / \alpha_{jj}$$
+where, if $\beta_{ij} < 1$, species $i$ can invade. This ratio is the relative strength of inter- vs. intraspecific competitive effect. It turns out to be useful to calculate $\lambda_1$ (“perturbation growth rate”) for combinations of $\beta_{ij}, \beta_{ji}$.
+
+__Stable equilibrium – $\beta_{ij}, \beta_{ji} < 1$__
+
+__Unstable equilibria – $\beta_{ij}, \beta_{ji} > 1$__
+
+#### Eigenanalysis of the Jacobian where $\beta_{ij}, \beta_{ji} > 1$
+
+Here we create values for $\alpha$ that create an unstable equilbrium.
+``` {r}
+a11 <- a22 <- 0.01
+a12 <- a21 <- 0.011
+N1 <- eval(N1Star)
+N2 <- eval(N2Star)
+eigen(eval(J))[["values"]]
+# [1]  0.04762 -1.00000
+```
+The dominant eigenvalue is now positive, while the other is negative, indicating a saddle (Table 5.2).
+
+__Neutral equilibria — $\beta_{ij} = \beta_{ji} = 1$__
+
+#### Eigenanalysis of the Jacobian where $\beta_{ij} = \beta_{ji} = 1$
+
+Here we create values for $\alpha$ that create a neutral equilbrium.
+``` {r}
+a11 <- a21 <- 0.01
+a22 <- a12 <- 0.015
+```
+We determine $N^∗$ differently (eq. 4.17) because the usual expression fails when the denominator equals 0.
+``` {r}
+N1 <- N2 <- 1/(a11 + a22)
+eigen(eval(J))[["values"]]
+# [1] -1 0
+```
+The dominant eigenvalue is now zero, indicating a neutral equilibrium (Table 5.2). The neutral nature of this equilibrium results in more than one equilibrium. Let’s try a different one, also on the isocline.
+``` {r}
+N1 <- 1/(a11)
+N2 <- 0
+eigen(eval(J))[["values"]]
+# [1] -1 0
+```
+Again $\lambda_1 = 0$ so this equilibrium is also neutral.
+
+## 5.4 Return Time and the Effect of $r$
+
+> Casey note: this section has no code.
+
+## 5.5 Summary
+
+This chapter has provided several useful results.
+
+* We can represent species effects on each other in precisely the same way we represented their effects on themselves.
+* Considering only two species, species $i$ can invade species $j$ when the effect of species $j$ on species $i$ is less than its effect of species $j$ on itself.
+* Two species coexist stably when their effects on each other are smaller than their effects on themselves.
+* The dominant eigenvalue of the Jacobian matrix (perturbation growth rate), and its negative inverse, return time, are useful mathematical definitions of stability.
+* Perturbation growth rate decreases as $\beta_{ij}, \beta_{ji}$ decrease, and are either both less than one or both greater than 1 ($\beta_{ij} = \alpha_{ij}/\alpha_{jj}$).
+* The magnitude of perturbation growth rate increases with $r$.
