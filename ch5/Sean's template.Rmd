@@ -214,7 +214,7 @@ Species coexist at points of equilibria, which is where the lines intersect. We 
 
 The outcome for $N_1$ is:
 
-$$N_1 = (\alpha_{22} - \alpha_{21})/(\alpha_{11}\alpha_{22} - \alpha_{12}\alpha_{21})$$
+$$N_1 = \frac{(\alpha_{22} - \alpha_{21})}{(\alpha_{11}\alpha_{22} - \alpha_{12}\alpha_{21})}$$
 
 **Note**: $r_i$ is not in the expressions for the equilibria — they do not depend on $r_i$. *It is important to remember that this intrinsic rate of increase is not germaine to the long term equilibria for the two species model.* Below, we will see that $r_i$ is germane to models with more than two species.
 
@@ -241,5 +241,10 @@ N1 <- eval(N1Star); N2 <- eval(N2Star); N1
 ### 5.3.2 Create the Jacobian matrix
 
 Next step is to find the partial derivative for each population. The partial derivatives describe how the growth rate of each species changes with respect to the abundance of the other species *and* the its own abundance.
+
+Thus a positive value indicates that a growth rate increases as another population increases. A negative value indicates a growth rate decreases as another population increases.
+
+**Can someone remind me why we take derivatives of things, and why we do so here.**
+
 
 
