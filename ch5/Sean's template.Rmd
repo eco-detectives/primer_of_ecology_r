@@ -240,4 +240,6 @@ N1 <- eval(N1Star); N2 <- eval(N2Star); N1
 
 ### 5.3.2 Create the Jacobian matrix
 
+Next step is to find the partial derivative for each population. The partial derivatives describe how the growth rate of each species changes with respect to the abundance of the other species *and* the its own abundance.
+
 
