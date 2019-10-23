@@ -36,6 +36,57 @@ Let $\alpha_{11} = \alpha_{22} = 0.1, \alpha_{12} = 0.05, \alpha_{21} = 0.01$.
 (c) Select other values for the $\alpha$ and repeat (a) and (b); swap your answers with a friend, and check each other’s work.
 (d) Start with equilibria for competing species, and show algebraically that when interspecific competition is nonexistent, species reach their carrying capacities.
 
+### Molly's attempts
+
+a) Determining $N^*$s and $K$s
+
+```{r}
+# define the alphas (could also do this as a matrix)
+a11 <- a22 <- 0.1; a12 <- 0.05; a21 <- 0.01
+
+# set up equilibrium equations (can't remember why we used 'expression', but keeping here for now)
+N1star_eq <- expression((a22 - a12)/(a22 * a11 - a12 * a21))
+N2star_eq <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
+
+# evaluate expression
+N1star <- eval(N1star_eq)
+N2star <- eval(N2star_eq)
+
+K1 <- 1/a11
+K2 <- 1/a22
+```
+
+$N_1^∗$ = 'N1star'
+$N_2^∗$ = 'N2star'
+$K_1$ = 'K1'
+$K_2$ = 'K2'
+
+b) Drawing ZNGIs + arrows
+
+```{r}
+N1_iso <- function(x) 1/a11 - (a12/a11) * x # here x is N2
+N2_iso <- function(x) 1/a22 - (a21/a22) * x # here x is N1
+
+ggplot(data = data.frame(x = 0), mapping = aes(x = x)) +
+  stat_function(fun = N1_iso) + xlim(0,200)
+
+ggplot(data = data.frame(x = 0), mapping = aes(x = x)) +
+  stat_function(fun = N2_iso) + xlim(0,200)
+
+# need to add arrows, change x and y axes to refer to alphas...?
+```
+
+c) Repeat with dif alphas (will try this later)
+
+d) Start with equilibria for competing species, and show algebraically that when interspecific competition is nonexistent, species reach their carrying capacities.
+
+$N_1^∗ = \frac{\alpha_{22} - \alpha_{12}}{\alpha_{11}*\alpha_{22}-\alpha_{21}*\alpha_{12}}$
+
+When $\alpha_{21}$ and $\alpha_{12}$ are 0...
+$N_1^∗ = \frac{\alpha_{22}}{\alpha_{11}*\alpha_{22}}$
+$N_1^∗ = \frac{1}{\alpha_{11}} = K$
+
+
 ## 5.2. Derive and simplify...
 
 ...the expression for $N_1^∗/N_2^∗$ in terms of the $\alpha$.
