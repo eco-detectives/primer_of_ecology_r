@@ -42,9 +42,11 @@ a) Determining $N^*$s and $K$s
 
 ```{r}
 # define the alphas (could also do this as a matrix)
-a11 <- a22 <- 0.1; a12 <- 0.05; a21 <- 0.01
+a11 <- a22 <- 0.1
+a12 <- 0.05
+a21 <- 0.01
 
-# set up equilibrium equations (can't remember why we used 'expression', but keeping here for now)
+# set up equilibrium equations (can't remember why we used 'expression', but keeping here for now in case it becomes useful later...)
 N1star_eq <- expression((a22 - a12)/(a22 * a11 - a12 * a21))
 N2star_eq <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
 
@@ -56,36 +58,49 @@ K1 <- 1/a11
 K2 <- 1/a22
 ```
 
-$N_1^∗$ = 'N1star'
-$N_2^∗$ = 'N2star'
-$K_1$ = 'K1'
-$K_2$ = 'K2'
+$N_1^∗$ = `r N1star`  
+$N_2^∗$ = `r N2star`  
+$K_1$ = `r K1`  
+$K_2$ = `r K2`  
 
 b) Drawing ZNGIs + arrows
 
-```{r}
-N1_iso <- function(x) 1/a11 - (a12/a11) * x # here x is N2
+```{r, fig.height = 3, fig.width = 3, fig.align = "center"}
+N1_iso <- function(x) 1/a11 - (a12/a11) * x # here x is N2 - but I assume I need to call if x to work within ggplot?
 N2_iso <- function(x) 1/a22 - (a21/a22) * x # here x is N1
 
 ggplot(data = data.frame(x = 0), mapping = aes(x = x)) +
-  stat_function(fun = N1_iso) + xlim(0,200)
+  stat_function(fun = N2_iso) + xlim(0,200) +
+  geom_segment(aes(x = 25, xend = 25, y = 100, yend = 25), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") + 
+  geom_segment(aes(x = 50, xend = 50, y = 100, yend = 15), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") +
+  geom_segment(aes(x = 25, xend = 25, y = 0, yend = 5), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") +
+  geom_segment(aes(x = 50, xend = 50, y = 0, yend = 3), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") +
+  scale_y_continuous(limits = c(0,100)) +
+  scale_x_continuous(limits = c(0,100)) +
+  labs(y = "N2", x = "N1") +
+  theme_bw()
 
 ggplot(data = data.frame(x = 0), mapping = aes(x = x)) +
-  stat_function(fun = N2_iso) + xlim(0,200)
+  stat_function(fun = N1_iso) + xlim(0,200) +
+  geom_segment(aes(x = 5, xend = 5, y = 20, yend = 10), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") + 
+  geom_segment(aes(x = 15, xend = 15, y = 20, yend = 5), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") +
+  geom_segment(aes(x = 5, xend = 5, y = 0, yend = 5), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") +
+  geom_segment(aes(x = 15, xend = 15, y = 0, yend = 1), arrow = arrow(length = unit(.25, "cm")), color = "slategray", linetype = "F1") +
+  scale_y_continuous(limits = c(0,20)) +
+  scale_x_continuous(limits = c(0,20)) +
+  labs(y = "N1", x = "N2") +
+  theme_bw()
 
-# need to add arrows, change x and y axes to refer to alphas...?
 ```
 
-c) Repeat with dif alphas (will try this later)
+c) Repeat with dif alphas *(skipping this for now...)*
 
 d) Start with equilibria for competing species, and show algebraically that when interspecific competition is nonexistent, species reach their carrying capacities.
 
 $N_1^∗ = \frac{\alpha_{22} - \alpha_{12}}{\alpha_{11}*\alpha_{22}-\alpha_{21}*\alpha_{12}}$
 
-When $\alpha_{21}$ and $\alpha_{12}$ are 0...
-$N_1^∗ = \frac{\alpha_{22}}{\alpha_{11}*\alpha_{22}}$
-$N_1^∗ = \frac{1}{\alpha_{11}} = K$
-
+When $\alpha_{21}$ and $\alpha_{12}$ are 0...  
+$N_1^∗ = \frac{\alpha_{22}}{\alpha_{11}*\alpha_{22}} \rightarrow \frac{1}{\alpha_{11}} = K$  
 
 ## 5.2. Derive and simplify...
 
@@ -97,9 +112,37 @@ $N_1^∗ = \frac{1}{\alpha_{11}} = K$
 
 ## 5.4. Total community size
 
-Assume for convenience that $\alpha_{11} = \alpha_{22}$ and $\alpha_{12} = \alpha_{21}$, and let $N_T = N_1 + N_2$. (a) Write $N_T^∗$ as a function of $\alpha_{11}, \alpha_{22}, \alpha_{12}, \alpha_{21}$.
+Assume for convenience that $\alpha_{11} = \alpha_{22}$ and $\alpha_{12} = \alpha_{21}$, and let $N_T = N_1 + N_2$. 
+(a) Write $N_T^∗$ as a function of $\alpha_{11}, \alpha_{22}, \alpha_{12}, \alpha_{21}$.
 (b) Describe in words how $N_T$ varies as $\alpha_{ij}$ varies from $\alpha_{ii} \rightarrow 0$.
 (c) Graph (by hand, or in R) the relation between $N_T$ versus $\alpha_{ij}$. Let $\alpha_{ii} = 0.01$.
+
+### Molly's attempts:
+
+a) Write equation for $N_T^∗$  
+$N_T^* = N_1^* + N_2^*$  
+$N_T^* = 2*(\frac{\alpha_{22} - \alpha_{12}}{\alpha_{11}*\alpha_{22}-\alpha_{21}*\alpha_{12}})$  
+$N_T^* = 2*(\frac{\alpha_{22} - \alpha_{12}}{(\alpha_{22})^2-(\alpha_{12})^2})$
+
+b) How does $N_T$ vary as $\alpha_{ij}$ goes from $\alpha_{ii} \rightarrow 0$  
+When $\alpha_{ij}$ ~ 0: $N_T$ approaches $2K$ ($2*\frac{1}{\alpha_{22}}$)  
+When $\alpha_{ij}$ ~ $\alpha_{ii}$: $N_T$ approaches 0?  
+
+(c) Graph the relation between $N_T$ versus $\alpha_{ij}$
+```{r}
+a_intra <- 0.01
+# a_inter <- seq(0, a_intra, 0.0001)
+
+NT <- function(x) 2 * (a_intra - x) / (a_intra^2 - x^2) # x referring to a_inter (a12 or a21)
+
+ggplot(data = data.frame(x = 0), mapping = aes(x = x)) +
+  stat_function(fun = NT) + xlim(0,0.01) +
+  scale_y_continuous(limits = c(0,200)) +
+  labs(y = "NT", x = expression(alpha[ij])) +
+  theme_bw()
+
+```
+
 
 ## 5.5. Interpret the Routh-Hurwitz criterion...
 
