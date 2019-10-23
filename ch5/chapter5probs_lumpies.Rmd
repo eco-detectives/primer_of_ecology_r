@@ -27,6 +27,9 @@ library(primer) # install.packages('primer')
 
 # Chapter 5: Lotka–Volterra Interspecific Competition {.tabset}
 
+\newcommand{\aa}{\alpha}
+
+
 ## 5.1. Basics
 
 Let $\alpha_{11} = \alpha_{22} = 0.1, \alpha_{12} = 0.05, \alpha_{21} = 0.01$.
@@ -58,10 +61,12 @@ K1 <- 1/a11
 K2 <- 1/a22
 ```
 
-$N_1^∗$ = `r N1star`  
-$N_2^∗$ = `r N2star`  
-$K_1$ = `r K1`  
-$K_2$ = `r K2`  
+$N_1^∗$ = `r N1star`; 
+$N_2^∗$ = `r N2star`; 
+$K_1$ = `r K1`; 
+$K_2$ = `r K2`
+Molly - looks like you wanted the inline code so fixed it for you (mostly so I could compare my results to yours!) -- Casey  
+Casey - thank you! -- Molly
 
 b) Drawing ZNGIs + arrows
 
@@ -100,11 +105,113 @@ d) Start with equilibria for competing species, and show algebraically that when
 $N_1^∗ = \frac{\alpha_{22} - \alpha_{12}}{\alpha_{11}*\alpha_{22}-\alpha_{21}*\alpha_{12}}$
 
 When $\alpha_{21}$ and $\alpha_{12}$ are 0...  
-$N_1^∗ = \frac{\alpha_{22}}{\alpha_{11}*\alpha_{22}} \rightarrow \frac{1}{\alpha_{11}} = K$  
+$N_1^∗ = \frac{\alpha_{22}}{\alpha_{11}*\alpha_{22}} \rightarrow \frac{1}{\alpha_{11}} = K$ 
+
+### Casey's attempts
+
+Let $\alpha_{11} = \alpha_{22} = 0.1, \alpha_{12} = 0.05, \alpha_{21} = 0.01$.
+
+(a) Determine $N_1^∗, N_2^∗, K_1, K_2$.
+
+```{r}
+alpha_mat <- matrix(c(0.10, 0.05, 0.01, 0.10), nrow = 2, byrow = TRUE)
+
+### following the text and Molly.  We can then eval(N1Star) with the values
+N1_star <- expression((a22 - a12)/(a22 * a11 - a12 * a21))
+N2_star <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
+
+### use the matrix to create the a_ii and a_ij values so eval() will work:
+a11 <- alpha_mat[1, 1]; a12 <- alpha_mat[1, 2]; 
+a21 <- alpha_mat[2, 1]; a22 <- alpha_mat[2, 2]
+
+```
+
+* $N_1^*$ = `r eval(N1_star)`; $N_2^*$ = `r eval(N2_star)`.
+* $K_i$ is just $1/\alpha_{ii}$, so $K_1$ = `r 1 / a11` and $K_2$ = `r 1 / a22` (set the effect of species $j$ on species $i$ to zero for carrying capacity in absence of competition).
+
+(b) Draw (by hand, or in R) the ZNGIs (zero net growth isoclines); include arrows that indicate trajectories, and label the axes.
+
+* From the text we can find the ZNGI isocline for $N_1 = \frac{1}{\alpha_{11}} - \frac{\alpha_{12}}{\alpha_{11}}N_2$ and $N_2 = \frac{1}{\alpha_{22}} - \frac{\alpha_{21}}{\alpha_{22}}N_1$.  
+* For easier plotting using `geom_abline()` let's rearrange the $N_1$ isocline in terms of $N_2 = \frac{1}{\alpha_{12}} - \frac{\alpha_{11}}{\alpha_{12}}N_1$.
+```{r}
+### ZNGI for species 2 and species 1:
+int_N2 <- 1 / a22; m_N2 = -a21 / a22
+int_N1 <- 1 / a12; m_N1 = -a11 / a12
+
+tmp_df <- data.frame(int = c(int_N2, int_N1),
+                     m   = c(m_N2, m_N1),
+                     pop = c('N2', 'N1'))
+
+ggplot(tmp_df) +
+  geom_abline(aes(intercept = int, slope = m, color = pop)) +
+  xlim(c(0, 1/a21)) +
+  ylim(c(0, 1/a12)) +
+  geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
+  theme_minimal() +
+  labs(x = latex2exp::TeX('Species 1 population: $N_1$'),
+       y = latex2exp::TeX('Species 2 population: $N_2$'))
+
+```
+
+* can draw arrows using `geom_segment()` and `arrow()` but that seems tedious.
+(c) Select other values for the $\alpha$ and repeat (a) and (b); swap your answers with a friend, and check each other’s work.
+    * Here, $\alpha = \begin{pmatrix}0.14 & 0.06 \\ 0.04 & 0.12\end{pmatrix}$.
+```{r}
+alpha_mat <- matrix(c(0.14, 0.06, 0.04, 0.12), nrow = 2, byrow = TRUE)
+
+### following the text and Molly.  We can then eval(N1Star) with the values
+N1_star <- expression((a22 - a12)/(a22 * a11 - a12 * a21))
+N2_star <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
+
+### use the matrix to create the a_ii and a_ij values so eval() will work:
+a11 <- alpha_mat[1, 1]; a12 <- alpha_mat[1, 2]; 
+a21 <- alpha_mat[2, 1]; a22 <- alpha_mat[2, 2]
+```
+
+* $N_1^*$ = `r eval(N1_star)`; $N_2^*$ = `r eval(N2_star)`.
+* $K_1$ = `r 1 / a11` and $K_2$ = `r 1 / a22`.
+
+``` {r}
+### ZNGI for species 2 and species 1:
+int_N2 <- 1 / a22; m_N2 = -a21 / a22
+int_N1 <- 1 / a12; m_N1 = -a11 / a12
+
+tmp_df <- data.frame(int = c(int_N2, int_N1),
+                     m   = c(m_N2, m_N1),
+                     pop = c('N2', 'N1'))
+
+ggplot(tmp_df) +
+  geom_abline(aes(intercept = int, slope = m, color = pop)) +
+  xlim(c(0, 1/a21)) +
+  ylim(c(0, 1/a12)) +
+  geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
+  theme_minimal() +
+  labs(x = latex2exp::TeX('Species 1 population: $N_1$'),
+       y = latex2exp::TeX('Species 2 population: $N_2$'))
+
+```
+
+(d) Start with equilibria for competing species, and show algebraically that when interspecific competition is nonexistent, species reach their carrying capacities.
+    * This is simply setting the $\alpha_{ij}$ terms to zero (or equivalently, set $N_j$ = 0), so $N_1^* = 1 / \alpha_{11} = K_1$ and similar for $N_2$.
+    * Oops, this is for the zero net growth isoline formulas.  Instead, start with:
+$$N_1^* = \frac{\aa_{22} - \aa_{12}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}$$
+and if you set the $\aa_{ij}$ terms to zero, you end up with 
+$$N_1^* = \frac{\aa_{22}}{\aa_{22} \aa_{11}} = \frac{1}{\aa_{11}}$$
+>>>>>>> 6291ff4e4debd1dc36a715ce2e261175efac5c56
 
 ## 5.2. Derive and simplify...
 
 ...the expression for $N_1^∗/N_2^∗$ in terms of the $\alpha$.
+
+### Casey's version:
+
+Start with the formulas for $N_1^∗, N_2^∗$:
+\begin{align*}
+  N_1^*  &= \frac{\aa_{22} - \aa_{12}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}\\
+  N_2^*  &= \frac{\aa_{11} - \aa_{21}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}\\
+  \Longrightarrow \frac{N_1^*}{N_2^*} &= \frac{\aa_{22} - \aa_{12}}{\aa_{11} - \aa_{21}
+\end{align*}
+... since the denominators are identical and cancel out.
 
 ## 5.3. Show the derivations...
 
@@ -113,9 +220,37 @@ $N_1^∗ = \frac{\alpha_{22}}{\alpha_{11}*\alpha_{22}} \rightarrow \frac{1}{\alp
 ## 5.4. Total community size
 
 Assume for convenience that $\alpha_{11} = \alpha_{22}$ and $\alpha_{12} = \alpha_{21}$, and let $N_T = N_1 + N_2$. 
+
 (a) Write $N_T^∗$ as a function of $\alpha_{11}, \alpha_{22}, \alpha_{12}, \alpha_{21}$.
+\begin{align*}
+  N_T^* &= N_1^* + N_2^*\\
+  N_1^* &= \frac{\aa_{22} - \aa_{12}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}\\
+  N_2^* &= \frac{\aa_{11} - \aa_{21}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}\\
+  \Longrightarrow N_T^*  &= \frac{\aa_{22} - \aa_{12} + \aa_{11} - \aa_{21}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}
+\end{align*}
+This doesn't depend on the simplification described above... with that simplification:
+$$N_T^* = \frac{2(\aa_{ii} - \aa_{ij})}{\aa_{ii}^2 - \aa_{ij}^2} = \frac{2}{\aa_{ii} + \aa_{ij}}$$
+
 (b) Describe in words how $N_T$ varies as $\alpha_{ij}$ varies from $\alpha_{ii} \rightarrow 0$.
+   * should this be how $N_T^*$ varies?  
+       * At $\aa_{ii} = \aa_{ij}$, $N_T^* = 2/2\aa_{ii} = K_i$.  At this point, species $i$ and $j$ suppress each other exactly as they suppress their own populations; inter- and intra-species competition are identical, so effectively it's identical to a single population of a species competing with itself.
+       * As $\aa_{ij} \rightarrow 0$, $N_T^* \rightarrow 2/\aa_{ii} = 2K_i$.  Inter-species competition becomes negligible, and it's effectively identical to two independent species with intra-specific competition.
 (c) Graph (by hand, or in R) the relation between $N_T$ versus $\alpha_{ij}$. Let $\alpha_{ii} = 0.01$.
+```{r}
+a_ii <- 0.01
+tmp_df <- data.frame(a_ij = seq(0, a_ii, a_ii/20),
+                     a_ii) %>%
+  mutate(N_T_star = 2 / (a_ii + a_ij))
+
+ggplot(tmp_df, aes(x = a_ij, y = N_T_star)) +
+  geom_line() +
+  geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
+  geom_hline(yintercept = (1:2)/a_ii, linetype = 'dashed') +
+  labs(x = latex2exp::TeX('$\alpha_{ij}$'),
+       y = latex2exp::TeX('$N_T^*$')) +
+  theme_minimal()
+```
+
 
 ### Molly's attempts:
 
@@ -126,7 +261,7 @@ $N_T^* = 2*(\frac{\alpha_{22} - \alpha_{12}}{(\alpha_{22})^2-(\alpha_{12})^2})$
 
 b) How does $N_T$ vary as $\alpha_{ij}$ goes from $\alpha_{ii} \rightarrow 0$  
 When $\alpha_{ij}$ ~ 0: $N_T$ approaches $2K$ ($2*\frac{1}{\alpha_{22}}$)  
-When $\alpha_{ij}$ ~ $\alpha_{ii}$: $N_T$ approaches 0?  
+When $\alpha_{ij}$ ~ $\alpha_{ii}$: $N_T$ approaches $K$  
 
 (c) Graph the relation between $N_T$ versus $\alpha_{ij}$
 ```{r}
@@ -148,9 +283,35 @@ ggplot(data = data.frame(x = 0), mapping = aes(x = x)) +
 
 ...in terms of species relative inter- and intraspecific competitive abilities.
 
+### Casey's attempt:
+
+The Routh-Hurwitz criterion states that "a two-species equilibrium will be locally stable, only if $\mathbf{J}_{11} + \mathbf{J}_{22} < 0$ and if $\mathbf{J}_{11} \mathbf{J}_{22} − \mathbf{J}_{12} \mathbf{J}_{21} > 0$," where the Jacobian $\mathbf J$ is:
+
+\begin{align*}
+  \mathbf{J} = 
+  \begin{pmatrix}
+    \frac{\partial \dot N_1}{\partial N_1} &
+    \frac{\partial \dot N_1}{\partial N_2} \\
+    \frac{\partial \dot N_2}{\partial N_1} &
+    \frac{\partial \dot N_2}{\partial N_2}
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    r_1 - 2r_1 \alpha_{11} N_1 - r_1 \alpha_{12} N_2 &
+    -r_1 \alpha_{12} N_1 \\
+    -r_2 \alpha_{21} N_2 &
+    r_2 - 2r_2 \alpha_{22} N_2 - r_2 \alpha_{21} N_1
+  \end{pmatrix}
+\end{align*}
+
+First, we look at the $\mathbf{J}_{11} + \mathbf{J}_{22} < 0$ term; this requires that the sum of marginal growth rates $\frac{\partial \dot N_i}{\partial N_i}$ must be negative.  This allows two cases:
+
+* both populations may have a negative marginal growth rate with respect to themselves (in which case any perturbation away from $N_i$ will push that population back toward the equilibrium)
+* OR any populations where marginal growth rate is positive must be counterbalanced by a population where the marginal growth rate is even more negative.
+
 ## 5.6. The Jacobian matrix
 
-Here we turn words into math. Note that this is one way of making our as- sumptions very precise and clear. In each case below (a.–d.), (i) use algebraic inequalities between the $\beta$s and between the $\alpha$s to show what the assumptions imply for the equalities and inequalities with respect to all $\alpha$s, (ii) use these inequalities to simplify the Jacobian matrix (eq. (5.21) as much as possible, (iii) show algebraically how these (in)equalities determine the sign of each element of the Jacobian, and (iv) explain in words how the magnitudes of the Jacobian elements determine stability properties.
+Here we turn words into math. Note that this is one way of making our assumptions very precise and clear. In each case below (a.–d.), (i) use algebraic inequalities between the $\beta$s and between the $\alpha$s to show what the assumptions imply for the equalities and inequalities with respect to all $\alpha$s, (ii) use these inequalities to simplify the Jacobian matrix (eq. (5.21) as much as possible, (iii) show algebraically how these (in)equalities determine the sign of each element of the Jacobian, and (iv) explain in words how the magnitudes of the Jacobian elements determine stability properties.
 
 (a) Assume that both species are functionally equivalent, and intraspecific competition is more intense than interspecific competition.
 (b) Assume species are functionally equivalent and that each species has a greater impact on each other than they do on themselves.
