@@ -81,9 +81,118 @@ N_2_star <- (a_11 - a_21) / (a_22 * a_11 - a_12 * a_21) # 9.47
 
 (d) Start with equilibria for competing species, and show algebraically that when interspecific competition is nonexistent, species reach their carrying capacities.
 
+#### Jessica's attempt
+
+$\alpha_{11} = \alpha_{22} = 0.1$  
+$\alpha_{12} = 0.05$  
+$\alpha_{21} = 0.01$
+
+##### A. Determine $N_1^∗, N_2^∗, K_1, K_2$
+
+$$N^*_1=\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}\alpha_{22}-\alpha_{12}\alpha_{21}}$$
+
+```{r n1Eq}
+
+alphs<-matrix(c(0.1,0.05,0.01,0.1),ncol=2)
+
+n1eq<-(alphs[2,2]-alphs[1,2])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+
+n2eq<-(alphs[1,1]-alphs[2,1])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+
+```
+
+At equilibrium, $N^*_1=$ `r round(n1eq,2)` and $N^*_2=$ `r round(n2eq,2)`
+
+$$K_i=\frac{1}{\alpha_{i,i}}$$
+
+```{r kEq}
+
+k1<-1/(alphs[1,1])
+
+k2<-1/(alphs[2,2])
+
+```
+
+...and $K_1=$ `r round(k1,1)` and $K_2=$ `r round(k2,1)`
+
+##### B. Draw the ZNGIs (zero net growth isoclines); include arrows that indicate trajectories, and label the axes.
+
+```{r isoclines}
+
+n2vec=seq(0,k2,by=0.1)
+
+iso1<-data.frame(n2=n2vec)%>%
+  mutate(n1iso=(1/alphs[1,1])-(alphs[1,2]/alphs[1,1])*n2)
+
+
+n1vec=seq(0,k1,by=0.1)
+iso2<-data.frame(n1=n1vec)%>%
+  mutate(n2iso=(1/alphs[2,2])-(alphs[2,1]/alphs[2,2])*n1)
+
+ggplot(iso1,aes(n1iso,n2))+
+  geom_line()+
+  geom_line(data=iso2,aes(n1,n2iso))+
+  geom_point(x=n1eq,y=n2eq,color="red",size=2)+
+  labs(x="Population 1",y="Population 2",title="JLC's isoclines")+
+  theme_bw()
+
+```
+
+##### C. Other values for $\alpha$s
+
+```{r}
+
+isoFunc<-function(a11,a12,a21,a22){
+
+  alphs<-matrix(c(a11,a12,a21,a22),ncol=2)
+
+  
+  ## eq pops
+  n1eq<-(alphs[2,2]-alphs[1,2])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+  n2eq<-(alphs[1,1]-alphs[2,1])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+
+  ## Carrying capacities
+  k1<-1/(alphs[1,1])
+  k2<-1/(alphs[2,2])
+  
+  n2vec=seq(0,k2,by=0.1)
+
+  iso1<-data.frame(n2=n2vec)%>%
+    mutate(n1iso=(1/alphs[1,1])-(alphs[1,2]/alphs[1,1])*n2)
+
+
+  n1vec=seq(0,k1,by=0.1)
+  iso2<-data.frame(n1=n1vec)%>%
+    mutate(n2iso=(1/alphs[2,2])-(alphs[2,1]/alphs[2,2])*n1)
+
+  isoPlt<-ggplot(iso1,aes(n1iso,n2))+
+    geom_line(color="navyblue")+
+    geom_line(data=iso2,aes(n1,n2iso),color="grey35")+
+    geom_point(x=n1eq,y=n2eq,color="red",size=2)+
+    labs(x="Population 1 (blue)",y="Population 2 (grey)",title="JLC's isoclines")+
+    theme_bw()
+  
+  return(isoPlt)
+  
+}
+
+# isoFunc(0.1,0.05,0.01,0.1) # test: works!
+
+isoFunc(0.3,0.09,0.05,0.1) # a11,a12,a21, a22
+## stable coexistence
+
+isoFunc(0.1,0.18,0.15,0.19) # a11,a22,a12,a21
+## population 1 goes extinct
+
+
+
+
+```
+
+
 ## 5.2. Derive and simplify...
 
-...the expression for $N_1^∗/N_2^∗$ in terms of the $\alpha$.
+...the expression for $N_1^∗/N_2^∗$ in terms of the $\alpha$
 
 
 ## 5.3. Show the derivations...
@@ -97,6 +206,36 @@ We can find $N_1^*$ and $N_2^*$ by writing the Lotka-Volterra interspecific comp
 Then,
 
 Then,
+
+#### Jessica's answer
+
+We can find $N_1^*$ and $N_2^*$ by writing the Lotka-Volterra interspecific competition models at equilibrium, solving them for $N_1$ and $N_2$, and then subsitting one (either $N_1$ or $N_2$) into the other to get $N_1^*$ and $N_2^*$. So... 
+$$\frac{dN_1}{dt} = 0 = r_{1,d} N_{1,t} (1 - \alpha_{11} N_{1,t} - \alpha_{21} N_{2,t})$$
+...which gives us $$N_2=\frac{1}{\alpha_{22}}-\frac{\alpha_{21}}{\alpha_{22}}N_1$$
+
+$$\frac{dN_2}{dt} = 0 = r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+
+...which gives us $$N_1=\frac{1}{\alpha_{11}}-\frac{\alpha_{12}}{\alpha_{11}}N_2$$
+
+*copied from Sean ;)*
+
+Plugging in one for the other to get where the isoclines meet, we get:
+$$N_1=\frac{1}{\alpha_{11}}-\frac{\alpha_{12}}{\alpha_{11}}\left(\frac{1}{\alpha_{22}}-\frac{\alpha_{21}}{\alpha_{22}}N_1\right)$$
+
+which simplifies to:
+
+$$N^*_1=\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}\alpha_{22}-\alpha_{12}\alpha_{21}}$$
+and...
+
+$$N^*_2=\frac{\alpha_{11}-\alpha_{21}}{\alpha_{22}\alpha_{11}-\alpha_{12}\alpha_{21}}$$
+
+So...
+$$\frac{N^*_1}{N^*_2}=\frac{\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}\alpha_{22}-\alpha_{12}\alpha_{21}}}{\frac{\alpha_{11}-\alpha_{21}}{\alpha_{22}\alpha_{11}-\alpha_{12}\alpha_{21}}}=\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}-\alpha_{21}}$$
+
+
+## 5.3. Show the derivations...
+
+...of the partial derivatives of $dN_2/dt$, with respect to $N_2$ and to $N_1$; begin with eq. 5.6.
 
 ## 5.4. Total community size
 
