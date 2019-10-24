@@ -85,6 +85,11 @@ N_2_star <- (a_11 - a_21) / (a_22 * a_11 - a_12 * a_21) # 9.47
 
 ...the expression for $N_1^∗/N_2^∗$ in terms of the $\alpha$.
 
+
+## 5.3. Show the derivations...
+
+...of the partial derivatives of $dN_2/dt$, with respect to $N_2$ and to $N_1$; begin with eq. 5.6.
+
 #### Sean's answer
 
 We can find $N_1^*$ and $N_2^*$ by writing the Lotka-Volterra interspecific competition models at equilibrium, solving them for $N_1$ and $N_2$, and then subsitting one (either $N_1$ or $N_2$) into the other to get $N_1^*$ and $N_2^*$. So... $$\frac{dN_1}{dt} = 0 = r_{1,d} N_{1,t} (1 - \alpha_{11} N_{1,t} - \alpha_{21} N_{2,t})$$ $$\frac{dN_2}{dt} = 0 = r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
@@ -92,10 +97,6 @@ We can find $N_1^*$ and $N_2^*$ by writing the Lotka-Volterra interspecific comp
 Then,
 
 Then,
-
-## 5.3. Show the derivations...
-
-...of the partial derivatives of $dN_2/dt$, with respect to $N_2$ and to $N_1$; begin with eq. 5.6.
 
 ## 5.4. Total community size
 
