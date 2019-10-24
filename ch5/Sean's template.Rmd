@@ -1,10 +1,255 @@
 ---
-title: "Sean’s Chapter 5 template"
+title: "Sean’s Chapter 5"
 author: "Sean Denny"
 date: "10/10/2019"
-output: html_document
+output:
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
 ---
+
 
 Just set this up so I can write it all out myself.
 
-# hi
+
+
+```{r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+```
+
+# Chapter 5: Lotka-Volterra Interspecific Competition {.tabset}
+
+## 5.1 Discrete and Continuous Time Models
+
+### 5.1.1 Discrete time model
+
+$$N_{t+1} = N_t + r_d N_t (1 - \alpha N_t)$$
+\alpha is the per capita effect of each individual on each other, so the $$(1 - \alpha N_t)$$ portion is the density-dependence term.
+
+Adding in interspecific competition:
+
+$$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{t,1} - \alpha_{12} N_{2,t})$$
+
+in which $\alpha_{11}$ is the effect of species 1 on itself, and $\alpha_{12}$ is the effect of species 2 on the growth rate of species 1.
+
+$$N_{2_,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+
+in which $\alpha_{21}$ is the effect of species 1 on the growth rate of species 2, and $\alpha_{22}$ is the effect of species 2 on itself.
+
+#### Code for a model of discrete logistic competition:
+
+```{r Model of discrete logistic growth with competition}
+
+dlv_comp_2 <- function(N, alpha, rd = c(1,1))
+  
+# When you specify with "=" you're giving it a default. Don't have to, beause later you can specify a value, so it's just a preference. If you have a rule that you want the function to follow, you can specify it above. Casey's specified 'round = FALSE' bceause he wanted integer values.
+  
+# You can add notes here to help yourself, or be smart (like Casey) and make the argument names indicate the kinds of data you're inputting. For example: N needs to be a vector of 2, alpha is a matrix, and rd is also a vector of 2. Casey made his argument names 'N_vec', 'alpha_matrix', and 'rd_vec'.
+                                             {
+  N1_t1 <- N[1] + rd[1] * N[1] * (1 - alpha[1,1] * N[1] - alpha[1,2] * N[2])
+  N2_t1 <- N[2] + rd[2] * N[2] * (1 - alpha[2,2] * N[2] - alpha[2,1] * N[1])
+  return(c(N1_t1, N2_t1))
+}  
+
+# We created a function that we will use later
+```
+
+### 5.1.2 Effects of $\alpha$
+
+We define all of the $\alpha$’s together as a matrix,
+
+*This all just La Tex?* Yep.
+
+\begin{align*}
+  \alpha = \begin{pmatrix} 
+      \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} 
+    \end{pmatrix}
+  = \begin{pmatrix} 
+      0.010 & 0.005 \\ 0.008 & 0.010 
+    \end{pmatrix}
+\end{align*}
+
+The subscripts on the $\alpha$s represent the row and column of the coefficient; $\alpha_{12}$ is in the first row, second column. This merely reflects how mathematicians describe matrix elements and dimensions — row $\times$ column. When we use matrix multiplication (Chapter 2), $\alpha_{12}$ becomes the effect of species 2 (column) on species 1 (row). In this case, $\alpha_{11} = \alpha_{22} = 0.01$, $\alpha_{21} = 0.008$, and $\alpha_{12} = 0.005$. Thus, both species have greater effects on themselves than on each other. Remember, the larger the $\alpha$, the larger the effect.
+
+#### Discrete logistic competition dynamics (Figure 5.2)
+
+This could also be described as discrete logistic growth of two competing species. **I logistic growth just density-dependent growth?**
+
+```{r}
+# Create a matrix of our alphas and specify the time period (twenty years)
+
+alphas <- matrix(c(0.01, 0.005, 0.008, 0.01), ncol = 2, nrow = 2, byrow = TRUE)
+t <- 20
+```
+
+Create a matrix for the results. We want to put in the initial population sizes and then project the sizes through time.
+
+```{r}
+# What is the within matrix() 'NA' for? It specifies that the matrix is empty. But you could also just remove the 'NA,' and you'd get the same thing.
+
+# How else would we make this matrix? Is their a tidyverse equivalent? Yeah, you could make a dataframe.
+
+# And, can someone walk through the loop with me?
+
+N <- matrix(NA, nrow = t + 1, ncol = 2)
+N[1, ] <- c(10,10) # Is this just saying, for the first row in the matrix N, for all of the columns (which is why we left it blank, make the values match this vector (of the same length)?
+for (i in 1:t) {
+  N[i + 1, ] <- dlv_comp_2(N[i, ], alphas)
+}
+```
+
+Next, we plot the populations through time, using the results from our loop. We can add a reference line for the size of the populations if there were only one species, at $K_i = 1/\alpha_{ii}$.
+
+```{r}
+# Let's do this in the tidyverse:
+
+
+
+
+
+#Book's verson:
+
+# matplot(0:t, N, type = "l", col = 1, ylim = c(0, 110))
+# abline(h = 1/alphs[1, 1], lty = 3)
+# text(0, 1/alphs[1, 1], "K", adj = c(0, 0))
+# legend("right", c(expression("Sp.1 " * (alpha[21] == 0.008)),   
+#                  expression("Sp.2 " * (alpha[12] == 0.005))), 
+#       lty = 1:2, bty = "n")
+```
+
+### 5.1.3 Continuous time model
+
+Continuous Lotka-Volterra model of interspecific competition:
+
+$$dN_1/dt = r_1 N_1 (1- \alpha_{11} N_1 - \alpha_{12} N_2) $$
+
+$$dN_2/dt = r_2 N_2 (1- \alpha_{21} N_1 - \alpha_{22} N_2)$$
+Our growth rates $r_i$ are instantaneous growth rates (but also still an intrinsic growth rate); individuals produced per unit time.
+
+**See Table 5.1 for parameter descriptons**
+
+#### Continuous logistic competition function:
+
+```{r}
+# Why (as.list..)?
+
+clv_comp_2 <- function(t, n, parms) {    # parms is an argument for the ode function.
+  
+  with(as.list(parms), {
+    dn1dt <- r1 * n[1] * (1 - a11 * n[1] - a12 * n[2])
+    dn2dt <- r2 * n[2] * (1 - a21 * n[1] - a22 * n[2])
+    list(c(dn1dt, dn2dt))
+  })
+}
+
+# A list is different than a vector because the data within it doesn't have to be the same class of data. (And it doesn't even have to be data. It can be plots, for example).
+```
+
+We could then use this to numerically integrate the dynamics, using `ode` in the `deSolve` package, and plot it (graph not shown).
+
+```{r}
+library(deSolve)
+parms <- c(r1 = 1, r2 = 0.1, 
+           a11 = 0.2,  a21 = 0.1, 
+           a22 = 0.02, a12 = 0.01)
+initialN <- c(2, 1)
+out <- ode(y = initialN, times = 1:100, func = clv_comp_2, parms = parms)
+matplot(out[, 1], out[, -1], type = "l")
+
+# Question for group!: wwhy out[, -1] instead of out[, 2]? And where does the second line come from? We're guessing it's the second column, but why doesn't it show up if we use out[, 2]?
+```
+
+```{r}
+# Graph this in tidyverse, if time.
+
+
+
+```
+
+## 5.2 Equilibria
+
+### 5.2.1 Isoclines
+
+An isocline is a line connecting points on a graph or map that have equal value. Our isoclines will connect points in state space at which the growth rate for species i equals zero - every point on that line represents population growth rate equaling zero. We call these zero net growth isoclines.
+
+A zero net growth isocline, typically referred to simply as an isocline,  is the set of all points for which the growth of a population is zero, when all else (such as the population size of a competing species) is held constant.
+
+An equilibrium is one (or sometimes more than one) of those points, and in particular, it is a point at which the growth rates of all populations are zero.
+
+We find the isocline of a species by setting its growth rate equal to zero
+and solving the equation for that species in terms of the other species.
+
+### Graphing an isocline (Figure 5.3)
+
+Here we graph something similar, but not identical, to Fig. 5.3a. First, we define a new matrix of competition coefficients, where $\alpha_{11} = \alpha_{22} > \alpha_{12} = \alpha_{21}.$
+
+```{r}
+a <- matrix(c(0.01, 0.005, 0.005, 0.01), ncol = 2, byrow = TRUE)
+
+# We create an expression to plot the N2 isocline, as a function of possible values of N1.
+
+N2_iso <- expression(1/a[2, 2] - (a[2, 1]/a[2, 2]) * N1)
+
+# We then specify N1, and then evaluate and plot N2.
+
+N1 <- 0:200
+plot(N1, eval(N2_iso), type = "l", ylim = c(0, 200), xlim = c(0, + 200), ylab = expression("N"[2]))
+
+# We add arrows to remind us of what happens if N2 is above or below the value on the isocline.
+
+arrows(x0 = 90, y0 = 150, x1 = 90, y1 = 80, length = 0.1) > arrows(x0 = 75, y0 = 0, x1 = 75, y1 = 50, length = 0.1)
+```
+
+### 5.2.2 Finding equilibria
+
+Species coexist at points of equilibria, which is where the lines intersect. We can find these equilibria points by solving the isoclines simultaneously; that is, by substituting the $N_1$ equation into the $N_2$ equation, or vice versa.
+
+The outcome for $N_1$ is:
+
+$$N_1 = \frac{(\alpha_{22} - \alpha_{21})}{(\alpha_{11}\alpha_{22} - \alpha_{12}\alpha_{21})}$$
+
+**Note**: $r_i$ is not in the expressions for the equilibria — they do not depend on $r_i$. *It is important to remember that this intrinsic rate of increase is not germaine to the long term equilibria for the two species model.* Below, we will see that $r_i$ is germane to models with more than two species.
+
+Invsion criterion: The authors demonstrate that species 1 will always persist if $\alpha_{12} < \alpha_{22}$. In other words, *for species to coexist stably, their effects on themselves must be greater than their effects on each other.*
+
+## Dynamics at the Equilibria
+
+Using eigenanalysis to analyze properties of equilibria, whether they are attractors, repellers, or both, and whether the system oscialltees around these equilibria.
+
+### 5.3.1 Determine the equilibria
+
+```{r}
+N1Star <- expression((a22 - a12)/(a22 * a11 - a12 * a21))
+N2Star <- expression((a11 - a21)/(a22 * a11 - a12 * a21))
+### Next we create the $\alpha$ and evaluate our expressions.
+a11 <- a22 <- 0.01; a12 <- 0.001; a21 <- 0.001
+N1 <- eval(N1Star); N2 <- eval(N2Star); N1
+# [1] 90.9
+
+
+# Why are we doing this eval thing? Just another way to do things when we have complicated equations?
+```
+
+### 5.3.2 Create the Jacobian matrix
+
+Next step is to find the partial derivative for each population. The partial derivatives describe how the growth rate of each species changes with respect to the abundance of the other species *and* the its own abundance.
+
+Thus a positive value indicates that a growth rate increases as another population increases. A negative value indicates a growth rate decreases as another population increases.
+
+**Can someone remind me why we take derivatives of things, and why we do so here.**
+
+
+

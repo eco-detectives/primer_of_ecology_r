@@ -1,0 +1,260 @@
+---
+title: "chapter5probs_nudibranchs"
+output: 
+  html_document:
+    toc: false
+    code_folding: hide
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+```{r setup, echo = TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+# This book has an R package!
+
+library(primer) #install.packages('primer')
+```
+
+# Chapter 5: Lotka-Volterra Interspecific Competition {.tabset}
+
+## 5.1. Basics
+
+Let $\alpha_{11} = \alpha_{22} = 0.1, \alpha_{12} = 0.05, \alpha_{21} = 0.01$.
+
+(a) Determine $N_1^∗, N_2^∗, K_1, K_2$.
+(b) Draw (by hand, or in R) the ZNGIs (zero net growth isoclines); include arrows that indicate trajectories, and label the axes.
+(c) Select other values for the $\alpha$ and repeat (a) and (b); swap your answers with a friend, and check each other’s work.
+(d) Start with equilibria for competing species, and show algebraically that when interspecific competition is nonexistent, species reach their carrying capacities.
+
+#### Sean's attempts
+
+(a) Determine $N_1^*, N_2^*, K_1, K_2$.
+
+First, the models for Lotka-Volterra Interspecific Competition are: $$N_{1,t+1} = N_{1,t} + r_{1,d} N_{1,t} (1 - \alpha_{11} N_{1,t} - \alpha_{21} N_{2,t})$$ $$N_{2,t+1} = N_{2,t} + r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+
+We can determine $K_1$ and $K_2$ by using $K_i = \frac{1}{\alpha_{ii}}$
+
+```{r}
+
+a_11 <- a_22 <- 0.1
+a_12 <- 0.05
+a_21 <- 0.01
+
+# Could also make a matrix (I think):
+
+alphas_prob_1 <- matrix(c(0.1, 0.05, 0.01, 0.1), ncol = 2, byrow = TRUE) # But would we only do this if we were going to insert this matrix into a model that considers which alpha is which, right?
+
+# Options (I think):
+# Create a function
+# Write expressions and then evaluate them # Why would we do this here?
+# Just write it out
+
+K_1 = (1 / a_11) # 10
+K_2 = (1 / a_22) # 10
+```
+
+We can find $N_1^*$ and $N_2^*$ by writing the Lotka-Volterra interspecific competition models at equilibrium, and then subsitting one (either $N_1^*$ or $N_2^*$ into the other. So... $$\frac{dN_1}{dt} = 0 = r_{1,d} N_{1,t} (1 - \alpha_{11} N_{1,t} - \alpha_{21} N_{2,t})$$ $$\frac{dN_2}{dt} = 0 = r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+Then, (for some reason I couldn't re-write these in the form of $N_i^*$ in LaTex, so see code below)
+```{r}
+N_1_star <- (a_22 - a_12) / (a_11 * a_22 - a_12 * a_21) # 5.26
+
+N_2_star <- (a_11 - a_21) / (a_22 * a_11 - a_12 * a_21) # 9.47
+```
+
+(b) Draw the ZNGIs (zero net growth isoclines); include arrows that indicate trajectories, and label the axes.
+
+```{r}
+# Need to graph equations of lines in the tidyverse (???)
+
+# You could make a small increment sequence based on a model, and then used predict to graph it?
+```
+
+
+(c) Select other values for the $\alpha$ and repeat (a) and (b); swap your answers with a friend, and check each other’s work.
+
+(d) Start with equilibria for competing species, and show algebraically that when interspecific competition is nonexistent, species reach their carrying capacities.
+
+#### Jessica's attempt
+
+$\alpha_{11} = \alpha_{22} = 0.1$  
+$\alpha_{12} = 0.05$  
+$\alpha_{21} = 0.01$
+
+##### A. Determine $N_1^∗, N_2^∗, K_1, K_2$
+
+$$N^*_1=\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}\alpha_{22}-\alpha_{12}\alpha_{21}}$$
+
+```{r n1Eq}
+
+alphs<-matrix(c(0.1,0.05,0.01,0.1),ncol=2)
+
+n1eq<-(alphs[2,2]-alphs[1,2])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+
+n2eq<-(alphs[1,1]-alphs[2,1])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+
+```
+
+At equilibrium, $N^*_1=$ `r round(n1eq,2)` and $N^*_2=$ `r round(n2eq,2)`
+
+$$K_i=\frac{1}{\alpha_{i,i}}$$
+
+```{r kEq}
+
+k1<-1/(alphs[1,1])
+
+k2<-1/(alphs[2,2])
+
+```
+
+...and $K_1=$ `r round(k1,1)` and $K_2=$ `r round(k2,1)`
+
+##### B. Draw the ZNGIs (zero net growth isoclines); include arrows that indicate trajectories, and label the axes.
+
+```{r isoclines}
+
+n2vec=seq(0,k2,by=0.1)
+
+iso1<-data.frame(n2=n2vec)%>%
+  mutate(n1iso=(1/alphs[1,1])-(alphs[1,2]/alphs[1,1])*n2)
+
+
+n1vec=seq(0,k1,by=0.1)
+iso2<-data.frame(n1=n1vec)%>%
+  mutate(n2iso=(1/alphs[2,2])-(alphs[2,1]/alphs[2,2])*n1)
+
+ggplot(iso1,aes(n1iso,n2))+
+  geom_line()+
+  geom_line(data=iso2,aes(n1,n2iso))+
+  geom_point(x=n1eq,y=n2eq,color="red",size=2)+
+  labs(x="Population 1",y="Population 2",title="JLC's isoclines")+
+  theme_bw()
+
+```
+
+##### C. Other values for $\alpha$s
+
+```{r}
+
+isoFunc<-function(a11,a12,a21,a22){
+
+  alphs<-matrix(c(a11,a12,a21,a22),ncol=2)
+
+  
+  ## eq pops
+  n1eq<-(alphs[2,2]-alphs[1,2])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+  n2eq<-(alphs[1,1]-alphs[2,1])/((alphs[1,1]*alphs[2,2])-(alphs[1,2]*alphs[2,1]))
+
+  ## Carrying capacities
+  k1<-1/(alphs[1,1])
+  k2<-1/(alphs[2,2])
+  
+  n2vec=seq(0,k2,by=0.1)
+
+  iso1<-data.frame(n2=n2vec)%>%
+    mutate(n1iso=(1/alphs[1,1])-(alphs[1,2]/alphs[1,1])*n2)
+
+
+  n1vec=seq(0,k1,by=0.1)
+  iso2<-data.frame(n1=n1vec)%>%
+    mutate(n2iso=(1/alphs[2,2])-(alphs[2,1]/alphs[2,2])*n1)
+
+  isoPlt<-ggplot(iso1,aes(n1iso,n2))+
+    geom_line(color="navyblue")+
+    geom_line(data=iso2,aes(n1,n2iso),color="grey35")+
+    geom_point(x=n1eq,y=n2eq,color="red",size=2)+
+    labs(x="Population 1 (blue)",y="Population 2 (grey)",title="JLC's isoclines")+
+    theme_bw()
+  
+  return(isoPlt)
+  
+}
+
+# isoFunc(0.1,0.05,0.01,0.1) # test: works!
+
+isoFunc(0.3,0.09,0.05,0.1) # a11,a12,a21, a22
+## stable coexistence
+
+isoFunc(0.1,0.18,0.15,0.19) # a11,a22,a12,a21
+## population 1 goes extinct
+
+
+
+
+```
+
+
+## 5.2. Derive and simplify...
+
+...the expression for $N_1^∗/N_2^∗$ in terms of the $\alpha$
+
+
+## 5.3. Show the derivations...
+
+...of the partial derivatives of $dN_2/dt$, with respect to $N_2$ and to $N_1$; begin with eq. 5.6.
+
+#### Sean's answer
+
+We can find $N_1^*$ and $N_2^*$ by writing the Lotka-Volterra interspecific competition models at equilibrium, solving them for $N_1$ and $N_2$, and then subsitting one (either $N_1$ or $N_2$) into the other to get $N_1^*$ and $N_2^*$. So... $$\frac{dN_1}{dt} = 0 = r_{1,d} N_{1,t} (1 - \alpha_{11} N_{1,t} - \alpha_{21} N_{2,t})$$ $$\frac{dN_2}{dt} = 0 = r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+
+Then,
+
+Then,
+
+#### Jessica's answer
+
+We can find $N_1^*$ and $N_2^*$ by writing the Lotka-Volterra interspecific competition models at equilibrium, solving them for $N_1$ and $N_2$, and then subsitting one (either $N_1$ or $N_2$) into the other to get $N_1^*$ and $N_2^*$. So... 
+$$\frac{dN_1}{dt} = 0 = r_{1,d} N_{1,t} (1 - \alpha_{11} N_{1,t} - \alpha_{21} N_{2,t})$$
+...which gives us $$N_2=\frac{1}{\alpha_{22}}-\frac{\alpha_{21}}{\alpha_{22}}N_1$$
+
+$$\frac{dN_2}{dt} = 0 = r_{2,d} N_{2,t} (1 - \alpha_{21} N_{1,t} - \alpha_{22} N_{2,t})$$
+
+...which gives us $$N_1=\frac{1}{\alpha_{11}}-\frac{\alpha_{12}}{\alpha_{11}}N_2$$
+
+*copied from Sean ;)*
+
+Plugging in one for the other to get where the isoclines meet, we get:
+$$N_1=\frac{1}{\alpha_{11}}-\frac{\alpha_{12}}{\alpha_{11}}\left(\frac{1}{\alpha_{22}}-\frac{\alpha_{21}}{\alpha_{22}}N_1\right)$$
+
+which simplifies to:
+
+$$N^*_1=\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}\alpha_{22}-\alpha_{12}\alpha_{21}}$$
+and...
+
+$$N^*_2=\frac{\alpha_{11}-\alpha_{21}}{\alpha_{22}\alpha_{11}-\alpha_{12}\alpha_{21}}$$
+
+So...
+$$\frac{N^*_1}{N^*_2}=\frac{\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}\alpha_{22}-\alpha_{12}\alpha_{21}}}{\frac{\alpha_{11}-\alpha_{21}}{\alpha_{22}\alpha_{11}-\alpha_{12}\alpha_{21}}}=\frac{\alpha_{22}-\alpha_{12}}{\alpha_{11}-\alpha_{21}}$$
+
+
+## 5.3. Show the derivations...
+
+...of the partial derivatives of $dN_2/dt$, with respect to $N_2$ and to $N_1$; begin with eq. 5.6.
+
+## 5.4. Total community size
+
+Assume for convenience that $\alpha_{11} = \alpha_{22}$ and $\alpha_{12} = \alpha_{21}$, and let $N_T = N_1 + N_2$. (a) Write $N_T^∗$ as a function of $\alpha_{11}, \alpha_{22}, \alpha_{12}, \alpha_{21}$.
+(b) Describe in words how $N_T$ varies as $\alpha_{ij}$ varies from $\alpha_{ii} \rightarrow 0$.
+(c) Graph (by hand, or in R) the relation between $N_T$ versus $\alpha_{ij}$. Let $\alpha_{ii} = 0.01$.
+
+## 5.5. Interpret the Routh-Hurwitz criterion...
+
+...in terms of species relative inter- and intraspecific competitive abilities.
+
+## 5.6. The Jacobian matrix
+
+Here we turn words into math. Note that this is one way of making our as- sumptions very precise and clear. In each case below (a.–d.), (i) use algebraic inequalities between the $\beta$s and between the $\alpha$s to show what the assumptions imply for the equalities and inequalities with respect to all $\alpha$s, (ii) use these inequalities to simplify the Jacobian matrix (eq. (5.21) as much as possible, (iii) show algebraically how these (in)equalities determine the sign of each element of the Jacobian, and (iv) explain in words how the magnitudes of the Jacobian elements determine stability properties.
+
+(a) Assume that both species are functionally equivalent, and intraspecific competition is more intense than interspecific competition.
+(b) Assume species are functionally equivalent and that each species has a greater impact on each other than they do on themselves.
+(c) Assume species are functionally equivalent and interspecific competition is
+precisely equal to intraspecific competition.
+(d) Assume species have the same carrying capacity, and can coexist, but that species 1 is dominant.
+(e) Assume species 1 is the better competitor (note: this may have multiple interpretations).
+(f) Assume species 1 and 2 are equivalent (note: this may have multiple interpretations).
