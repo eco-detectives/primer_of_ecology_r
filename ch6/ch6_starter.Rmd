@@ -1,0 +1,256 @@
+---
+title: 'Primer of Ecology with $\textsf{R}$: chapter 6'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 6: Enemy-Victim Interactions  {.tabset}
+
+## 6.1 Predators and Prey
+
+### 6.1.1 Lotka-Volterra model
+
+- Simple (assumes exponential growth of the prey and exponential decay of the predator).
+- Lays the groundwork for other consumer-resource interactions.
+- Captures instability (when prey reproduce and are limited only by the predator, and the predators are limited only by the abundance of prey, these interactions are not stable).
+
+
+$$\frac{dH}{dt} = bH - aPH$$
+$$\frac{dP}{dt} = eaPH - sP$$
+
+Where the growth of the prey population ($\frac{dH}{t}$) is given by the exponential growth of the prey, with a per capita growth rate $b$ (units are number of herbivores produced per hervibore), and by the killing done by the predator, which depends on the abudances of prey and predators ($H$ and $P$, respectively) and $a$, the killing rate. The growth of the predator population ($\frac{dP}{t}$) is given by $e$, the efficiency of converting dead prey into new predator predator numbers (units are numbers of predators per number of herbivores killed), the killing rate $a$, both population's abundances and $s$, the predators' per capita rate of death.
+
+#### Code for Lotka-Volterra predator-prey model 
+
+This will calculate $\frac{dH}{dt}$ and $\frac{dP}{dt}$, given $N_t$, $r_d$ and a matrix of competition coefficients $\alpha$.
+
+``` {r} 
+predpreyLV <- function(t, y, params) {
+H <- y[1]
+P <- y[2]
+with(as.list(params), {
+dH.dt <- b * H - a * P * H
+dP.dt <- e * a * P * H - s * P
+return(list(c(dH.dt, dP.dt)))
+})
+}
+```
+
+
+#### Functional response 
+
+The functional response is the rate at which a single predator kills prey across different prey densities. There are different types of functional responses:
+
+- **Type I** is the simpler one. It is linear, meaning that a single predator can and will always kill a fixed proportion of the prey population. It is given by $aH$.
+- **Type II** saturate. Will be discuss later. 
+- **Type III** saturate. Will be discuss later. 
+
+Plots for the different functional responses are shown below. 
+
+```{r, fig.cap= "Fig. 6.2a: Types I, II, and III predator functional responses; these are the rates at which predators kill prey across different prey densities. The Lotka-Volterra model assumes a type I functional response."}
+
+# Graphing different types of functional responses 
+
+a <- 0.1
+w <- 0.1
+D <- w/a
+
+curve(a * x, 0, 2, xlab = "Prey Density", ylab = "Prey Killed Per Predator") # Type I
+curve(w * x/(D + x), 0, 2, add = TRUE, lty = 2) # Type II
+curve(w * x^2/(D^2 + x^2), 0, 2, add = TRUE, lty = 3) # Type III
+legend("topleft", c("Type I", "Type II", "Type III"), lty = 1:3, bty = "n")
+title('Functional response')
+```
+
+To better distinguish between functional responses, especially at low prey densities, it is better to graph them on a per prey basis. 
+
+```{r, fig.cap= "Fig. 6.2b: Types I, II, and III predator functional responses on a prey basis; these are the rates at which predators kill prey across different prey densities. The Lotka-Volterra model assumes a type I functional response."}
+
+
+curve(w * x^2/(D^2 + x^2)/x, 0, 2, ylim = c(0, a), lty = 3,
+xlab = "Prey Density", ylab = "Prey Killed Per Predator Per Prey")
+ curve(w * x/(D + x)/x, 0, 2, lty = 2, add = TRUE)
+curve(a * x/x, 0, 2, add = TRUE, lty = 1)
+legend("topright", c("Type I", "Type II", "Type III"), lty = 1:3, bty = "n")
+title('Functional response per prey')
+
+```
+
+#### Numerical response 
+
+
+The numerical response of the predators is the population-level response of predators to the prey, that derives from both the growth and death terms. This model pretends that predators die at a constant proportional rate.
+
+#### Lotka-Volterra isoclines
+
+When will populations decrease or increase? Zero net growth isoclines help us resolve this question (Fig. 6.3). To find them we need to set the growth equations equal to zero and solve for the relevant state variable. 
+
+For the prey ($\dot H = 0$): 
+
+$$ 0 = bH - aPH $$
+$$0 = H(b-aP) $$
+Thus, $\dot H = 0$ when either $H = 0 $, the prey goes extinct or $P = \frac{b}{a}$, the predator's abundance is equal to the ratio of the intrinsic growth rate ($b$), and the attack rate ($a$).
+
+
+For the predator ($\dot P = 0$): 
+
+$$0 = eaPH - sP $$
+$$ 0 = P(eaH - s) $$
+Thus, $\dot P = 0$ when either $P = 0$, the predator goes extinct or $H = \frac{s}{ea}$, the prey's abundance is equal to the ratio of the density independent per capita death rate ($s$), conversion efficiency ($e$) times the attack rate ($a$).
+
+In both cases, the populations at equilibrium are independent of the population abundances themselves, but rather depend on species' traits only. 
+
+
+
+```{r, fig.cap= "Fig. 6.3: Lotka-Volterra predator-prey isoclines. The isoclines (solid and dashed lines) are the set of all points for which the predator growth rate or the herbivore growth rate are zero. Increases and decreases in abundance are indicated by arrows (solid - prey, dashed - predator). Prey abundance, H, decreases in quadrants 1 and 2 because predator abundance, P, is high; prey abundance increases in quadrants 3 and 4 because predator abundance is low. In contrast, predator abundance, P, increases in quadrants 4 and 1 because prey abundance is high, whereas predator abundance decreases in quandrants 2 and 3 because prey abundance is low. These reciprocal changes in each species abundance results in counterclockwise dynamics between the two populations."}
+
+# We first select parameters and calculate these isoclines.
+b <- 0.5
+a <- 0.01
+Hi <- b/a
+e <- 0.1
+s <- 0.2
+Pi <- s/(e * a)
+
+# We then set up an empty plot with plenty of room; we next add the prey isocline and arrows indicating trajectories. Last, we add the predator isocline, text, arrows, and then label each quadrant.
+
+plot(c(0, 2 * Pi), c(0, 2 * Hi), type = "n", xlab = "H", ylab = "P")
+abline(h = Hi)
+text(Pi, Hi, "Prey isocline", adj = c(1.3, -0.3))
+arrows(x0 = c(0.85 * Pi, 1.15 * Pi), y0 = c(0.3 * Hi, 1.7 * Hi), x1 = c(1.15 * Pi, 0.85 * Pi), y1 = c(0.3 * Hi, 1.7 *Hi), len = 0.2)
+abline(v = Pi, lty = 2)
+text(Pi, Hi, "Predator isocline", adj = c(1.1, -0.2), srt = 90)
+arrows(x0 = c(0.3 * Pi, 1.7 * Pi), y0 = c(1.15 * Hi, 0.85 * Hi), x1 = c(0.3 * Pi, 1.7 * Pi), y1 = c(0.85 * Hi, 1.15 * Hi), lty = 2, len = 0.2)
+text(x = c(2 * Pi, 0, 0, 2 * Pi), y = c(2 * Hi, 2 * Hi, 0, 0), 1:4, cex = 2)
+title('Lotka-Volterra predator-prey isoclines')
+```
+
+We see that arrows go around and around in a counterclockwise fashion, as each population responds to the changing abundances of the other species (negative feedback between predators and prey abundances). 
+
+### 6.1.2 Stability analysis for Lotka-Volterra
+
+We can follow four analyticakl steps to understand the dynamics of Lokta-Volterra predator-prey model. These are: determine equilibria, create the Jacobian matrix, and solve and use the Jacobian.
+
+#### Lotka-Volterra equilibrium
+
+We have to solve for where the isoclines cross by setting the equations equal to each other. The solution are the ($x$, $y$) coordinates $\big(\frac{b}{a}$, $\frac{s}{ea}\big)$.
+
+#### Creating, solving and using the Jacobian matrix
+
+To know how each population growth rate changes in response to changes in the abundance each of the other population, we take the partial derivatives. 
+
+\begin{align*}
+  \begin{pmatrix}
+    \frac{\partial \dot H}{\partial H} &
+    \frac{\partial \dot H}{\partial P} \\
+    \frac{\partial \dot P}{\partial P} &
+    \frac{\partial \dot P}{\partial H}
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    b -aP & -aH\\
+    eaP & eaH - s
+  \end{pmatrix}
+\end{align*}
+
+We can replace the P and H in the Jacobian with the equilibria found above.
+
+\begin{align*}
+  \begin{pmatrix}
+    b - a(b/a) & -a(s/(ae))\\
+    ea(b/a) & ea(s/(ae)) - s
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    0 & -s/e\\
+    eb & 0
+  \end{pmatrix}
+\end{align*}
+
+Recall the Routh-Hurwitz criterion:
+
+$$ J_{11} + J_{22} < 0$$
+In the equilibrium Jacobian matrix above $J_{11}$ and $J_{22}$ are both zero. These zeroes reveal that there is no negative density dependence within each population; that is no self-regulation.
+
+The other part of the Routh-Hurwitz criterion is the condition:
+
+$$ J_{11}J_{22} - J_{12}J_{21} > 0$$
+In the predator-prey context, this suggests that the herbivore declines due to the predator ($J_{12} < 0$) and the predator increases due to the herbivore ($J_{21} > 0$). The signs of these elements make their product negative, and help make the
+above condition true. Note that because $J_{11}J_{22} = 0$, this condition reduces to $bs > 0$. Thus it seems that this will be true as along as both b and s are positive (which is always the case).
+
+```{r}
+# We can perform eigenanalysis given the parameters above.
+Jac <- matrix(c(0, -s/e, e * b, 0), byrow = TRUE, nr = 2)
+eig <- round(eigen(Jac)[["values"]],3)
+```
+
+If we performed eigenanalysis on the above Jacobian matrix, we would find that the eigenvalues are complex (`r eig`), meaning that the populations will oscillate or cycle, with period $\frac{2\pi}{\omega}$.Because the real parts are zero, this means that the Lotka-Volterra predator-prey exhibits neutral stability. Recall that neutral stability is the \"in-
+between\" case where perturbations at the equilibrium neither grow nor decline over time.
+
+#### Lotka-Volterra Dynamics
+
+Predator-prey cycles look like figure 6.4a. Preys tipically achieve higher abundances than predators when predators are not pathogens and are not perfectly effcient at converting prey to offspring. Another char acteristic we note is that the predator populations lag behind the prey.
+
+```{r, fig.cap= "Fig 6.4a: Dynamics of the Lotka-Volterra predator-prey model.The times series shows the population sizes through time; these dynamics correspond to the largest oscillations in (b)."}
+# Lotka-Volterra predator-prey dynamics (Fig. 6.4a) Here we set parameters and integrate the populations, with initial abundances of
+H0 = 25; P0 = 5.
+params1 <- c(b = b, a = a, s = s, e = e)
+Time <- seq(0, 100, by = 0.1)
+LV.out <- ode(c(H0 = 25, P0 = 5), Time, predpreyLV, params1)
+# Next we graph the populations over time.
+matplot(Time, (LV.out[, 2:3]), type = "l", ylab = "Population Size")
+title("Predator-prey cycles")
+```
+
+Neutral cyles look like figure 6.4b. Both populations oscillate indeffinitely, going neither toward extinction, nor toward a stable node or point.
+
+```{r, fig.cap= "Fig 6.4b: Dynamics of the Lotka-Volterra predator-prey model.The phase plane plot includes three different starting abundances, indicated by symbols; the largest cycle (through solid dot) (a)"}
+
+# We integrate the same model as above twice more, but with arbitrarily different starting abundances- everything else is the same.
+LV.out2 <- ode(c(H0 = 500, P0 = 15), Time, predpreyLV, params1)
+LV.out3 <- ode(c(H0 = 300, P0 = 50), Time, predpreyLV, params1)
+# Now we plot the phase plane portrait of the first predator{prey pair, add trajectories associated with different starting points, and finally add the isoclines.
+plot(LV.out[, 2], LV.out[, 3], type = "l", ylab = "P", xlab = "H")
+points(25, 5, cex = 1.5, pch = 19)
+arrows(x0 = c(1300, -20, 500), y0 = c(125, 175, 0), x1 = c(650, + -20, 950), y1 = c(200, 100, 2), length = 0.1)
+lines(LV.out2[, 2], LV.out2[, 3])
+points(500, 15, cex = 1.5)
+lines(LV.out3[, 2], LV.out3[, 3])
+points(300, 50, cex = 1.5, pch = 2)
+abline(h = b/a, lty = 2)
+abline(v = s/(e * a), lty = 2)
+
+```
+
+### 6.1.3 Rosenzweig-MacArthur model
+
+- In the absence of predators, prey would become self-limiting.
+- Type II functional response of the predators to prey density (upper limit to the number of prey a predator can consume per unit time).
+
+$$ \frac{dH}{dt}= bH(1 - a H)- w \frac{H}{D + H} P $$
+$$ \frac{dP}{dt}= ew\frac{H}{D + H} P - sp$$
+
+where $w$ and $D$ are new constants.
+
+Here we focus on the functional response
