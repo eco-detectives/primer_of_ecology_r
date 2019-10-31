@@ -1,0 +1,976 @@
+---
+title: 'Primer of Ecology with $\textsf{R}$: chapter 6 - Team Lumpsucker'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+library(bbmle)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 6: Enemy-Victim Interactions  {.tabset}
+
+![](../img/lumpsucker.jpg)
+## 6.1 Predators and Prey
+
+* one species has a negative effect on the other, while the other has a positive effect on the first.
+
+### 6.1.1 Lotka-Volterra model
+
+- Simple (assumes exponential growth of the prey and exponential decay of the predator).
+- Lays the groundwork for other consumer-resource interactions.
+- Captures instability (when prey reproduce and are limited only by the predator, and the predators are limited only by the abundance of prey, these interactions are not stable).
+
+$$\frac{dH}{dt} = bH - aPH$$
+$$\frac{dP}{dt} = eaPH - sP$$
+
+Where the growth of the prey population ($\frac{dH}{t}$) is given by the exponential growth of the prey, with a per capita growth rate $b$ (units are number of herbivores produced per hervibore), and by the killing done by the predator, which depends on the abudances of prey and predators ($H$ and $P$, respectively) and $a$, the killing rate. The growth of the predator population ($\frac{dP}{t}$) is given by $e$, the efficiency of converting dead prey into new predator predator numbers (units are numbers of predators per number of herbivores killed), the killing rate $a$, both population's abundances and $s$, the predators' per capita rate of death.
+
+#### Code for Lotka-Volterra predator-prey model 
+
+This will calculate $\frac{dH}{dt}$ and $\frac{dP}{dt}$, given $N_t$, $r_d$ and a matrix of competition coefficients $\alpha$.
+
+``` {r} 
+predpreyLV <- function(t, y, params) {
+  H <- y[1]
+  P <- y[2]
+  with(as.list(params), {
+    dH.dt <- b * H - a * P * H
+    dP.dt <- e * a * P * H - s * P
+    return(list(c(dH.dt, dP.dt)))
+  })
+}
+```
+
+
+#### Functional response 
+
+The functional response is the rate at which a single predator kills prey across different prey densities. There are different types of functional responses:
+
+- **Type I** is the simpler one. It is linear, meaning that a single predator can and will always kill a fixed proportion of the prey population. It is given by $aH$.
+- **Type II** saturate. Will be discuss later. 
+- **Type III** saturate. Will be discuss later. 
+
+Plots for the different functional responses are shown below. 
+
+```{r, fig.cap= "Fig. 6.2a: Types I, II, and III predator functional responses; these are the rates at which predators kill prey across different prey densities. The Lotka-Volterra model assumes a type I functional response."}
+
+# Graphing different types of functional responses 
+
+a <- 0.1
+w <- 0.1
+D <- w/a
+
+curve(a * x, 0, 2, xlab = "Prey Density", ylab = "Prey Killed Per Predator") # Type I
+curve(w * x/(D + x), 0, 2, add = TRUE, lty = 2) # Type II
+curve(w * x^2/(D^2 + x^2), 0, 2, add = TRUE, lty = 3) # Type III
+legend("topleft", c("Type I", "Type II", "Type III"), lty = 1:3, bty = "n")
+title('Functional response')
+```
+
+To better distinguish between functional responses, especially at low prey densities, it is better to graph them on a per prey basis. 
+
+```{r, fig.cap= "Fig. 6.2b: Types I, II, and III predator functional responses on a prey basis; these are the rates at which predators kill prey across different prey densities. The Lotka-Volterra model assumes a type I functional response."}
+
+
+curve(w * x^2/(D^2 + x^2)/x, 0, 2, ylim = c(0, a), lty = 3,
+xlab = "Prey Density", ylab = "Prey Killed Per Predator Per Prey")
+ curve(w * x/(D + x)/x, 0, 2, lty = 2, add = TRUE)
+curve(a * x/x, 0, 2, add = TRUE, lty = 1)
+legend("topright", c("Type I", "Type II", "Type III"), lty = 1:3, bty = "n")
+title('Functional response per prey')
+
+```
+
+#### Numerical response 
+
+The numerical response of the predators is the population-level response of predators to the prey, that derives from both the growth and death terms. This model pretends that predators die at a constant proportional rate.
+
+#### Lotka-Volterra isoclines
+
+When will populations decrease or increase? Zero net growth isoclines help us resolve this question (Fig. 6.3). To find them we need to set the growth equations equal to zero and solve for the relevant state variable. 
+
+For the prey ($\dot H = 0$): 
+
+$$ 0 = bH - aPH $$
+$$0 = H(b-aP) $$
+Thus, $\dot H = 0$ when either $H = 0 $, the prey goes extinct or $P = \frac{b}{a}$, the predator's abundance is equal to the ratio of the intrinsic growth rate ($b$), and the attack rate ($a$).
+
+
+For the predator ($\dot P = 0$): 
+
+$$0 = eaPH - sP $$
+$$ 0 = P(eaH - s) $$
+Thus, $\dot P = 0$ when either $P = 0$, the predator goes extinct or $H = \frac{s}{ea}$, the prey's abundance is equal to the ratio of the density independent per capita death rate ($s$), conversion efficiency ($e$) times the attack rate ($a$).
+
+In both cases, the populations at equilibrium are independent of the population abundances themselves, but rather depend on species' traits only. 
+
+
+
+```{r, fig.cap= "Fig. 6.3: Lotka-Volterra predator-prey isoclines. The isoclines (solid and dashed lines) are the set of all points for which the predator growth rate or the herbivore growth rate are zero. Increases and decreases in abundance are indicated by arrows (solid - prey, dashed - predator). Prey abundance, H, decreases in quadrants 1 and 2 because predator abundance, P, is high; prey abundance increases in quadrants 3 and 4 because predator abundance is low. In contrast, predator abundance, P, increases in quadrants 4 and 1 because prey abundance is high, whereas predator abundance decreases in quandrants 2 and 3 because prey abundance is low. These reciprocal changes in each species abundance results in counterclockwise dynamics between the two populations."}
+
+# We first select parameters and calculate these isoclines.
+b <- 0.5
+a <- 0.01
+Hi <- b/a
+e <- 0.1
+s <- 0.2
+Pi <- s/(e * a)
+
+# We then set up an empty plot with plenty of room; we next add the prey isocline and arrows indicating trajectories. Last, we add the predator isocline, text, arrows, and then label each quadrant.
+
+plot(c(0, 2 * Pi), c(0, 2 * Hi), type = "n", xlab = "H", ylab = "P")
+abline(h = Hi)
+text(Pi, Hi, "Prey isocline", adj = c(1.3, -0.3))
+arrows(x0 = c(0.85 * Pi, 1.15 * Pi), y0 = c(0.3 * Hi, 1.7 * Hi), 
+       x1 = c(1.15 * Pi, 0.85 * Pi), y1 = c(0.3 * Hi, 1.7 *Hi), 
+       len = 0.2)
+abline(v = Pi, lty = 2)
+text(Pi, Hi, "Predator isocline", adj = c(1.1, -0.2), srt = 90)
+arrows(x0 = c(0.3 * Pi, 1.7 * Pi), y0 = c(1.15 * Hi, 0.85 * Hi), 
+       x1 = c(0.3 * Pi, 1.7 * Pi), y1 = c(0.85 * Hi, 1.15 * Hi), 
+       lty = 2, len = 0.2)
+text(x = c(2 * Pi, 0, 0, 2 * Pi), y = c(2 * Hi, 2 * Hi, 0, 0), 1:4, cex = 2)
+title('Lotka-Volterra predator-prey isoclines')
+```
+
+We see that arrows go around and around in a counterclockwise fashion, as each population responds to the changing abundances of the other species (negative feedback between predators and prey abundances). 
+
+### 6.1.2 Stability analysis for Lotka-Volterra
+
+We can follow four analyticakl steps to understand the dynamics of Lokta-Volterra predator-prey model. These are: determine equilibria, create the Jacobian matrix, and solve and use the Jacobian.
+
+#### Lotka-Volterra equilibrium
+
+We have to solve for where the isoclines cross by setting the equations equal to each other. The solution are the ($x$, $y$) coordinates $\big(\frac{b}{a}$, $\frac{s}{ea}\big)$.
+
+#### Creating, solving and using the Jacobian matrix
+
+To know how each population growth rate changes in response to changes in the abundance each of the other population, we take the partial derivatives. 
+
+\begin{align*}
+  \begin{pmatrix}
+    \frac{\partial \dot H}{\partial H} &
+    \frac{\partial \dot H}{\partial P} \\
+    \frac{\partial \dot P}{\partial P} &
+    \frac{\partial \dot P}{\partial H}
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    b -aP & -aH\\
+    eaP & eaH - s
+  \end{pmatrix}
+\end{align*}
+
+We can replace the P and H in the Jacobian with the equilibria found above.
+
+\begin{align*}
+  \begin{pmatrix}
+    b - a(b/a) & -a(s/(ae))\\
+    ea(b/a) & ea(s/(ae)) - s
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    0 & -s/e\\
+    eb & 0
+  \end{pmatrix}
+\end{align*}
+
+Recall the Routh-Hurwitz criterion:
+
+$$ J_{11} + J_{22} < 0$$
+In the equilibrium Jacobian matrix above $J_{11}$ and $J_{22}$ are both zero. These zeroes reveal that there is no negative density dependence within each population; that is no self-regulation.
+
+The other part of the Routh-Hurwitz criterion is the condition:
+
+$$ J_{11}J_{22} - J_{12}J_{21} > 0$$
+In the predator-prey context, this suggests that the herbivore declines due to the predator ($J_{12} < 0$) and the predator increases due to the herbivore ($J_{21} > 0$). The signs of these elements make their product negative, and help make the
+above condition true. Note that because $J_{11}J_{22} = 0$, this condition reduces to $bs > 0$. Thus it seems that this will be true as along as both b and s are positive (which is always the case).
+
+```{r}
+# We can perform eigenanalysis given the parameters above.
+Jac <- matrix(c(0, -s/e, e * b, 0), byrow = TRUE, nr = 2)
+eig <- round(eigen(Jac)[["values"]],3)
+```
+
+If we performed eigenanalysis on the above Jacobian matrix, we would find that the eigenvalues are complex (`r eig`), meaning that the populations will oscillate or cycle, with period $\frac{2\pi}{\omega}$.Because the real parts are zero, this means that the Lotka-Volterra predator-prey exhibits neutral stability. Recall that neutral stability is the \"in-
+between\" case where perturbations at the equilibrium neither grow nor decline over time.
+
+#### Lotka-Volterra Dynamics
+
+Predator-prey cycles look like figure 6.4a. Preys tipically achieve higher abundances than predators when predators are not pathogens and are not perfectly effcient at converting prey to offspring. Another char acteristic we note is that the predator populations lag behind the prey.
+
+```{r, fig.cap= "Fig 6.4a: Dynamics of the Lotka-Volterra predator-prey model.The times series shows the population sizes through time; these dynamics correspond to the largest oscillations in (b)."}
+# Lotka-Volterra predator-prey dynamics (Fig. 6.4a) Here we set parameters and integrate the populations, with initial abundances of
+H0 = 25; P0 = 5.
+params1 <- c(b = b, a = a, s = s, e = e)
+Time <- seq(0, 100, by = 0.1)
+LV.out <- ode(c(H0 = 25, P0 = 5), Time, predpreyLV, params1)
+# Next we graph the populations over time.
+matplot(Time, (LV.out[, 2:3]), type = "l", ylab = "Population Size")
+title("Predator-prey cycles")
+```
+
+Neutral cyles look like figure 6.4b. Both populations oscillate indeffinitely, going neither toward extinction, nor toward a stable node or point.
+
+```{r, fig.cap= "Fig 6.4b: Dynamics of the Lotka-Volterra predator-prey model.The phase plane plot includes three different starting abundances, indicated by symbols; the largest cycle (through solid dot) (a)"}
+
+# We integrate the same model as above twice more, but with arbitrarily different starting abundances- everything else is the same.
+LV.out2 <- ode(c(H0 = 500, P0 = 15), Time, predpreyLV, params1)
+LV.out3 <- ode(c(H0 = 300, P0 = 50), Time, predpreyLV, params1)
+# Now we plot the phase plane portrait of the first predator{prey pair, add trajectories associated with different starting points, and finally add the isoclines.
+plot(LV.out[, 2], LV.out[, 3], type = "l", ylab = "P", xlab = "H")
+points(25, 5, cex = 1.5, pch = 19)
+arrows(x0 = c(1300, -20, 500), y0 = c(125, 175, 0), x1 = c(650, + -20, 950), y1 = c(200, 100, 2), length = 0.1)
+lines(LV.out2[, 2], LV.out2[, 3])
+points(500, 15, cex = 1.5)
+lines(LV.out3[, 2], LV.out3[, 3])
+points(300, 50, cex = 1.5, pch = 2)
+abline(h = b/a, lty = 2)
+abline(v = s/(e * a), lty = 2)
+
+```
+
+### 6.1.3 Rosenzweig-MacArthur model
+
+- In the absence of predators, prey would become self-limiting.
+- Type II functional response of the predators to prey density (upper limit to the number of prey a predator can consume per unit time).
+
+$$ \frac{dH}{dt}= bH(1 - a H)- w \frac{H}{D + H} P $$
+$$ \frac{dP}{dt}= ew\frac{H}{D + H} P - sp$$
+
+where $w$ and $D$ are new constants.
+
+#### Code Rosenzweig-MacArthur predator-prey function 
+
+```{r}
+
+predpreyRM <- function(t, y, p) {
+H <- y[1]
+P <- y[2]
+with(as.list(p), {
+dH.dt <- b * H * (1 - alpha * H) - w * P * H/(D + H)
+dP.dt <- e * w * P * H/(D + H) - s * P
+return(list(c(dH.dt, dP.dt)))
+})
+}
+
+```
+
+#### Rosenzweig-MacArthur isoclines
+
+
+Whenever the prey are abundant (right of dashed predator isocline), the predators increase, and when the prey are rare, the predators decrease. In contrast, whenever the predators are abundant (above solid prey isocline), then prey decline, and when predators are rare, then prey increase. In this case (Fig. 6.5), we see the classic counter-clockwise cycling through state space leading to a stable point equilibrium.
+
+```{r, fig.cap= 'Fig. 6.5: Rosenzweig-MacArthur predator-prey isoclines for the predator (dashed) and the prey (solid). The isoclines are the set of all points for which the predator growth rate (dashed) and the herbivore growth rate (solid) are zero. The arrows get shorter, and the arrowheads closer together because the populations change more slowly as we approach the steady state equilibrium. Note that the x-intercept of the prey isocline is K'}
+
+# Let's graph the zero net growth isoclines for this model. First we set parameters, and make an expression for the prey isocline.
+b <- 0.8
+e <- 0.07
+s <- 0.2
+w <- 5
+D <- 400
+alpha <- 0.001
+H <- 0:(1/alpha)
+Hiso <- expression(b/w * (D + (1 - alpha * D) * H - alpha * H^2))
+HisoStable <- eval(Hiso)
+# We also want to add a single trajectory, so we integrate using ode.
+p.RM <- c(b = b, alpha = alpha, e = e, s = s, w = w, D = D)
+Time <- 150
+RM1 <- ode(c(900, 120), 1:Time, predpreyRM, p.RM)
+# Finally, we plot everything, starting with the isoclines, and adding the trajectory using arrows.
+plot(H, HisoStable, type = "l", ylab = "P", xlab = "H", ylim = c(0,150))
+abline(v = s * D/(e * w - s), lty = 2)
+arrows(RM1[-Time, 2], RM1[-Time, 3], RM1[-1, 2], RM1[-1,3], length = 0.1)
+# Note that an arrow illustrates the change per one unit of time because we chose to have ode return H; P at every integer time step.
+```
+
+#### Creating and using the Jacobian
+
+\begin{align*}
+  \begin{pmatrix}
+    \frac{\partial \dot H}{\partial H} &
+    \frac{\partial \dot H}{\partial P} \\
+    \frac{\partial \dot P}{\partial P} &
+    \frac{\partial \dot P}{\partial H}
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    b -2abH - \big(\frac{wP}{D+H} - \frac{wPH}{(D+H)^2}) & -w \frac{H}{D+H}\\
+    \frac{ewP}{D+H} - \frac{ewPH}{(D+H)^2}  & ew\frac{H}{D+H} - s
+  \end{pmatrix}
+\end{align*}
+
+```{r}
+# Here we are going to write expressions for the two time derivatives, make a list of all the partial derivatives, and the stable equilibrium point, evaluate the partial derivatives as we stick them into the Jacobian matrix, and then perform eigenanalysis on the Jacobian. 
+
+## First, the time derivatives.
+
+dhdt <- expression(b * H * (1 - alpha * H) - w * P * H/(D + H))
+dpdt <- expression(e * w * P * H/(D + H) - s * P)
+
+# Next we create a list of the partial derivatives, where their order will allow us, below, to all columns of the Jacobian matrix.
+
+RMjac1 <- list(D(dhdt, "H"), D(dpdt, "H"), D(dhdt, "P"), D(dpdt, "P"))
+
+# We need the stable equilibria, H*; P*. We know the value of H* right away, because the predator isocline is a constant. Predator abundance exhibits zero growth when H = sD/(ew 􀀀 s), or
+
+H <- s * D/(e * w - s)
+
+# Now all we have to do is substitute that into the herbivore isocline, and we are finished.
+
+P <- eval(Hiso)
+
+# Now we "apply" the eval function to each component of the list of PD's, using the values of H and P we just created. We stick these values into a matrix and perform eigenanalysis.
+
+(RM.jac2 <- matrix(sapply(RMjac1, function(pd) eval(pd)),  nrow = 2))
+eigen(RM.jac2)[["values"]]
+
+```
+
+### 6.1.4 The paradox of enrichment
+
+The \"paradox of enrichment\" states that, under a type II functional response, increasing the carrying capacity of the prey or decreasing the self-limitation (decreasing $a$) could destabilize the system.  
+
+```{r, fig.cap= "Fig. 6.6a : One example of the paradox of enrichment, where large carrying capacity causes cycles instead of a stable attractor (compare to Fig. 6.5)."}
+
+# Let's graph the zero net growth isoclines for this model. We use previous parameter values, but change a, and reevaluate range of H we need, and the new trajectory.
+
+p.RM["alpha"] <- alpha <- 5e-04
+Time <- 100
+H <- 0:(1/alpha)
+RM2 <- ode(c(500, 110), 1:Time, predpreyRM, p.RM)
+
+# Next, we plot everything, starting with the prey isoclines with large K (solid line) and then the small K (dotted line). Last, we add the trajectory for the system with large K, small a.
+
+plot(H, eval(Hiso), type = "l", ylab = "P", xlab = "H", ylim = c(0,max(RM2[, 3])))
+lines(0:1000, HisoStable, lty = 3)
+abline(v = s * D/(e * w - s), lty = 2)
+arrows(RM2[-Time, 2], RM2[-Time, 3], RM2[-1, 2], RM2[-1,3], length = 0.1)
+```
+
+Now we create the Jacobian matrix for the paradox of enrichment.
+
+```{r, fig.cap= 'Fig. 6.6b: Stability declines when the prey are too strongly selflimiting (very small K) or especially when they have the capacity to achieve very high abundances (large K).'}
+# Using the expressions created above, we vary a and examine the effect on lambda1, the dominant eigenvalue. We select 'as' so that K ranges very small (K = H*) to very large.
+
+H <- with(as.list(p.RM), s * D/(e * w - s))
+alphas <- 1/seq(H, 3000, by = 10)
+
+# For each 'ai' in our sequence, we calculate P*, then evaluate the Jacobian, arranging it in a matrix. The result is a list of evaluated Jacobian matrices.
+
+RM.jacList <- lapply(1:length(alphas), function(i) {
+alpha <- alphas[i]
+P <- eval(Hiso)
+matrix(sapply(RMjac1, function(pd) eval(pd)), nrow = 2)
+})
+
+# For each evaluated Jacobian matrix, we perform eigenanalysis, and retain the maximum real part of the eigen values.
+
+L1 <- sapply(RM.jacList, function(J) max(Re(eigen(J)[["values"]])))
+
+# Finally, we plot these dominant eigenvalues vs. the carrying capacities that generated them.
+
+plot(1/alphas, L1, type = "l", xlab = quote(italic(K) == 1/alpha), ylab = quote(lambda[1]))
+abline(h = 0, lty = 3)
+abline(v = H, lty = 2)
+
+```
+
+## 6.2 Space, Hosts, and Parasitoids
+
+The fact that life cycles of host and prey are so intimately connected make the host-parasitoid relation different from other kinds of predator-prey relations. In the host-parasitoid relation there is a one-to-one correspondence between dead hosts and the number of parasitoids in the next generation. Thus, if we we know how many hosts are killed, then we know approximately how many parasitoids are born.
+
+### 6.2.1 Independent and random attacks
+
+Here is a discrete time model for the dynamics of hosts and their parasitoid enemies assuming geometrical growth of the Host ($H_{t+1} = RH_t$) and that some individuals are killed by parasitoids ($H_a$):
+
+$$H_{t+1} = R(H_t - H_a) $$ 
+
+The total number of attack events are $E_t = aH_tP_t$, assuming that the parasitoid searchs randomly and independently for prey,in an area $a$ in its life time. Also, assuming that only one adult parasitoid can emerge from a single host, the abundance of parasitoids in a time period is given by:
+
+$$ P_{t+1} =H_a $$
+Relaxing the assumption "one host one new parasitoid" can be relaxed with the constant $q$:
+
+$$ P_{t+1} =qH_a $$
+
+#### Dynamics of the Nicholson-Bailey host-parasitoid model
+
+The Nicholson and Bailey model adds a Poisson distirbution to describe the attacks :
+
+$$H_{t+1} = RH_t e^{-aP_t} $$
+
+$$ P_{t+1} = H_t \big(1 - e^{-aP_t} )  $$
+
+The host equilibirum of the Nicholson and Bailey model is:
+
+$$ H^* = P^* \frac{R}{R-1}$$
+```{r, fig.cap= 'Fig. 6.7: Dynamics around the unstable equilibrium of the Nicholson-Bailey host- parasitoid model (R = 3, a = 0:005). Arrows indicate a single time step; the point is the equilibrium at the center.'}
+
+# We set the duration of the time series, the model parameters, and create an empty data frame to hold the results.
+
+time <- 20
+R <- 3
+a <- 0.005
+HPs <- data.frame(Hs <- numeric(time), Ps <- numeric(time))
+
+# Next we calculate the equilibrium, and use a nearby point for the initial abundances.
+
+Pst <- log(R)/a
+Hst <- Pst * R/(R - 1)
+HPs[1, ] <- c(Hst + 1, Pst)
+
+# We then project the dynamics, one generation at a time, for each time step.
+
+for (t in 1:(time - 1)) HPs[t + 1, ] <- {
+H <- R * HPs[t, 1] * exp(-a * HPs[t, 2])
+P <- HPs[t, 1] * (1 - exp(-a * HPs[t, 2]))
+c(H, P)
+}
+
+# Last we plot the trajectory, placing a point at the (unstable) equilibrium, and using arrows to highlight the direction and magnitude of the increment of change per time step.
+
+plot(HPs[, 1], HPs[, 2], type = "n", xlab = "H", ylab = "P")
+points(Hst, Pst)
+arrows(HPs[-time, 1], HPs[-time, 2], HPs[-1, 1], HPs[-1,2], length = 0.05)
+```
+
+#### Simulating Random Attacks
+
+Let us simulate parasitoid attacks that are random and independent and compare those data to field data.
+
+```{r}
+
+# Let's start with some field data which are the number of parasitoid larvae per host, either 0, 1, 2, 3, or 4 larvae.
+
+totals <- c(1066, 176, 48, 8, 5)
+obs <- rep(0:4, totals)
+
+# To simulate random attacks, let's use the same number of hosts, and the same number of attacks, and let the computer attack hosts at random.
+
+H <- sum(totals)
+No.attacks <- sum(obs)
+mean.attacks <- mean(obs)
+
+# Next, the predators "sample" the hosts at random and with equal probability. To code this, we identify the hosts by numbering them 1-H. We then attack these hosts independently, that is, we replace each attacked host back into the pool of possible prey.
+
+attack.events <- sample(x=1:H, size=No.attacks, replace=TRUE)
+
+# We then count the number times different hosts were attacked.
+
+N.attacks.per.host <- table(attack.events)
+
+# and then find count the number of hosts that were attacked once, twice, or more.
+
+(tmp <- table(N.attacks.per.host))
+
+# calculate not attacked hosts 
+
+not.att <- H - sum(tmp)
+
+# Let's compare the observed data to the simulated 
+
+obs.sim <- rep(0:max(N.attacks.per.host), c(not.att, tmp))
+table(obs)
+table(obs.sim)
+
+# Is there a systematic difference between simulated and observed data? 
+
+## Non-parametric approach: One way to check whether the observed data differ from our model of random and independent attacks is to simulate many such observations, and compare the observed data (1066 unattacked hosts) to the distribution of the simulated results.
+
+n <- 1000
+unatt.sim <- sapply(1:n, function(j) {
+  host.sim.att <- sample(x=1:H, size=No.attacks, replace=TRUE)
+  attacks.per <- table(host.sim.att)
+  n.attd <- length(attacks.per)
+  H - n.attd
+})
+
+# Making an histogram of the number of unattacked hosts
+
+hist(unatt.sim, xlab = "Simulated # of Unattacked Hosts", 
+     prob = TRUE, xlim = c(1000, 1070))
+abline(v = 1066, lty = 3)
+abline(v = exp(-mean.attacks), lty = 2)
+
+## Parametric approach: Comparing the ratio of the variance of the observed larvae per host to the mean. If the data follow a Poisson distribution, this ratio is expected to equal to one.
+
+(I <- var(obs)/mean(obs))
+
+# How likely this ratio, or a more extreme ratio, would be, if attacks are random and independent? We compare it to the cumulative probability density function for the Chi2 distribution.
+
+1 - pchisq(I * H, df = H - 1)
+
+```
+
+### 6.2.2 Aggregation leads to coexistence
+
+Two problems with the Nicholson and Bailey model:
+
+- Parasitoids tend to aggregate on particular hosts or on local populations of the hosts.
+- It is not stable, and predicts that the parasitoid or host becomes extinct.
+
+The negative binomial distribution (Fig. 6.9) can describe greater aggregation than the Poisson distribution and thereby describe nature somewhat more accurately.
+
+```{r, fig.cap = 'Fig. 6.9: The negative binomial distribution, where the dispersion parameter k controls variance or breadth the distribution. For a given mean, smaller k causes a greater variance, and results in a higher proportion of zeroes. These k are representative of values from Pacala et al. (1990).'}
+
+# R has the negative binomial distribution built in, but does not use k as one of its arguments; rather, size = k. Here we generate a graph showing the distribution with different values of k.
+
+nb.dat <- cbind(Random = dnbinom(0:5, mu = 0.5, size = 10^10),
+                `k=10` = dnbinom(0:5, mu = 0.5, size = 10), 
+                `k=1` = dnbinom(0:5, mu = 0.5, size = 1), 
+                `k=0.01` = dnbinom(0:5, mu = 0.5, size = 0.01))
+matplot(0:5, nb.dat, type = "b", pch = 1:4, col = 1, ylim = c(0, 1), 
+        xlab = "Attacks per Hosts", ylab = "Probability")
+legend("topright", rev(colnames(nb.dat)), pch = 4:1, lty = 4:1, bty = "n")
+mtext(quote(mu == 0.5), padj = 2)
+```
+
+The model with the negative binomial distribution (the phenomenlogical model) is:
+
+$$ H_{t+1} = RH_t \big( 1 + \frac{aP_t}{k}\big)^{-k}$$
+$$ P_{t+1} = H_t - H_t\big( 1 + \frac{aP_t}{k}\big)^{-k}$$
+
+#### Equilibria for a discrete-time model
+
+To find the equilibrium of this discrete model we need $H^* = H_{t+1} = H_t$ and $P^* = P_{t+1} = P_t$. Solving for this we have: 
+
+$$ H^* = P^* \big(\frac{R}{R-1}) $$
+
+### 6.2.3 Stability of host-parasitoid dynamics
+
+In the discrete time case, the Jacobian matrix is the set of partial derivatives of the discrete growth increment rather than of the time derivatives used for continuous growth. The Jacobian matrix for the model is: 
+
+\begin{align*}
+  \begin{pmatrix}
+    \frac{\partial \delta H}{\partial H} &
+    \frac{\partial \delta H}{\partial P} \\
+    \frac{\partial \delta P}{\partial P} &
+    \frac{\partial \delta P}{\partial H}
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    R(1 +aP)^{-k} -1 &  -akHR(1 +aP)^{-(k+1)}\\
+    1 - (1 +aP)^{-k}  & akH (1 +aP)^ {-(k+1)}
+  \end{pmatrix}
+\end{align*}
+
+...
+
+We can illustrate the stability criterion for discrete models in a few ways. The phase plane portrait or time series would illustrate the dynamics directly (Fig 6.10a). However, it is also useful to show the relation between a measure of stability
+and parameters influencing stability. Since aggregation seems so important in the host-parasitoid model, we can show how stability ($\lambda$) varies with $k$ (Fig 6.10b).
+
+```{r, fig.cap='Fig. 6.10b: Dynamical stability of a discrete host-parasitoid model with aggregation.'}
+
+# We proceed largely as we did for continuous models, first with expressions for, and partial derivatives of, the relevant functions -- for discrete models we use F(Nt), where of Nt+1 = F(Nt), where of Nt+1 = F(Nt).
+
+F.H <- expression(R * H * (1 + a * P/k)^-k - H)
+F.P <- expression(H - H * (1 + a * P/k)^-k - P)
+F.H.H <- D(F.H, "H")
+F.H.P <- D(F.H, "P")
+F.P.H <- D(F.P, "H")
+F.P.P <- D(F.P, "P")
+
+# We next specify a sequence of k's, and for each k, and the equilibria, evaluate the Jacobian, and return the eigenvalues of the Jacobian.
+
+k <- 10^seq(-1, 1, by = 0.01)
+R <- 3
+a <- 0.005
+HPeigs <- sapply(k, function(ki) {
+  k <- ki
+  P <- k * (R^(1/k) - 1)/a
+  H <- P * R/(R - 1)
+  jac <- matrix(c(eval(F.H.H), eval(F.H.P), eval(F.P.H),
+  eval(F.P.P)), nrow = 2, byrow = TRUE)
+  eigen(jac)[["values"]]
+})
+
+# Last, we plot the eigenvalue with the greatest absolute magnitude, and retain the sign of the real part, lambda vs. k.
+
+modmaxs <- apply(HPeigs, 2, function(lambdas) {
+  i <- which.max(Mod(lambdas))
+  sign(Re(lambdas[i])) * Mod(lambdas[i])
+})
+plot(k, modmaxs, type = "l", ylab = quote("Stability " * (lambda[1])))
+abline(h = -1, lty = 3)
+```
+
+```{r, fig.cap='Fig. 6.10a: Dynamical stability of a discrete host-parasitoid model with aggregation. Region of stability for the rate of change following a small perturbation away from equilibrium. The plus sign is (0,0) and the two small circles are the complex eigenvalues. The length of the vector is the modulus'}
+
+# Graphing eigenvalues in the complex number plane
+
+# It is typically important to evaluate the modulus, or magnitude, of the eigenvalues of a Jacobian matrix for a discrete model. First we set up the unit circle which will define the stability region in the complex number plane.
+
+th <- seq(-pi, pi, len = 100)
+z <- exp((0+1i) * th)
+
+# We then plot the circle and add the eigenvalues for our smallest k;
+
+par(pty = "s")
+plot(z, type = "l")
+points(0, 0, pch = 3)
+points(HPeigs[, 100])
+arrows(x0 = c(0, 0), y0 = c(0, 0), 
+       x1 = Re(HPeigs[, 100]), y1 = Im(HPeigs[, 100]))
+
+```
+
+#### Dynamics of the May host-parasitoid model
+
+The following generates a phase plane diagram of the dynamics, although it is not shown.
+
+
+```{r, fig.cap='Fig x. Playing with May model. '}
+
+# We set the duration of the time series, the model parameters, and create an empty data frame to hold the results.
+
+time <- 20
+R <- 3
+a <- 0.005
+k <- 0.6
+HP2s <- data.frame(Hs <- numeric(time), Ps <- numeric(time))
+
+# Next we calculate the equilibrium, and use a nearby point for the initial abundances.
+
+P2st <- k * (R^(1/k) - 1)/a
+H2st <- P2st * R/(R - 1)
+P2st
+H2st
+HP2s[1, ] <- c(1000, 500)
+
+# We then project the dynamics, one generation at a time, for each time step.
+
+for (t in 1:(time - 1)) HP2s[t + 1, ] <- {
+  H <- R * HP2s[t, 1] * (1 + a * HP2s[t, 2]/k)^(-k)
+  P <- HP2s[t, 1] - HP2s[t, 1] * (1 + a * HP2s[t, 2]/k)^(-k)
+  c(H, P)
+}
+
+# Last we plot the trajectory, placing a point at the equilibrium, and using arrows to highlight the direction and magnitude of the increment of change per time step.
+
+plot(HP2s[, 1], HP2s[, 2], type = "l", xlab = "H", ylab = "P")
+points(H2st, P2st)
+arrows(HP2s[-time, 1], HP2s[-time, 2], HP2s[-1, 1], HP2s[-1, 2], length = 0.05)
+```
+
+## 6.3 Disease
+
+Here we discuss epidemiological disease models (SIR) which model all $N$ host by keeping track of different types of hosts:
+
+- **Susceptible hosts:** individuals which are not infected, but could become infected,
+- **Infected hosts:** individuals which are already infected, and
+- ** Resistant hosts:** individuals which are resistant to the disease, typically assumed to have built up an immunity through past exposure.
+
+Where $N = S+I+R$. It is important to note that $N$, $S$ , $I$, and $R$ are densities. That is, we track numbers of individuals in a fixed area.
+
+A simple SIR model for a population of constant size, with no immigration or emigration:
+
+$$ \frac {dS}{dt} = -\beta IS$$
+$$ \frac {dI}{dt} = \beta IS - \gamma I$$
+$$\frac {dR}{dt} = \gamma I$$
+
+Where $\beta$ is the transmission coefficient, which describes the instantaneous rate at which the number of infected hosts increases per infected individual, and $\gamma$ the per capita rate at which individuals become resistant. 
+
+#### Coding a density-dependent SIR model 
+
+```{r}
+
+# Here we create the function for the system of ODE's in eq. 6.33.
+
+SIR <- function(t, y, p) {
+{
+    S <- y[1]
+    I <- y[2]
+    R <- y[3]
+}
+  with(as.list(p), {
+    dS.dt <- -B * I * S
+    dI.dt <- B * I * S - g * I
+    dR.dt <- g * I
+    return(list(c(dS.dt, dI.dt, dR.dt)))
+})
+
+}
+```
+
+Under what conditions will an outbreak occur? Or, when is $\dot I > 0 $? Setting $\frac{dI}{dt} = 0$ we find that the condition for an putbreak is:
+
+$$ \frac{\gamma}{\beta} < S$$
+
+Another common representation of this is called the \"force of infection\" or \"basic reproductive rate of the disease\" ($R_0$). If we assume that in a large population $S = N$, then rearranging eq. 6.36 gives us:
+
+$$ R_0 = \frac{\beta N}{\gamma}$$
+If $R_0 >1$ then an outbreak (i.e., disease growth) is plausible.
+
+Here we model the outbreak of a nonlethal disease (e.g., a new cold virus in winter on a university campus). We assume that the disease is neither live-threatening, and nor is anyone resistant, thus $R_{t=0} = 0$. We can investigate the SIR model by pretending that, as is often the case, we begin with a largely uninfected population and $t = 0$, so $I_0 = 1$ and $S_0 = N$. 
+
+```{r, fig.cap= 'Fig. 6.11: Epidemic with the simplest SIR model. Assumes constant population size.'}
+# We first set parameters.
+
+N <- 10^4
+I <- R <- 1
+S <- N - I - R
+parms <- c(B = 0.01, g = 4)
+
+# We next integrate for three months.
+
+months <- seq(0, 3, by = 0.01)
+require(deSolve)
+SIR.out <- data.frame(ode(c(S, I, R), months, SIR, parms))
+matplot(months, SIR.out[, -1], type = "l", lty = 1:3, col = 1)
+legend("right", c("R", "I", "S"), lty = 3:1, col = 3:1, bty = "n")
+```
+
+### 6.3.1 SIR with frequency-dependent transmission
+
+
+$$ \frac {dS}{dt} = -\beta \frac{SI}{N}$$
+
+$$ \frac {dI}{dt} = -\beta \frac{SI}{N} - \gamma I$$
+
+$$ \frac {dR}{dt} = \gamma I$$
+
+#### Coding the frequency-dependent SIR model
+
+```{r}
+
+# Here we create the function for the system of ODEs in eq. 6.33.
+
+SIRf <- function(t, y, p) {
+ {
+ S <- y[1]
+ I <- y[2]
+ R <- y[3]
+ N <- S + I + R
+ }
+ with(as.list(p), {
+ dS.dt <- -B * I * S/N
+ dI.dt <- B * I * S/N - g * I
+ dR.dt <- g * I
+ return(list(c(dS.dt, dI.dt, dR.dt)))
+ })
+}
+```
+
+... 
+
+Here we plot density-dependent and frequency-dependent transmission rates, as functions of S and I.
+
+```{r, fig.cap='Fig. 6.12: The rate of transmission may depend only on the linear dependence of mass action, or may depend curvilinearly on the prevalence, the frequency of infected individuals in the population.'}
+
+# We rescale the transmission coeffcient appropriately (BetaF = Nmax Beta D) [136].
+
+R <- 0
+S <- I <- 1000
+Ss <- Is <- seq(1, S, length = 11)
+N <- S + I + R
+betaD <- 0.1
+betaF <- betaD * N
+
+# We use sapply to calculate the transmission functions for each combination of the values of I and S .
+
+mat1 <- sapply(Is, function(i) betaD * i * Ss)
+mat2 <- sapply(Is, function(i) betaF * i * Ss/(i + Ss + R))
+
+# Now we plot these matrices.
+
+layout(matrix(1:2, nr = 1))
+persp(mat1, theta = 20, phi = 15, r = 10, zlim = c(0, betaD * S * I), main = "Density Dependent", xlab = "I", ylab = "S", zlab = "Transmission Rate")
+persp(mat2, theta = 20, phi = 15, r = 10, zlim = c(0, betaF * S * I/N), main = "Frequency Dependent", xlab = "I", ylab = "S", zlab = "Transmission Rate")
+
+```
+
+In a frequency-dependent SIR model an outbreak will occur as long as $\beta > \gamma$ , regardless of population density. This is in direct contrast to the density{dependent transmission model!
+
+Another interesting phenomenon with frequency{dependent transmission is that prevalence (I=N) can decline with increasing population size (Fig. 6.13).
+
+...
+
+Here we demonstrate that prevalence can decline with increasing population size in a frequency-dependent disease (e.g., a smut on plant). Let us assume that resistance cannot be acquired, so  $\gamma = 0$, and $R = 0$. We can investigate the SIR
+model by pretending that, as is often the case, we begin with a largely uninfected population and $t = 0$, so $I_0 = 1$ and $S_0=N$.
+
+```{r, fig.cap='Fig. 6.13: Prevalence (I=N) vs. population density. With frequency-dependent transmission, (a), prevalence may decrease with population density. In contrast, with density{dependent transmission, (b), prevalence may increase with density'}
+
+# We first set parameters.
+
+S <- 4^(0:4); I <- 1
+parmsf <- c(B = 1, g = 0)
+parmsd <- c(B = 1/16, g = 0)
+
+# We next integrate for six months, letting R = S/2.
+
+Months <- seq(0, 8, by = 0.1)
+outd <- sapply(S, function(s) {
+out <- ode(c(s, I, R), Months, SIR, parmsd) 
+out[, 3]/apply(out[, 2:4], 1, sum)
+})
+outf <- sapply(S, function(s) {
+out <- ode(c(s, I, R), Months, SIRf, parmsf)
+out[, 3]/apply(out[, 2:4], 1, sum)
+})
+
+# Last, we make the figures.
+
+matplot(Months, outd, type = "l", col = 1, ylab = "Prevalence (I/N)")
+matplot(Months, outf, type = "l", col = 1, ylab = "Prevalence (I/N)")
+legend("bottomright", legend = S, lty = 1:length(S), bty = "n")
+
+```
+
+### 6.3.2 SIR with population dynamics
+
+We could make a more complex model that includes population growth and death unrelated to disease. Here we add births, $b$, potentially by all types, sick or not (S + I + R), and we assume that the newborns are susceptible only. We also added a mortality term, $m$, to each group.
+
+$$ \frac{dS}{dt} = b(S + I + R) - \beta SI -mS$$
+$$ \frac{dI}{dt} = \beta SI - \gamma I -mI$$
+$$ \frac{dR}{dt} = \gamma I -mR$$
+#### Coding a disease model with population growth
+
+```{r, fig.cap='Fig. 6.14: Epidemic for a nonlethal disease, with an SIR model which includes births and deaths, and a constant population size.'}
+
+# Here we create the function for the system of ODE's in eq. 6.42.
+
+SIRbd <- function(t, y, p) {
+S <- y[1]
+I <- y[2]
+R <- y[3]
+with(as.list(p), {
+dS.dt <- b * (S + I + R) - B * I * S - m * S
+dI.dt <- B * I * S - g * I - m * I
+dR.dt <- g * I - m * R
+return(list(c(dS.dt, dI.dt, dR.dt)))
+})
+}
+
+# Let's assume $m_i = m$, $b = m$ and an initial population of virtually all suceptible people with one infected person.
+
+ N <- 10^6
+ R <- 0
+ I <- 1
+ S <- N - I - R
+ 
+# Let's further pretend that the disease runs its course over about 10-14 days. Recall that ("gamma") is the inverse of the duration of the disease and that the average life span is 50 years. 
+ 
+ g <- 1/(13/365)
+ b <- 1/50
+ 
+# For this model, the force of infection turns out to be R0 = 1+1= (b + a), where a is the average age at onset of the disease. We can therefore estimate beta from all the other parameters, including population size, average life span, average age at onset, and the average duration of the disease. For instance, imagine that we have a disease of children, where the average onset of disease is 5 y, so we have:
+ 
+age <- 5
+R0 <- 1 + 1/(b * age)
+B <- R0 * (g + b)/N
+ 
+# Finally, we can integrate the population and its states. We create a named vector of parameters, and decide on the time interval.
+
+parms <- c(B = B, g = g, b = b, m = b)
+years <- seq(0, 30, by = 0.1)
+
+# It turns out that because of the relatively extreme dynamics (Fig. 6.14), we want to tell the ODE solver to take baby steps, so as to properly capture the dynamics -- we use the hmax argument to make sure that the maximum step it takes is relatively small.
+
+ SIRbd.out <- data.frame(ode(c(S = S, I = I, R = R), years,
+ SIRbd, parms, hmax = 0.01))
+ matplot(SIRbd.out[, 1], sqrt(SIRbd.out[, -1]), type = "l",
+ col = 1, lty = 1:3, ylab = "sqrt(No. of Individuals)",
+ xlab = "Years")
+ legend("right", c("S", "I", "R"), lty = 1:3, bty = "n")
+ 
+```
+
+
+### 6.3.3 Modeling data from Bombay
+
+Here we try our hand at fitting the SIR model to some data.
+
+
+```{r, fig.cap='Fig. 6.16: Likelihood profile plots, indicating conffidence intervals on transformed SIRmodel parameters.'}
+
+# We first enter data of plague deaths per week in Bombay between 1905-06 (Kermack and McCormick)
+ 
+data(ross)
+
+# We define our objective function for the optimization
+
+sirLL = function(logit.B, logit.g, log.N, log.I0) {
+  parms <- c(B = plogis(logit.B), g = plogis(logit.g))
+  x0 <- c(S = exp(log.N), I = exp(log.I0), R = 0)
+  Rs <- ode(y = x0, ross$Week, SIR, parms, hmax = 0.01)[,4]
+  SD <- sqrt(sum((ross$CumulativeDeaths - Rs)^2)/length(ross$Week))
+  -sum(dnorm(ross$CumulativeDeaths, mean = Rs, sd = SD,log = TRUE))
+ }
+
+# The mle2 function in the bbmle library20 will minimize the negative log-likelihood generated by sirLL, and return values for the parameters of interest. We supply mle2 with the objective function and a list of initial parameter values.
+
+require(bbmle)
+ fit <- mle2(sirLL, start = list(logit.B = qlogis(1e-05), logit.g = qlogis(0.2), log.N = log(1e+06), log.I0 = log(1)),
+ method = "Nelder-Mead")
+ summary(fit)
+ 
+# This gets us some parameter estimates, but subsequent attempts to actually get conffidence intervals failed. This occurs frequently when we ask the computer to estimate too many, often correlated, parameters for a given data set. Therefore, we have to make assumptions regarding selected parameters. Let us assume for the time being that the two variable estimates are correct, that the population size of the vulnerable population was approximately exp(9.6) and the number of infections at the onset of the outbreak was 1.2. We will hold these constant and ask R to refit the model, using the default method.
+ 
+fit2 <- mle2(sirLL,start= as.list(coef(fit)), fixed = list(log.N = coef(fit)[3], log.I0 = coef(fit)[4]), method = "Nelder-Mead")
+
+summary(fit2)
+
+# Next we want to find conffidence intervals for beta and gamma. This can take several minutes, but results in a likelihood profile for these parameters, which show the confidence regions for these parameters (Fig. 6.16).
+ 
+pr2 <- profile(fit2)
+par(mar = c(5, 4, 4, 1))
+plot(pr2)
+
+```
+
+```{r, fig.cap='Fig. 6.15: Cumulative deaths for plague, in Bombay, India, 1905{1906 (raw data and fitted model, as described in this section).'}
+
+# Last we get to plot our curve with the data. We first backtransform the coefficients of the objective function.
+ 
+p <- as.numeric(c(plogis(coef(fit2)[1:2]), exp(coef(fit2)[3:4])))
+p
+
+# We then get ready to integrate the disease dynamics over this time period.
+
+inits <- c(S = p[3], I = p[4], R = 0)
+params <- c(B = p[1], g = p[2])
+SIR.Bombay <- data.frame(ode(inits, ross$Week, SIR, params))
+
+# Last, we plot the model and the data (Fig. 6.15).
+
+matplot(SIR.Bombay[, 1], SIR.Bombay[, 3:4], type = "l", col = 1)
+points(ross$Week, ross$CumulativeDeaths)
+legend("topleft", c("I", "R"), lty = 1:2, bty = "n")
+
+```
+
+```{r}
+
+# So, what does this mean (Fig. 6.15)? We might check what these values mean, against what we know about the reality. Our model predicts that logit of $\gamma$ was a confidence interval,
+
+(CIs <- confint(pr2))
+
+# This corresponds to a confidence interval for gamma of
+
+(gs <- as.numeric(plogis(CIs[2, ])))
+
+# Recall that the duration of the disease in the host is 1/gamma. Therefore, our model predicts a confidence interval for the duration (in days) of
+
+7 * 1/gs
+
+```
+

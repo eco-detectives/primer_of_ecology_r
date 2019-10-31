@@ -19,6 +19,8 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
 
 library(tidyverse)
 library(RColorBrewer)
+library(deSolve)
+library(latex2exp)
 
 ### The book has an R package! 
 library(primer) # install.packages('primer')

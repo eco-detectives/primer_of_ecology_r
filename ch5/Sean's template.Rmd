@@ -13,6 +13,11 @@ output:
     toc: false
 ---
 
+
+Just set this up so I can write it all out myself.
+
+
+
 ```{r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
 knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
