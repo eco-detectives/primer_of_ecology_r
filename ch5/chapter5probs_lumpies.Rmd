@@ -71,8 +71,13 @@ Casey - thank you! -- Molly
 b) Drawing ZNGIs + arrows
 
 ```{r, fig.height = 3, fig.width = 3, fig.align = "center"}
-N1_iso <- function(x) 1/a11 - (a12/a11) * x # here x is N2 - but I assume I need to call if x to work within ggplot?
-N2_iso <- function(x) 1/a22 - (a21/a22) * x # here x is N1
+N1_iso <- function(x) {
+  1/a11 - (a12/a11) * x 
+}
+# here x is N2 - but I assume I need to call if x to work within ggplot?
+N2_iso <- function(x) {
+  1/a22 - (a21/a22) * x # here x is N1
+}
 
 ggplot(data = data.frame(x = 0), mapping = aes(x = x)) +
   stat_function(fun = N2_iso) + xlim(0,200) +
@@ -197,7 +202,6 @@ ggplot(tmp_df) +
 $$N_1^* = \frac{\aa_{22} - \aa_{12}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}$$
 and if you set the $\aa_{ij}$ terms to zero, you end up with 
 $$N_1^* = \frac{\aa_{22}}{\aa_{22} \aa_{11}} = \frac{1}{\aa_{11}}$$
->>>>>>> 6291ff4e4debd1dc36a715ce2e261175efac5c56
 
 ## 5.2. Derive and simplify...
 
@@ -209,7 +213,7 @@ Start with the formulas for $N_1^∗, N_2^∗$:
 \begin{align*}
   N_1^*  &= \frac{\aa_{22} - \aa_{12}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}\\
   N_2^*  &= \frac{\aa_{11} - \aa_{21}}{\aa_{22} \aa_{11} - \aa_{12} \aa_{21}}\\
-  \Longrightarrow \frac{N_1^*}{N_2^*} &= \frac{\aa_{22} - \aa_{12}}{\aa_{11} - \aa_{21}
+  \Longrightarrow \frac{N_1^*}{N_2^*} &= \frac{\aa_{22} - \aa_{12}}{\aa_{11} - \aa_{21}}
 \end{align*}
 ... since the denominators are identical and cancel out.
 
