@@ -250,7 +250,7 @@ abline(v = s/(e * a), lty = 2)
 - Type II functional response of the predators to prey density (upper limit to the number of prey a predator can consume per unit time).
 
 $$ \frac{dH}{dt}= bH(1 - a H)- w \frac{H}{D + H} P $$
-$$ \frac{dP}{dt}= ew\frac{H}{D + H} P - sp$$
+$$ \frac{dP}{dt}= ew\frac{H}{D + H} P - sP$$
 
 where $w$ and $D$ are new constants.
 
