@@ -1,0 +1,62 @@
+---
+title: 'Primer of Ecology with $\textsf{R}$: chapter 6 problems'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: show
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(RColorBrewer)
+library(bbmle)
+
+### The book has an R package! 
+library(primer) # install.packages('primer')
+
+```
+
+# Chapter 6 Problems: Enemy-Victim Interactions  {.tabset}
+
+## 6.1. Lotka–Volterra Predator–prey Model
+
+(a) Write down the two species Lotka–Volterra predator–prey model.
+(b) Describe how Fig. 6.4 illustrates neutral oscillatory dynamics.
+(c) What are the units of the predator–prey model coefficients $b$, $a$, $e$, and $s$? How do we interpret them?
+
+## 6.2. Rosenzweig-MacArthur Predator–prey Model
+
+(a) Write down the two species Rosenzweig-MacArthur predator–prey model. 
+(b) How do we interpret $b$, $K$, $w$, $D$, $e$ and $s$? What are their units?
+(c) What is the value of the functional response when $H = D$? Explain how this result provides the meaning behind the name we use for $D$, the half saturation constant.
+(d) For each point A–D in Fig. 6.5, determine whether the growth rate for the predator and the herbivore are zero, positive, or negative.
+(e) In what way is the Rosenzweig-MacArthur predator isocline (Fig. 6.5) similar to the Lotka–Volterra model? It also differs from the Lotka–Volterra isocline – explain the ecological interpretation of $D$ in the type II functional response and its consequence for this isocline.
+(f) Explain the interpretation of real and imaginary parts of the eigenvalues for this paramterization of the Rosenzweig-MacArthur predator–prey model.
+(g) In what ways does Fig. 6.6a match the interpretation of the eigenanalysis of this model?
+(h) Examine the prey isoclines in Fig. 6.6a. How you can tell what the carrying capacities of the prey are?
+(i) What do the above eigenanalyses tell us about how the stability of the predator–prey interaction varies with the carrying capacity of the prey?
+(j) Consult Fig. 6.6a. What is the relation between the carrying capacity of the prey and the magnitude of the oscillations? What is the relation between the carrying capacity of the prey and the minimum population size? What does this interpretation imply about natural ecosystems?
+
+## 6.3. Effects of dispersion on host–parasitoid dynamics
+
+(a) Demonstrate the effects of aggregation on host–parasitoid dynamics. Specifically, vary the magnitude of $k$ to find the effects on stability.
+(b) Demonstrate the effects of $a$ on stability.
+(c) Demonstrate the effects of $R$ on stability.
+
+## 6.4. Effects of age at onset and disease duration on outbreak periodicity
+
+(a) Create three simulations showing how diseases of different durations influence the periodicity of the outbreaks.
+(b) Create three simulations showing how the age at onset for different diseases influence the periodicity of the outbreaks.
+(c) Consider which factor is more important in influencing outbreak interval. How do you measure the interval? What criteria would you use to determine
+"importance"? How do the realities of age and duration influence your selection of criteria? Write a short essay that asserts a thesis, and then provides support based on this exercise.
+
