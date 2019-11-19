@@ -39,13 +39,12 @@ library(primer) # install.packages('primer')
 a) This is just copy and paste... but I'll put it here so I can refer in part c.
 $$\frac{dH}{dt} = bH - aPH$$
 $$\frac{dP}{dt} = eaPH - sP$$
-b) Fig. 6.4 shows isoclines for herbivore and predator in a Lotka-Volterra model; because the line beginning from any starting point progresses around the diagram in such a way as to meet back up with itself, we know that the populations for herbivores and predators oscillate between high and low alternating, and then return to their original populations, only to start again.
-c) The parameters: 
-    * $b$ is effectively the per capita birth rate for herbivores, in units of herbivores per herbivore (or unitless). 
-    * $a$ is the attack rate of predators on herbivores, the rate at which predators kill the herbivores.  The units of this are in herbivores per predator per herbivore, or 1/predators.
+b) Fig. 6.4 shows isoclines for herbivore and predator in a Lotka-Volterra model; because the line beginning from any starting point progresses around the diagram in such a way as to meet back up with itself, we know that the populations for herbivores and predators oscillate between high and low (i.e. low predators $\rightarrow$ high prey $\rightarrow$ high predators $\rightarrow$ low prey $\rightarrow$ low predators), and then return to their original populations, only to start again.
+c) The parameters: in all cases, the parameter units times the units of the variables by which they're multiplied must result in a rate of change of prey or predators.
+    * $b$ is effectively the per capita birth rate (or difference between fecundity and natural death rate) for herbivores, in units of herbivores per herbivore per unit time. 
+    * $a$ is the attack rate of predators on herbivores, the rate at which predators kill the herbivores.  The units of this are in herbivores per predator per herbivore per unit time, or 1/(predators * time).
     * $e$ is the efficiency at which predators convert eaten prey into baby predators.  $aPH$ is the number of herbivores eaten, a proportion $e$ of which are instantaneously converted into new predators.  The units would have to be predators per herbivore.
     * $s$ is the constant instantaneous death rate of predators.  It is unitless - just a proportion.
-
 
 ## 6.2. Rosenzweig-MacArthur Predator–prey Model
 
@@ -59,6 +58,23 @@ c) The parameters:
 (h) Examine the prey isoclines in Fig. 6.6a. How you can tell what the carrying capacities of the prey are?
 (i) What do the above eigenanalyses tell us about how the stability of the predator–prey interaction varies with the carrying capacity of the prey?
 (j) Consult Fig. 6.6a. What is the relation between the carrying capacity of the prey and the magnitude of the oscillations? What is the relation between the carrying capacity of the prey and the minimum population size? What does this interpretation imply about natural ecosystems?
+
+### Casey:
+
+a) again, copy and paste of Rosenzweig-MacArthur model for reference.
+$$ \frac{dH}{dt}= bH(1 - \alpha H)- w \frac{H}{D + H} P$$
+$$ \frac{dP}{dt}= ew\frac{H}{D + H} P - sP$$
+b) As for the Lotka Volterra model, the units of each parameter must allow that the result is in terms of rate of change of prey or predators.
+    * $b$ is the same as for the Lotka-Volterra model.
+    * $K$ there's no $K$ but the $\alpha$ term is $1/K$, i.e. the marginal effect of an additional herbivore on the rate of growth.  Units of $\alpha$ would be 1/prey, so units of $K$ would be units of prey.
+    * $w$ is the maximum capture rate, in units of prey per predator per unit time.
+    * $D$ is the half-saturation value, in units of prey.
+    * $e$ is the same as for the Lotka-Volterra model.
+    * $s$ is the same as for the Lotka-Volterra model.
+c) When $H = D$, the $\frac{H}{D + H}$ term becomes 0.5, or the capture rate $w \frac{H}{D + H}$ becomes half the maximum capture rate. Thus the term half-saturation value.
+d) I don't see points A-D in figure 6.5... roughly, for prey species below about 550, the predator population will be negative, and positive above that.  Above the solid curve, the prey population will increase, and below the prey population will decrease.
+e) The predator isocline for R-M model is similar to the L-V model, in that it is a constant value.  The prey isocline is now curved downward due to the handling time implied by the $D$ term combined with the $\alpha$ term: the $D$ term on its own implies an upward slope to the isocline (predators are less effective at controlling prey since they have to spend a little time eating them, so for greater prey numbers, more predators are needed to keep the prey population at zero growth).  The downward curve comes from the carrying capacity effect of the $\alpha$ term.
+
 
 ## 6.3. Effects of dispersion on host–parasitoid dynamics
 
