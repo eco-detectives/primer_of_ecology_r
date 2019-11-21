@@ -72,10 +72,16 @@ b) As for the Lotka Volterra model, the units of each parameter must allow that 
     * $e$ is the same as for the Lotka-Volterra model.
     * $s$ is the same as for the Lotka-Volterra model.
 c) When $H = D$, the $\frac{H}{D + H}$ term becomes 0.5, or the capture rate $w \frac{H}{D + H}$ becomes half the maximum capture rate. Thus the term half-saturation value.
-d) I don't see points A-D in figure 6.5... roughly, for prey species below about 550, the predator population will be negative, and positive above that.  Above the solid curve, the prey population will increase, and below the prey population will decrease.
+d) I don't see points A-D in figure 6.5... roughly, for prey species below about 550, the predator population growth will be negative, and positive above that.  Above the solid curve, the prey population will decrease, and below the prey population will increase.
 e) The predator isocline for R-M model is similar to the L-V model, in that it is a constant value.  The prey isocline is now curved downward due to the handling time implied by the $D$ term combined with the $\alpha$ term: the $D$ term on its own implies an upward slope to the isocline (predators are less effective at controlling prey since they have to spend a little time eating them, so for greater prey numbers, more predators are needed to keep the prey population at zero growth).  The downward curve comes from the carrying capacity effect of the $\alpha$ term.
-
-
+f) in eigenanalysis of the R-M Jacobian, the real portion of the eigenvalue is related to the instantaneous growth rate of the population (where a negative indicates a stable attractor drawing the system toward stability, and positive indicates unstable attractor pushing the system to a stable oscillation); the imaginary portion is related to oscillations around a stable point.  
+g) Figure 6.6a shows the interpretation of f) by showing that the system moves away from a stable equilibrium toward what may become a stable oscillation around the various quadrants of the system. As an example, I changed the setup for Fig. 6.5 to have $\alpha = 0.0005$ instead of 0.001 (doubling the carring capacity).  In this case, the eigenvalues have positive real parts so the system pushes toward an oscillation regime.
+h) From Fig. 6.6a, we can tell the carrying capacity of the prey by looking at the dynamics around the solid line, particularly where predator population drops to zero and the solid line intersects the x axis - in the absence of predators, the prey population will self-stabilize.  In this case, $K = 2000$.
+i) The stability of the predator–prey interaction varies with the carrying capacity of the prey - as the carrying capacity increases, the "hump" of the prey isocline moves rightward, and when the peak passes the predator isocline, the system moves toward stable oscillations increasingly distant from the equilibrium point.
+j) What is the relation between the carrying capacity of the prey and the magnitude of the oscillations? The higher the carrying capacity, the greater the magnitude of oscillations.  
+    * What is the relation between the carrying capacity of the prey and the minimum population size? The higher the carrying capacity, the closer the minimum prey population size approaches the vertical axis. 
+    * What does this interpretation imply about natural ecosystems?  It seems as if other parameters (e.g. $D$) might compensate for a system where prey has a high carrying capacity.
+    
 ## 6.3. Effects of dispersion on host–parasitoid dynamics
 
 (a) Demonstrate the effects of aggregation on host–parasitoid dynamics. Specifically, vary the magnitude of $k$ to find the effects on stability.
