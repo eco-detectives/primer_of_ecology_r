@@ -76,6 +76,93 @@ d) I don't see points A-D in figure 6.5... roughly, for prey species below about
 e) The predator isocline for R-M model is similar to the L-V model, in that it is a constant value.  The prey isocline is now curved downward due to the handling time implied by the $D$ term combined with the $\alpha$ term: the $D$ term on its own implies an upward slope to the isocline (predators are less effective at controlling prey since they have to spend a little time eating them, so for greater prey numbers, more predators are needed to keep the prey population at zero growth).  The downward curve comes from the carrying capacity effect of the $\alpha$ term.
 f) in eigenanalysis of the R-M Jacobian, the real portion of the eigenvalue is related to the instantaneous growth rate of the population (where a negative indicates a stable attractor drawing the system toward stability, and positive indicates unstable attractor pushing the system to a stable oscillation); the imaginary portion is related to oscillations around a stable point.  
 g) Figure 6.6a shows the interpretation of f) by showing that the system moves away from a stable equilibrium toward what may become a stable oscillation around the various quadrants of the system. As an example, I changed the setup for Fig. 6.5 to have $\alpha = 0.0005$ instead of 0.001 (doubling the carring capacity).  In this case, the eigenvalues have positive real parts so the system pushes toward an oscillation regime.
+```{r copied this from the fig 6.5 code, echo = FALSE}
+
+predpreyRM <- function(t, y, p) {
+  H <- y[1]
+  P <- y[2]
+  with(as.list(p), {
+    dH.dt <- b * H * (1 - alpha * H) - w * P * H/(D + H)
+    dP.dt <- e * w * P * H/(D + H) - s * P
+    return(list(c(dH.dt, dP.dt)))
+  })
+}
+
+# Let's graph the zero net growth isoclines for this model. First we set parameters, and make an expression for the prey isocline.
+b <- 0.8
+e <- 0.07
+s <- 0.2
+w <- 5
+D <- 400
+alpha1 <- 0.001
+alpha2 <- 0.0006
+alpha3 <- 0.0005
+alpha4 <- 0.00075
+
+H <- 0:(1/alpha3)
+
+Hiso1 <- eval(b/w * (D + (1 - alpha1 * D) * H - alpha1 * H^2))
+Hiso2 <- eval(b/w * (D + (1 - alpha2 * D) * H - alpha2 * H^2))
+Hiso3 <- eval(b/w * (D + (1 - alpha3 * D) * H - alpha3 * H^2))
+Hiso4 <- eval(b/w * (D + (1 - alpha4 * D) * H - alpha4 * H^2))
+# We also want to add a single trajectory, so we integrate using ode.
+rm_params1 <- c(b = b, alpha = alpha1, e = e, s = s, w = w, D = D)
+rm_params2 <- c(b = b, alpha = alpha2, e = e, s = s, w = w, D = D)
+rm_params3 <- c(b = b, alpha = alpha3, e = e, s = s, w = w, D = D)
+rm_params4 <- c(b = b, alpha = alpha4, e = e, s = s, w = w, D = D)
+Time <- 150
+RM1 <- ode(c(900, 120), 1:Time, predpreyRM, rm_params1)
+RM2 <- ode(c(900, 120), 1:Time, predpreyRM, rm_params2)
+RM3 <- ode(c(900, 120), 1:Time, predpreyRM, rm_params3)
+RM4 <- ode(c(900, 120), 1:Time, predpreyRM, rm_params4)
+
+# Finally, we plot everything, starting with the isoclines, and adding the trajectory using arrows.
+p_iso <- s * D/(e * w - s)
+iso_df <- data.frame(H, Hiso1, Hiso2, Hiso3, Hiso4) %>%
+  gather(alpha, H_iso, -H) %>%
+  mutate(alpha = case_when(alpha == 'Hiso1' ~ paste0('a = ', alpha1),
+                           alpha == 'Hiso2' ~ paste0('a = ', alpha2),
+                           alpha == 'Hiso3' ~ paste0('a = ', alpha3),
+                           TRUE             ~ paste0('a = ', alpha4))) %>%
+  filter(H_iso >= 0)
+equil_df <- iso_df %>%
+  filter(H == 533)
+
+
+pops_df <- as.data.frame(RM1) %>%
+  mutate(alpha = paste0('a = ', alpha1)) %>%
+  bind_rows(as.data.frame(RM2) %>%
+    mutate(alpha = paste0('a = ', alpha2))) %>%
+  bind_rows(as.data.frame(RM3) %>%
+    mutate(alpha = paste0('a = ', alpha3))) %>%
+  bind_rows(as.data.frame(RM4) %>%
+    mutate(alpha = paste0('a = ', alpha4))) %>%
+  setNames(c('t', 'H', 'P', 'alpha'))
+
+alphas <- pops_df$alpha %>% unique()
+
+RM_plot <- ggplot() +
+  geom_line(data = iso_df, aes(x = H, y = H_iso, color = alpha),
+            linetype = 'dashed', size = .25) +
+  geom_vline(xintercept = p_iso, linetype = 'dashed', size = .25) +
+  geom_point(data = equil_df, aes(x = H, y = H_iso, color = alpha),
+             size = 2) +
+  theme_minimal()
+
+### ugh, intermediate arrows are a pain - so the "lead()" doesn't connect back
+### to the start of the next sequence, adding each alpha path individually
+### in a loop.
+for(alpha_plot in alphas) {
+  RM_plot <- RM_plot +
+      geom_segment(data = pops_df %>% filter(alpha == alpha_plot), 
+               aes(x = H, y = P, xend = lead(H), yend = lead(P), color = alpha),
+               arrow = arrow(length = unit(0.07, 'inches')), 
+               size = .25)
+}
+
+RM_plot
+```
+
 h) From Fig. 6.6a, we can tell the carrying capacity of the prey by looking at the dynamics around the solid line, particularly where predator population drops to zero and the solid line intersects the x axis - in the absence of predators, the prey population will self-stabilize.  In this case, $K = 2000$.
 i) The stability of the predator–prey interaction varies with the carrying capacity of the prey - as the carrying capacity increases, the "hump" of the prey isocline moves rightward, and when the peak passes the predator isocline, the system moves toward stable oscillations increasingly distant from the equilibrium point.
 j) What is the relation between the carrying capacity of the prey and the magnitude of the oscillations? The higher the carrying capacity, the greater the magnitude of oscillations.  
@@ -92,6 +179,5 @@ j) What is the relation between the carrying capacity of the prey and the magnit
 
 (a) Create three simulations showing how diseases of different durations influence the periodicity of the outbreaks.
 (b) Create three simulations showing how the age at onset for different diseases influence the periodicity of the outbreaks.
-(c) Consider which factor is more important in influencing outbreak interval. How do you measure the interval? What criteria would you use to determine
-"importance"? How do the realities of age and duration influence your selection of criteria? Write a short essay that asserts a thesis, and then provides support based on this exercise.
+(c) Consider which factor is more important in influencing outbreak interval. How do you measure the interval? What criteria would you use to determine "importance"? How do the realities of age and duration influence your selection of criteria? Write a short essay that asserts a thesis, and then provides support based on this exercise.
 
