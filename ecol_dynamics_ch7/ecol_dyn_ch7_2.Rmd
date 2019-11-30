@@ -968,14 +968,14 @@ $$K \left(1 - \frac{\alpha_h \delta_c}{\alpha_c r} \right) \geq \frac{\delta_h}{
 
 ```{r}
 
-### params for simulations: what are some sensible numbers?
-a_h <- 0.75  ### herbivore attack rate
-a_c <- 0.4  ### consumer attack rate
-phi <- 150   ### plant constant primary production
-d_h <- 0.32  ### carbon mass losses for herbivores
-d_p <- 0.25  ### carrying capacity for plants
-P_0 <- 200
-H_0 <- 150
+### params for simulations: what are some sensible numbers? See Fig. 7.2
+a_h <- 1  ### herbivore attack rate
+a_c <- 1  ### consumer attack rate
+phi <- 0.1   ### plant constant primary production
+d_h <- 0.1  ### carbon mass losses for herbivores
+d_p <- 0.1  ### carrying capacity for plants
+P_0 <- 1
+H_0 <- 1
 d_c <- 0.20  ### carbon mass losses for consumers
 
 ### Equilibrium
@@ -993,11 +993,11 @@ if(any(c(P_star3 < 0, H_star3 < 0, C_star3 < 0))) {
 ```
 
 ``` {r run ode 3 level 3}
-pops_0 <- c(P = 100, H = 100, C = 5) 
+pops_0 <- c(P = .5, H = .5, C = .5) 
   ### initial carbon densities of herbivore, plant, and consumer
 prms <- c(a_h = a_h, a_c = a_c, phi = phi, 
           d_h = d_h, d_p = d_p, d_c = d_c, P_0 = P_0, H_0 = H_0)
-t <- seq(0, 250, by = 0.1)
+t <- seq(0, 150, by = 0.1)
 
 foodchain3_out <- ode(pops_0, t, foodchain_3level, prms)
 
@@ -1007,6 +1007,7 @@ foodchain3_df <- foodchain3_out %>%
   
 ```
 
+See fig. 7.2a:
 ``` {r plot dynamics 3 level pops over time 3}
 
 equil_df <- data.frame(P = P_star3, H = H_star3, C = C_star3) %>%
@@ -1040,3 +1041,53 @@ p
 
 ```
 
+``` {r run ode 3 level 3 unstable}
+pops_0 <- c(P = P_star3, H = H_star3, C = C_star3) 
+phi = 0.2
+  ### initial carbon densities of herbivore, plant, and consumer
+prms <- c(a_h = a_h, a_c = a_c, phi = phi, 
+          d_h = d_h, d_p = d_p, d_c = d_c, P_0 = P_0, H_0 = H_0)
+t <- seq(0, 150, by = 0.1)
+
+foodchain3_out <- ode(pops_0, t, foodchain_3level, prms)
+
+foodchain3_df <- foodchain3_out %>%
+  as.data.frame() %>%
+  setNames(c('t', 'P', 'H', 'C'))
+  
+```
+
+See fig. 7.2b:
+ 
+``` {r plot dynamics 3 level pops over time 3 unstable}
+
+equil_df <- data.frame(P = P_star3, H = H_star3, C = C_star3) %>%
+  gather(level, pop) %>%
+  mutate(level = fct_inorder(level))
+
+pop_v_time_df <- foodchain3_df %>%
+  gather(level, pop, -t) %>%
+  mutate(level = fct_inorder(level))
+
+ggplot(pop_v_time_df, aes(x = t, y = pop, color = level)) +
+  ggtheme_plot() +
+  geom_line() +
+  geom_hline(data = equil_df, aes(yintercept = pop, color = level),
+             linetype = 'dashed', size = .25) +
+  geom_hline(yintercept = 0) +
+  scale_color_manual(values = c('darkgreen', 'blue', 'darkred'))
+
+```
+
+``` {r plot dynamics 3 level phase plane 3 unstable}
+
+library(plotly)
+
+p <- plot_ly(data = foodchain3_df, 
+             x = ~ P, y = ~ H, z = ~ C, 
+             type = 'scatter3d', mode = 'lines',
+             opacity = 1)
+
+p
+
+```

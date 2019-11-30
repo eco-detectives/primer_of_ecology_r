@@ -1,0 +1,283 @@
+---
+title: 'Ecological Dynamics ch 7.3'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    toc: false
+    code_folding: hide
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+  pdf_document:
+    toc: false
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+library(bbmle)
+library(deSolve)
+
+```
+
+# Chapter 7: Ecosystems  {.tabset}
+
+## 7.3 Material Cycling {.tabset}
+
+### 7.3.1 Linear trophic interactions
+
+Nutrient-plant system: losses from the linear food-chain are collected in a nutrient compartiment from which material for primary production must be drawn.  Nutrient-plant example: Limiting nutrient $N(t)$ and plant functional group $P(t)$ characterized by the limiting nutrient density (instead of carbon).  System is closed, so any nutrient taken up by the plants ($\alpha_p N P$) is lost to the free nutrient pool, and returned via death and excretion, immediately added back to the pool ($\delta_p P$).
+
+$$\frac{dP}{dt} = \alpha_p N P - \delta_p P, \quad \frac{dN}{dt} = \delta_p P - \alpha_p P N$$
+Note that
+$$\frac{dP}{dt} + \frac{dN}{dt} \frac{d}{dt}(P + N) = 0$$
+so we can define $S \equiv P + N$ as the total nutrient in the (closed) system.
+
+Writing $N$ as $S - P$ and subbing into the $dP/dt$ eqn:
+$$\frac{dP}{dt} = (\alpha_p S - \delta_p)P\left[1 - \frac{\alpha_p P}{\alpha_p S - \delta_p} \right]$$
+then consider that if we define $r \equiv \alpha_p S - \delta P$ and $K \equiv r_p / \alpha_p = S - \delta_p / \alpha_p$ then we have a standard logistic regression model.
+
+#### Nutrient-plant-herbivore-consumer system
+
+Now we add an herbivore and consumer level.
+
+* $N = S - P - C - H$
+* $\frac{dP}{dt} = \alpha_p N P - \delta_p P - \alpha_h P H$
+* $\frac{dH}{dt} = \alpha_h P H - \delta_h H - \alpha_c H C$
+* $\frac{dC}{dt} = \alpha_c H C - \delta_c C$
+
+see table 7.2 for steady states of this system.
+
+#### Function and params for NPHC system 
+
+``` {r}
+NPHC_model <- function(t, y, params) {
+  N <- y[1]
+  P <- y[2]
+  H <- y[3]
+  C <- y[4]
+  with(as.list(params), {
+    dP_dt <- a_p * P * N - d_p * P - a_h * P * H
+    dH_dt <- a_h * P * H - d_h * H - a_c * C * H
+    dC_dt <- a_c * C * H - d_c * C
+    dN_dt <- -(dP_dt + dH_dt + dC_dt)
+    return(list(c(dN_dt, dP_dt, dH_dt, dC_dt)))
+  })
+}
+
+```
+
+#### NPHC dynamics
+
+```{r}
+
+### params for simulations
+a_p <- 0.03 ### plant uptake rate
+a_h <- 0.10 ### herbivore attack rate
+a_c <- 0.05 ### consumer attack rate
+d_p <- 0.15 ### nutrient losses for plants
+d_h <- 0.50 ### nutrient losses for herbivores
+d_c <- 0.90 ### nutrient loss for consumers
+
+pops_0 <- c(N = 80, P = 25, H = 15, C = 10) ### initial carbon densities of herbivore and plant
+prms <- c(a_p = a_p, a_h = a_h, a_c = a_c,
+          d_p = d_p, d_h = d_h, d_c = d_c)
+t <- seq(0, 100, by = 0.1)
+NPHC_out <- ode(pops_0, t, NPHC_model, prms)
+
+NPHC_df <- NPHC_out %>%
+  as.data.frame() %>%
+  setNames(c('t', 'N', 'P', 'H', 'C'))
+  
+```
+
+``` {r plot NPHC dynamics}
+### Equilibrium
+S <- sum(pops_0)
+a_ph <- a_h + a_p; a_ch <- a_h + a_c
+H_star <- d_c / a_c
+P_star <- a_c / a_ch * (S - d_p / a_p + d_h / a_c - a_ph * H_star / a_p)
+C_star <- a_h / a_ch * (S - d_p / a_p - d_h / a_h - a_ph * H_star / a_p)
+N_star <- S - P_star - H_star - C_star
+
+equil_df <- data.frame(N = N_star, P = P_star, H = H_star, C = C_star) %>%
+  gather(level, pop) %>%
+  mutate(level = fct_inorder(level))
+
+pop_v_time_df <- NPHC_df %>%
+  gather(level, pop, -t) %>%
+  mutate(level = fct_inorder(level))
+
+ggplot(pop_v_time_df, aes(x = t, y = pop, color = level)) +
+  ggtheme_plot() +
+  geom_line() +
+  geom_hline(data = equil_df, aes(yintercept = pop, color = level),
+             linetype = 'dashed', size = .25) +
+  geom_hline(yintercept = 0) +
+  scale_color_manual(values = c('darkgreen', 'blue', 'orange', 'darkred'))
+
+```
+
+``` {r plot NPHC dynamics phase plane}
+
+library(plotly)
+
+p <- plot_ly(data = NPHC_df, 
+             x = ~ P, y = ~ H, z = ~ C, 
+             type = 'scatter3d', mode = 'lines',
+             opacity = 1)
+
+p
+
+```
+
+
+
+### 7.3.2 Type II trophic interactions
+
+Nutrient-plant system: losses from the linear food-chain are collected in a nutrient compartiment from which material for primary production must be drawn.  Nutrient-plant example: Limiting nutrient $N(t)$ and plant functional group $P(t)$ characterized by the limiting nutrient density (instead of carbon).  System is closed, so any nutrient taken up by the plants ($\alpha_p N P$) is lost to the free nutrient pool, and returned via death and excretion, immediately added back to the pool ($\delta_p P$).
+
+#### Nutrient-plant-herbivore system
+
+Now we add an herbivore level.
+
+* $N = S - P - C - H$
+* $\frac{dP}{dt} = \alpha_p N P - \delta_p P - \frac{\alpha_h P H}{P + P_0}$
+* $\frac{dH}{dt} = \frac{\alpha_h P H}{P + P_0} - \delta_h H$
+
+Stable steady states:
+
+* $P^* = \frac{\delta_h P_0}{\alpha_h - \delta_h}$
+* $H^* = \frac{\alpha_p(S - P^*) - \delta_p}{\alpha_p + \alpha_h / (P^* + P_0)}$
+
+#### Function and params for NPH type II system 
+
+``` {r}
+NPH2_model <- function(t, y, params) {
+  N <- y[1]
+  P <- y[2]
+  H <- y[3]
+  with(as.list(params), {
+    dP_dt <- a_p * P * N - d_p * P - a_h * P * H / (P + P_0)
+    dH_dt <- a_h * P * H / (P + P_0) - d_h * H
+    dN_dt <- -(dP_dt + dH_dt)
+    return(list(c(dN_dt, dP_dt, dH_dt)))
+  })
+}
+
+```
+
+#### NPH II dynamics
+
+```{r}
+
+### params for simulations
+a_p <- 0.008 ### plant uptake rate
+a_h <- 0.65 ### herbivore attack rate
+d_p <- 0.08 ### nutrient losses for plants
+d_h <- 0.50 ### nutrient losses for herbivores
+P_0 <- 25  ### half-sat constant
+
+### Equilibrium
+pops_0 <- c(N = 300, P = 25, H = 15) ### initial carbon densities of herbivore and plant
+S <- sum(pops_0)
+P_star <- d_h * P_0 / (a_h - d_h)
+H_star <- (a_p * (S - P_star) - d_p) / (a_p + a_h / (P_star + P_0))
+N_star <- S - P_star - H_star
+  
+A_1 <- a_h * H_star / (P_star + P_0)^2 - a_p
+
+
+prms <- c(a_p = a_p, a_h = a_h,
+          d_p = d_p, d_h = d_h, P_0 = P_0)
+t <- seq(0, 200, by = 0.1)
+NPH2_out <- ode(pops_0, t, NPH2_model, prms)
+
+NPH2_df <- NPH2_out %>%
+  as.data.frame() %>%
+  setNames(c('t', 'N', 'P', 'H'))
+  
+```
+
+``` {r plot NPH II dynamics}
+
+equil_df <- data.frame(N = N_star, P = P_star, H = H_star) %>%
+  gather(level, pop) %>%
+  mutate(level = fct_inorder(level))
+
+pop_v_time_df <- NPH2_df %>%
+  gather(level, pop, -t) %>%
+  mutate(level = fct_inorder(level))
+
+ggplot(pop_v_time_df, aes(x = t, y = pop, color = level)) +
+  ggtheme_plot() +
+  geom_line() +
+  geom_hline(data = equil_df, aes(yintercept = pop, color = level),
+             linetype = 'dashed', size = .25) +
+  geom_hline(yintercept = 0) +
+  scale_color_manual(values = c('darkgreen', 'blue', 'darkred'))
+
+```
+
+``` {r plot NPH II phase plane}
+
+library(plotly)
+
+p <- plot_ly(data = NPH2_df, 
+             x = ~ N, y = ~ P, z = ~ H, 
+             type = 'scatter3d', mode = 'lines',
+             opacity = 1)
+
+p
+
+```
+
+#### NPH II stability analysis
+
+Based on the characteristic equation $\lambda^2 + A_1 \lambda + A_2 = 0$, where
+$$A_1 \equiv \frac{\alpha_h H^*}{(P^* + P_0)^2} - \alpha_p, \quad
+A_2 \equiv \left( \frac{\alpha_h P_0 H^*}{(P^* + P_0)^2} \right) \left( \alpha_p + \frac{\alpha_h}{P^*+P_0} \right)$$
+
+```{r}
+### params for simulations
+a_p <- 1 ### plant uptake rate
+a_h <- 1 ### herbivore attack rate
+d_p <- 0.1 ### nutrient losses for plants
+P_0 <- 1  ### half-sat constant
+
+d_h <- seq(0, 1, 0.002) ### nutrient losses for herbivores
+S   <- seq(0, 10, 0.02)
+df <- crossing(S, d_h) %>%
+  mutate(P_star = d_h * P_0 / (a_h - d_h),
+         H_star = (a_p * (S - P_star) - d_p) / (a_p + a_h / (P_star + P_0)),
+         N_star = S - P_star - H_star) %>%
+  mutate(A_1 = a_h * H_star / (P_star + P_0)^2 - a_p,
+         A_2 = a_h * P_0 * H_star / (P_star + P_0)^2 * (a_p + a_h / (P_star + P_0))) %>%
+  mutate(sensible = P_star >= 0 &  H_star >= 0 & N_star >= 0,
+         no_steady_state = !sensible,
+         stable = A_1 >= 0 & sensible,
+         unstable = A_1 <= 0 & sensible) %>%
+  gather(state, bool, no_steady_state:unstable) %>%
+  filter(bool)
+
+stable_unstable_df <- df %>%
+  filter(A_2 > 0) %>%
+  group_by(S) %>%
+  filter(A_1 == min(abs(A_1))) %>%
+  ungroup()
+
+no_steady_state_df <- df %>%
+  filter(!sensible) %>%
+  group_by(S) %>%
+  filter(d_h == min(d_h))
+
+ggplot(df, aes(x = S, y = d_h)) +
+  geom_raster(aes(fill = state)) +
+  geom_line(data = stable_unstable_df, size = .25) + 
+  geom_line(data = no_steady_state_df, size = .25) +
+  theme_minimal()
+```
+
